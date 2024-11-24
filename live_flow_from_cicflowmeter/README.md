@@ -5,4 +5,5 @@
 - writer.py wurde erweitert um die zusätzliche Funktionalität bereit zu stellen. 
 
 ### Quickstart
-Mit `sudo python my_sniffer.py` der sniffer gestartet werden. Evtl muss noch der name des Interfaces in `sniffer.py` geändert werden.
+Mit `python my_sniffer.py` der sniffer gestartet werden. Evtl. muss noch der name des Interfaces in `my_sniffer.py` geändert werden. Evtl. muss `my_sniffer.py` mit root-Rechten gestartet werden.
+Es kann durchaus etwas dauern, bis ein Flow fertig ist, und ausgegeben wird! 
