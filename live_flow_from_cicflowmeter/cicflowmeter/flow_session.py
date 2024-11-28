@@ -79,13 +79,13 @@ class FlowSession(DefaultSession):
         elif "F" in pkt.flags:
             # If it has FIN flag then early collect flow and continue
             flow.add_packet(pkt, direction)
-            self.garbage_collect(pkt.time)
+            self.garbage_collect(pkt.time)  
             return
 
         flow.add_packet(pkt, direction)
 
         if self.packets_count % GARBAGE_COLLECT_PACKETS == 0 or flow.duration > 120:
-            self.garbage_collect(pkt.time)
+            self.garbage_collect(pkt.time)  
 
     def get_flows(self):
         return self.flows.values()
@@ -102,6 +102,6 @@ class FlowSession(DefaultSession):
             ):
                 continue
 
-            self.output_writer.write(flow.get_data(self.fields))
+            self.output_writer.write(flow.get_data(self.fields)) # TODO hier auf prediction warten 
             del self.flows[k]
             self.logger.debug(f"Flow Collected! Remain Flows = {len(self.flows)}")

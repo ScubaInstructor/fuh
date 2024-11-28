@@ -39,6 +39,10 @@ class HttpWriter(OutputWriter):
         self.session.close()
 
 class InternWriter(OutputWriter):
+    """
+    Writer, der eine Funktion übergeben bekommt, die die Flows verarbeitet. 
+    So können in die Flows einem Script weiterverarbeitet werden.
+    """
     def __init__(self, output_function):
         self.output_function = output_function
         
