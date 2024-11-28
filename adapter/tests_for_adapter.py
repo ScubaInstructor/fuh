@@ -21,8 +21,8 @@ def sample_dataframe():
 
 class Tests():
     
-    test_data = pd.read_csv("cicflowmeter/new_flows.csv")
-    test_cicids2017 = joblib.load("cicids2017_excerpt_for_testing_in_dataframe.pkl")
+    test_data = pd.read_csv("data/new_flows.csv")
+    test_cicids2017 = joblib.load("data/cicids2017_excerpt_for_testing_in_dataframe.pkl") # Excerpt von CIC IDS 2017 Daten 
     ipca = joblib.load("out/ipca.pkl")
     ipca_size = 34
     scaler = joblib.load("out/scaler.pkl")
