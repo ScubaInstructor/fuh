@@ -1,7 +1,9 @@
+from io import BytesIO
+import joblib
 from my_sniffer import My_Sniffer
 from scapy.sendrecv import AsyncSniffer as ASS
 from cicflowmeter.writer import InternWriter, OutputWriter, output_writer_factory
-
+from utilities import erstelle_datei
 
 
 class Tests():    
@@ -18,4 +20,6 @@ class Tests():
         int_writer.write(data={0:4})
         assert self.data == 4
 
-        
+    def test_utilities_create_file(self):
+        flow = joblib.load("flow2.pkl")
+        assert isinstance(BytesIO, erstelle_datei(flow))

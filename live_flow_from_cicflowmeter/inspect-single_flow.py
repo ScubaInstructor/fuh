@@ -11,6 +11,7 @@ packete = []
 for p in f.packets:
     packete.append(p[0])
 
+print(packete)
 # %%
 from scapy.utils import PcapWriter
 pktdump = PcapWriter("banana.pcap", append=True, sync=True)
