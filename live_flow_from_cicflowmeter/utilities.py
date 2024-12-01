@@ -50,3 +50,4 @@ def sende_BytesIO_datei_per_scp(pcap_buffer: BytesIO, ziel_host: str, ziel_pfad:
             remote_file.write(pcap_buffer.getvalue())
     
     ssh.close()
+    # TODO erstelle return 

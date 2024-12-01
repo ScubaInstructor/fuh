@@ -1,0 +1,5 @@
+ARKIMEDIR="/opt/arkime"
+# must be ended with a new line "LF" (Unix) and not "CRLF" (Windows)
+* * * * * /bin/bash /data/arkime-parse-pcap-folder.sh -d /data/pcap  >> /var/log/cron.log 2>&1
+# An empty line is required at the end of this file for a valid cron file.
+

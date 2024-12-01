@@ -5,7 +5,7 @@ LABEL org.opencontainers.image.authors="mammo0 - https://github.com/mammo0"
 # Install dependencies that are needed, but not set in the arkime.deb file
 RUN apt-get -qq update && \
     apt-get -yq upgrade && \
-    apt-get install -yq curl libmagic-dev wget logrotate
+    apt-get install -yq curl libmagic-dev wget logrotate cron
 
 # Set arguments
 ARG ARKIME_VERSION=5.5.1
@@ -44,6 +44,24 @@ RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/* && \
 # Add scripts
 ADD /scripts /data/
 RUN chmod 755 /data/*.sh
+
+# CRON FOR NEW PCAP FILE CHECK
+# Copy hello-cron file to the cron.d directory
+COPY update_consume_folder_cron /etc/cron.d/update_consume_folder_cron
+ 
+# Give execution rights on the cron job
+RUN chmod 0644 /etc/cron.d/update_consume_folder_cron
+
+# Apply cron job
+RUN crontab /etc/cron.d/update_consume_folder_cron
+ 
+# Create the log file to be able to run tail
+RUN touch /var/log/cron.log
+ 
+# Run the command on container startup
+# CMD cron && tail -f /var/log/cron.log
+
+
 
 VOLUME ["/data/pcap", "/data/config", "/data/logs"]
 EXPOSE 8005

@@ -1,20 +1,19 @@
 #%%
-import scapy.data
-import scapy.packet
 import joblib
+import os
 from cicflowmeter import flow
-
-f: flow.Flow = joblib.load('flow2.pkl')
+from utilities import erstelle_datei, sende_BytesIO_datei_per_scp
+f: flow.Flow = joblib.load('flow1.pkl')
 
 #%%
-packete = []
-for p in f.packets:
-    packete.append(p[0])
 
-print(packete)
-# %%
-from scapy.utils import PcapWriter
-pktdump = PcapWriter("banana.pcap", append=True, sync=True)
+flow_bytesio = erstelle_datei(flow=f)
+#%%
+HOST="localhost"
+USER="georg"
+PATH="/tmp/arkime/pcap/test2.pcap"
+SSHFILE=os.path.expanduser('~')+"/.ssh/id_ed25519.pub"
+sende_BytesIO_datei_per_scp(pcap_buffer=flow_bytesio, ziel_host=HOST,
+                            ziel_pfad=PATH,username=USER, mySSHK=SSHFILE)
 
-pktdump.write(packete)
 # %%
