@@ -1,6 +1,7 @@
 from cicflowmeter import flow
 from scapy.utils import PcapWriter
-from io import BytesIO, StringIO
+from io import BytesIO
+import paramiko
 
 def erstelle_datei(flow: flow.Flow) -> BytesIO:
     """
@@ -35,8 +36,7 @@ def sende_BytesIO_datei_per_scp(pcap_buffer: BytesIO, ziel_host: str, ziel_pfad:
         ziel_host (str): Der Hostname oder die IP-Adresse des Zielhosts.
         ziel_pfad (str): Der Pfad auf dem Zielhost, wohin die Datei gesendet werden soll.
     """
-    import paramiko
-
+    
     # Beispiel für die Verwendung von Paramiko für SCP
     ssh = paramiko.SSHClient()
     # Automatisch hostkey akzeptieren evtl zu unsicher?

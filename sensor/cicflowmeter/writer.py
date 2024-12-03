@@ -1,11 +1,10 @@
 #import csv
 from typing import Protocol
-
 #import requests
 
 
 class OutputWriter(Protocol):
-    def write(self, data: dict) -> None:
+    def write(self, data: list) -> None:
         raise NotImplementedError
 
 
@@ -46,10 +45,10 @@ class InternWriter(OutputWriter):
     def __init__(self, output_function):
         self.output_function = output_function
         
-    def write(self, data):
+    def write(self, data: list):
         '''write to function instead of url or file'''
         self.output_function(data)
-    
+
 def output_writer_factory(output_mode, output) -> OutputWriter:
     match output_mode:
         # case "url":

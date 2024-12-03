@@ -10,7 +10,7 @@ from cicflowmeter.utilities import erstelle_datei, sende_BytesIO_datei_per_scp
 from uuid import uuid4
 import sys
 import io
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, line_buffering=True) # TODO entfernen
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, line_buffering=True)
 from sklearn.ensemble import RandomForestClassifier
 from adapt import adapt_for_prediction
 from pandas import DataFrame
@@ -26,10 +26,9 @@ REMOTE_USER=os.getenv('USER')
 REMOTE_PATH=os.getenv('PATH')
 MYSSH_FILE=os.getenv('MYSSH_KEY')
 
-LOCALPREFIX = "/app/" # "/home/georg/Desktop/FaPra/python/fuh/sensor/"
-MODELPATH = LOCALPREFIX + "model.pkl" 
-SCALERPATH = LOCALPREFIX + "scaler.pkl"
-IPCAPATH = LOCALPREFIX + "ipca_mit_size_34.pkl"
+MODELPATH = "/home/georg/Desktop/FaPra/python/fuh/sensor/model.pkl" # TODO realtive pls
+SCALERPATH = "/home/georg/Desktop/FaPra/python/fuh/sensor/scaler.pkl"
+IPCAPATH = "/home/georg/Desktop/FaPra/python/fuh/sensor/ipca_mit_size_34.pkl"
 IPCASIZE = 34
 
 class My_Sniffer():
@@ -76,11 +75,13 @@ class My_Sniffer():
             item = self.queue.get()  # Hole ein Element aus der Warteschlange
             print(f'Working on {item}')  # Ausgabe zur Anzeige, dass an dem Element gearbeitet wird
             # Prognose erstellen
+            #data: dict = item[1]
+            #data = {k: float(v) if isinstance(v, np.float64) else v for k, v in data.items()}
+            #flow = DataFrame([data])
             flow = DataFrame([item[1]])
             flow = adapt_for_prediction(data=flow,scaler=self.scaler,ipca=self.ipca,ipca_size=IPCASIZE)
             prediction = self.model.predict(flow)
-            #if prediction:
-            if True:
+            if prediction:
                 print("prediction true")
                 # Verarbeite zu Datei
                 flow_bytesIO = erstelle_datei(item[0])
@@ -91,6 +92,6 @@ class My_Sniffer():
             self.queue.task_done()  # Markiere das Element als bearbeitet
 
 if __name__ == "__main__":
-    threading.stack_size(4096*4096) # TODO checke ob das nötig ist
+    threading.stack_size(4096*4096)
     s = My_Sniffer()  # Erstelle eine Instanz des My_Sniffer
     s.start()  # Starte den Sniffer und beginne mit dem Überwachen der Pakete
