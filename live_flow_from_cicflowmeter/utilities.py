@@ -41,13 +41,19 @@ def sende_BytesIO_datei_per_scp(pcap_buffer: BytesIO, ziel_host: str, ziel_pfad:
     ssh = paramiko.SSHClient()
     # Automatisch hostkey akzeptieren evtl zu unsicher?
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()) 
-    # Verbinden mit dem Zielhost
-    ssh.connect(ziel_host, username=username, key_filename=mySSHK)
-    
-    # SCP verwenden, um die Datei zu übertragen
-    with ssh.open_sftp() as sftp:
-        with sftp.file(ziel_pfad, 'wb') as remote_file:
-            remote_file.write(pcap_buffer.getvalue())
+    try:
+        # Verbinden mit dem Zielhost
+        ssh.connect(ziel_host, username=username, key_filename=mySSHK, banner_timeout=30)
+        
+        # SCP verwenden, um die Datei zu übertragen
+        with ssh.open_sftp() as sftp:
+            with sftp.file(ziel_pfad, 'wb') as remote_file:
+                remote_file.write(pcap_buffer.getvalue())
+    except paramiko.ssh_exception.AuthenticationException as ae:
+        print("Authentication failed.")    
+        print(ae)
+    except paramiko.ssh_exception.SSHException as se:
+        print("Timeout Fehler!")    
+        print(se)
     
     ssh.close()
-    # TODO erstelle return 

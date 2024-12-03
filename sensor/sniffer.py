@@ -14,19 +14,23 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, line_buffering=True) # TODO ent
 from sklearn.ensemble import RandomForestClassifier
 from adapt import adapt_for_prediction
 from pandas import DataFrame
-import numpy as np
 
 # Laden der Umgebungsvariablen aus der .env-Datei
 load_dotenv()
 
+INDOCKER = True # Nur für debugging
+
 # Auslesen der INTERFACE-Variable
 INTERFACE = os.getenv('INTERFACE')
-REMOTE_HOST=os.getenv('HOST')
-REMOTE_USER=os.getenv('USER')
-REMOTE_PATH=os.getenv('PATH')
+REMOTE_HOST=os.getenv('REMOTE_HOST')
+REMOTE_USER=os.getenv('REMOTE_USER')
+REMOTE_PATH=os.getenv('REMOTE_PATH')
 MYSSH_FILE=os.getenv('MYSSH_KEY')
-
-LOCALPREFIX = "/app/" # "/home/georg/Desktop/FaPra/python/fuh/sensor/"
+if INDOCKER:
+    LOCALPREFIX = "/app/"
+else: 
+    LOCALPREFIX = "/home/georg/Desktop/FaPra/python/fuh/sensor/"
+MYSSH_FILE = LOCALPREFIX + MYSSH_FILE
 MODELPATH = LOCALPREFIX + "model.pkl" 
 SCALERPATH = LOCALPREFIX + "scaler.pkl"
 IPCAPATH = LOCALPREFIX + "ipca_mit_size_34.pkl"
@@ -80,14 +84,18 @@ class My_Sniffer():
             flow = adapt_for_prediction(data=flow,scaler=self.scaler,ipca=self.ipca,ipca_size=IPCASIZE)
             prediction = self.model.predict(flow)
             #if prediction:
-            if True:
+            if True: # TODO nur für debugging
                 print("prediction true")
                 # Verarbeite zu Datei
+                id = str(uuid4())
                 flow_bytesIO = erstelle_datei(item[0])  # das BytesIO Objekt das eine .pcap Datei ist
-                remote__file_path = REMOTE_PATH + str(uuid4()) + ".pcap"    # Einzigartiger Dateiname evtl ist Datum besser?
+                remote_file_path = REMOTE_PATH + id + ".pcap"    # Einzigartiger Dateiname evtl ist Datum besser?
+                print(remote_file_path)
                 sende_BytesIO_datei_per_scp(pcap_buffer=flow_bytesIO,ziel_host=REMOTE_HOST,
-                                            ziel_pfad=remote__file_path,username=REMOTE_USER,mySSHK=MYSSH_FILE)
-            print(f'Finished {item}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
+                                            ziel_pfad=remote_file_path,username=REMOTE_USER,mySSHK=MYSSH_FILE)
+                print(f'Finished {item} mit UUID:{id}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
+            else:
+                print(f'Finished {item}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
             self.queue.task_done()  # Markiere das Element als bearbeitet
 
 if __name__ == "__main__":
