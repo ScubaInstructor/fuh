@@ -101,7 +101,6 @@ class FlowSession(DefaultSession):
                 and flow.duration < 90
             ):
                 continue
-            # TODO write() Methode anpassen, damit der ganze Flow weitergegeben werden kann. Sonst kann keine PCap Datei erstellt werden
-            self.output_writer.write([flow, flow.get_data(self.fields)]) # TODO hier auf prediction warten 
+            self.output_writer.write([flow, flow.get_data(self.fields)])
             del self.flows[k]
             self.logger.debug(f"Flow Collected! Remain Flows = {len(self.flows)}")
