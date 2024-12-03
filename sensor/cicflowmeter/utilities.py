@@ -27,7 +27,7 @@ def erstelle_datei(flow: flow.Flow) -> BytesIO:
 
     return pcap_buffer
 
-def sende_BytesIO_datei_per_scp(pcap_buffer: BytesIO, ziel_host: str, ziel_pfad: str, username: str, mySSHK: str = '~/.ssh/id_rsa.pub'):
+def sende_BytesIO_datei_per_scp(pcap_buffer: BytesIO, ziel_host: str, ziel_pfad: str, username: str, mySSHK: str = '/app/sshkey'):
     """
     Sendet eine pcap-Datei per SCP an einen Zielhost.
     

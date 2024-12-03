@@ -83,8 +83,8 @@ class My_Sniffer():
             if True:
                 print("prediction true")
                 # Verarbeite zu Datei
-                flow_bytesIO = erstelle_datei(item[0])
-                remote__file_path = REMOTE_PATH + str(uuid4()) + ".pcap"
+                flow_bytesIO = erstelle_datei(item[0])  # das BytesIO Objekt das eine .pcap Datei ist
+                remote__file_path = REMOTE_PATH + str(uuid4()) + ".pcap"    # Einzigartiger Dateiname evtl ist Datum besser?
                 sende_BytesIO_datei_per_scp(pcap_buffer=flow_bytesIO,ziel_host=REMOTE_HOST,
                                             ziel_pfad=remote__file_path,username=REMOTE_USER,mySSHK=MYSSH_FILE)
             print(f'Finished {item}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
