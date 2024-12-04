@@ -22,7 +22,7 @@ load_dotenv()
 # For Debug Purpose
 INDOCKER = os.environ.get('AM_I_IN_A_DOCKER_CONTAINER', False)
 
-# Auslesen der INTERFACE-Variable
+# Auslesen der Environment-Variable
 SNIFFING_INTERFACE = os.getenv('SNIFFING_INTERFACE')
 REMOTE_HOST=os.getenv('REMOTE_HOST')
 REMOTE_USER=os.getenv('REMOTE_USER')
@@ -106,6 +106,6 @@ class My_Sniffer():
             self.queue.task_done()  # Markiere das Element als bearbeitet
 
 if __name__ == "__main__":
-    threading.stack_size(4096*4096) # TODO checke ob das nötig ist
+    # threading.stack_size(4096*4096) # TODO checke ob das nötig ist
     s = My_Sniffer()  # Erstelle eine Instanz des My_Sniffer
     s.start()  # Starte den Sniffer und beginne mit dem Überwachen der Pakete
