@@ -16,3 +16,4 @@ imblearn
 pybind11
 python-dotenv
 paramiko
+flask

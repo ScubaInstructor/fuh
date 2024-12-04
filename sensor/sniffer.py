@@ -1,4 +1,6 @@
-import threading  # Importiere das threading-Modul für die Verwendung von Threads
+import threading
+
+import requests  # Importiere das threading-Modul für die Verwendung von Threads
 from cicflowmeter import sniffer  # Importiere den Sniffer von cicflowmeter
 from cicflowmeter.flow import Flow
 from queue import Queue  # Importiere die Queue-Klasse für Thread-sichere Warteschlangen
@@ -28,6 +30,7 @@ REMOTE_HOST=os.getenv('REMOTE_HOST')
 REMOTE_USER=os.getenv('REMOTE_USER')
 REMOTE_PATH=os.getenv('REMOTE_PATH')
 MYSSH_FILE=os.getenv('MYSSH_KEY')
+OUTPUT_URL=os.getenv('OUTPUT_URL')
 if INDOCKER:
     LOCALPREFIX = "/app/"
 else: 
@@ -96,14 +99,27 @@ class My_Sniffer():
                 # Verarbeite zu Datei
                 id = str(uuid4())
                 flow_bytesIO = erstelle_datei(item[0])  # das BytesIO Objekt das eine .pcap Datei ist
-                remote_file_path = REMOTE_PATH + id + ".pcap"    # Einzigartiger Dateiname evtl ist Datum besser?
-                print(remote_file_path)
-                sende_BytesIO_datei_per_scp(pcap_buffer=flow_bytesIO,ziel_host=REMOTE_HOST,
-                                            ziel_pfad=remote_file_path,username=REMOTE_USER,mySSHK=MYSSH_FILE)
+                #remote_file_path = REMOTE_PATH + id + ".pcap"    # Einzigartiger Dateiname evtl ist Datum besser?
+                #print(remote_file_path)
+                #sende_BytesIO_datei_per_scp(pcap_buffer=flow_bytesIO,ziel_host=REMOTE_HOST,
+                #                            ziel_pfad=remote_file_path,username=REMOTE_USER,mySSHK=MYSSH_FILE)
+                httpwriter = HttpWriter(output_url=OUTPUT_URL)
+                httpwriter.write(item)
                 print(f'Finished {item} mit UUID:{id}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
             else:
                 print(f'Finished {item}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
             self.queue.task_done()  # Markiere das Element als bearbeitet
+
+class HttpWriter():
+    def __init__(self, output_url) -> None:
+        self.url = output_url
+        self.session = requests.Session()
+
+    def write(self, data: dict) -> None:
+        self.session.post(self.url, json=data)
+
+    def __del__(self):
+        self.session.close()
 
 if __name__ == "__main__":
     # threading.stack_size(4096*4096) # TODO checke ob das nötig ist
