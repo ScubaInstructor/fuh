@@ -1,6 +1,5 @@
 import threading
 
-import requests  # Importiere das threading-Modul für die Verwendung von Threads
 from cicflowmeter import sniffer  # Importiere den Sniffer von cicflowmeter
 from cicflowmeter.flow import Flow
 from queue import Queue  # Importiere die Queue-Klasse für Thread-sichere Warteschlangen
@@ -8,7 +7,7 @@ from scapy.sendrecv import AsyncSniffer  # Importiere den asynchronen Sniffer vo
 from dotenv import load_dotenv
 import os
 from joblib import load
-from cicflowmeter.utilities import erstelle_datei, sende_BytesIO_datei_per_scp
+from cicflowmeter.utilities import erstelle_datei, sende_BytesIO_datei_per_scp, erstelle_post_request
 from uuid import uuid4
 import sys
 import io
@@ -93,33 +92,23 @@ class My_Sniffer():
             flow = DataFrame([item[1]])
             flow = adapt_for_prediction(data=flow,scaler=self.scaler,ipca=self.ipca,ipca_size=IPCASIZE)
             prediction = self.model.predict(flow)
-            #if prediction:
+            print(f"Prediction ist: {prediction}")
+            #if prediction: # TODO not ['BENIGN']
             if True: # TODO nur für debugging
                 print("prediction true")
                 # Verarbeite zu Datei
                 id = str(uuid4())
-                flow_bytesIO = erstelle_datei(item[0])  # das BytesIO Objekt das eine .pcap Datei ist
+                #flow_bytesIO = erstelle_datei(item[0])  # das BytesIO Objekt das eine .pcap Datei ist
                 #remote_file_path = REMOTE_PATH + id + ".pcap"    # Einzigartiger Dateiname evtl ist Datum besser?
                 #print(remote_file_path)
                 #sende_BytesIO_datei_per_scp(pcap_buffer=flow_bytesIO,ziel_host=REMOTE_HOST,
                 #                            ziel_pfad=remote_file_path,username=REMOTE_USER,mySSHK=MYSSH_FILE)
-                httpwriter = HttpWriter(output_url=OUTPUT_URL)
-                httpwriter.write(item)
+                erstelle_post_request(data=[item[0],item[1]],output_url=OUTPUT_URL)
                 print(f'Finished {item} mit UUID:{id}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
             else:
                 print(f'Finished {item}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
             self.queue.task_done()  # Markiere das Element als bearbeitet
 
-class HttpWriter():
-    def __init__(self, output_url) -> None:
-        self.url = output_url
-        self.session = requests.Session()
-
-    def write(self, data: dict) -> None:
-        self.session.post(self.url, json=data)
-
-    def __del__(self):
-        self.session.close()
 
 if __name__ == "__main__":
     # threading.stack_size(4096*4096) # TODO checke ob das nötig ist

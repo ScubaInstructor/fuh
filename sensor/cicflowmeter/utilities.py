@@ -1,3 +1,4 @@
+import requests
 from cicflowmeter import flow
 from scapy.utils import PcapWriter
 from io import BytesIO
@@ -56,3 +57,55 @@ def sende_BytesIO_datei_per_scp(pcap_buffer: BytesIO, ziel_host: str, ziel_pfad:
         print(se)
 
     ssh.close()
+
+class HttpWriter():
+    """
+    Eine Klasse zum Senden von HTTP POST-Anfragen.
+
+    Diese Klasse verwaltet eine Session für wiederholte Anfragen an eine bestimmte URL.
+    """
+
+    def __init__(self, output_url) -> None:
+        """
+        Initialisiert den HttpWriter.
+
+        Args:
+            output_url (str): Die URL, an die die Anfragen gesendet werden sollen.
+        """
+        self.url = output_url
+        self.session = requests.Session()
+
+    def write(self, data: list) -> None:
+        """
+        Sendet zwei POST-Anfragen: eine für JSON-Daten (Flow-Daten) und eine für Datei-Daten (pcap-Dateie-Daten).
+
+        Args:
+            data (list): Ein Liste mit zwei Elementen:
+                - data[0]: Datei-Daten (pcap-Datei als BytesIO)
+                - data[1]: JSON-Daten (Metadaten)
+        """
+        self.session.post(self.url, files={'file': data[0]})
+        self.session.post(self.url, json=data[1])
+        
+
+
+    def __del__(self):
+        self.session.close()
+
+def erstelle_post_request(data: list, output_url: str):
+    """
+    Erstellt und sendet einen POST-Request mit den gegebenen Daten.
+
+    Args:
+        data (list): Eine Liste mit zwei Elementen:
+            - data[0]: Flow-Object aus dem die Packete extrahiert werden sollen.
+            - data[1]: Flow (nur die reduzierten Daten)
+        output_url (str): Die URL, an die die Anfrage gesendet werden soll
+
+    Diese Funktion extrahiert das erste Element jedes Pakets und sendet es zusammen mit den Metadaten.
+    """
+    httpwriter = HttpWriter(output_url=output_url)
+    # Sendet einen POST-Request mit:
+    # - den Flow als JSON-Daten (Metadaten)
+    # - Eine Liste der packets ohne die Richtung als Datei-Daten
+    httpwriter.write([erstelle_datei(data[0]), data[1]])

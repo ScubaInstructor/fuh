@@ -1,87 +1,39 @@
-from flask import Flask, request, render_template_string, jsonify
+from flask import Flask, request, render_template_string, jsonify, send_file
 import pandas as pd
-from io import StringIO
 import uuid
-from sklearn.preprocessing import LabelEncoder
-from sklearn.decomposition import IncrementalPCA
-from sklearn.preprocessing import StandardScaler
-import joblib
-
-import numpy as np
+from io import BytesIO
 
 app = Flask(__name__)
 
-# Dictionary to store dataframes with unique IDs
+# Dictionary to store dataframes and files with unique IDs
 dataframes = {}
+filestore = {}
 
 @app.route('/upload', methods=['POST','GET'])
 def upload():
-    # # Get the CSV data from the request body
-    # post_data = request.get_json()
-    # ## Convert received dict into Dataframe
-    # df = pd.DataFrame([post_data])
-    
-    # # Preprocess dataframe
-    # # Reduce to exact columns that were used for fit
-    # df= df[['dst_port', 'flow_duration', 'tot_fwd_pkts', 'tot_bwd_pkts',
-    #    'totlen_fwd_pkts', 'totlen_bwd_pkts', 'fwd_pkt_len_max',
-    #    'fwd_pkt_len_min', 'fwd_pkt_len_mean', 'fwd_pkt_len_std',
-    #    'bwd_pkt_len_max', 'bwd_pkt_len_min', 'bwd_pkt_len_mean',
-    #    'bwd_pkt_len_std', 'flow_byts_s', 'flow_pkts_s', 'flow_iat_mean',
-    #    'flow_iat_std', 'flow_iat_max', 'flow_iat_min', 'fwd_iat_tot',
-    #    'fwd_iat_mean', 'fwd_iat_std', 'fwd_iat_max', 'fwd_iat_min',
-    #    'bwd_iat_tot', 'bwd_iat_mean', 'bwd_iat_std', 'bwd_iat_max',
-    #    'bwd_iat_min', 'fwd_psh_flags', 'fwd_urg_flags', 'fwd_header_len',
-    #    'bwd_header_len', 'fwd_pkts_s', 'bwd_pkts_s', 'pkt_len_min',
-    #    'pkt_len_max', 'pkt_len_mean', 'pkt_len_std', 'pkt_len_var',
-    #    'fin_flag_cnt', 'syn_flag_cnt', 'rst_flag_cnt', 'psh_flag_cnt',
-    #    'ack_flag_cnt', 'urg_flag_cnt', 'cwr_flag_count', 'ece_flag_cnt',
-    #    'down_up_ratio', 'pkt_size_avg', 'fwd_seg_size_avg',
-    #    'bwd_seg_size_avg', 'fwd_header_len', 'subflow_fwd_pkts',
-    #    'subflow_fwd_byts', 'subflow_bwd_pkts', 'subflow_bwd_byts',
-    #    'init_fwd_win_byts', 'init_bwd_win_byts', 'fwd_act_data_pkts',
-    #    'fwd_seg_size_min', 'active_mean', 'active_std', 'active_max',
-    #    'active_min', 'idle_mean', 'idle_std', 'idle_max', 'idle_min']]
-    # # Load pca and scaler
-    # scaler = joblib.load('C:/Users/arin1/Google Drive/Fernuni/Praktikum/cicflowmeter/src/scaler.pkl')
-    # ipca = joblib.load('C:/Users/arin1/Google Drive/Fernuni/Praktikum/cicflowmeter/src/ipca.pkl')
-    # # scaler = StandardScaler()
-    # scaled_features = scaler.transform(df)
-
-    # size = len(df.columns) // 2
-    # # ipca = IncrementalPCA(n_components = size)
-    # # ipca.partial_fit(scaled_features)
-    # #for batch in np.array_split(scaled_features, len(df) // 1):
-    # #    ipca.partial_fit(batch)
-
-    # #print(f'information retained: {sum(ipca.explained_variance_ratio_):.2%}')
-
-    # transformed_features = ipca.transform(scaled_features)
-    # new_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(size)])
-
-    # #Loading the saved model with joblib
-    # rf2 = joblib.load('C:/Users/arin1/Google Drive/Fernuni/Praktikum/cicflowmeter/src/rf2.pkl')
-
-    # df["attack_type"] = rf2.predict(new_data)
-    # Generate a unique ID for this DataFrame
-    df = request.get_json()
-
-    df_id = str(uuid.uuid4())
-
-    # Store the DataFrame in the dictionary with its unique ID
-    dataframes[df_id] = df
-
-    return jsonify({"id": df_id})
+    if 'file' not in request.files:  
+        # Process JSON data
+        df = pd.DataFrame([request.get_json()])
+        df_id = str(uuid.uuid4())
+        dataframes[df_id] = df
+        return jsonify({"id": df_id})
+    else: 
+        # Process file upload
+        file = request.files['file']
+        files_id = str(uuid.uuid4())
+        filestore[files_id] = file.read()  # Store file content
+        return jsonify({"id": files_id})
 
 @app.route('/')
 def index():
-    # Generate HTML content for all available dataframes
-    links = [{'id': df_id, 'name': f"DataFrame {i+1}"} for i, df_id in enumerate(dataframes.keys())]
+    # Generate HTML content for all available dataframes and files
+    links = [{'id': df_id, 'name': f"DataFrame {i+1}", 'type': 'dataframe'} for i, df_id in enumerate(dataframes.keys())] 
+    links += [{'id': file_id, 'name': f"File {i+1}", 'type': 'file'} for i, file_id in enumerate(filestore.keys())] 
 
     return render_template_string("""
         <html>
             <head>
-                <title>Real-Time DataFrames</title>
+                <title>Real-Time DataFrames and Files</title>
                 <style>
                     body {
                         display: flex;
@@ -121,9 +73,13 @@ def index():
             </head>
             <body>
                 <div class="sidebar">
-                    <h3>DataFrames</h3>
+                    <h3>DataFrames and Files</h3>
                     {% for link in links %}
-                        <a href="javascript:void(0);" onclick="fetchData('{{ link.id }}')">{{ link.name }}</a>
+                        {% if link.type == 'dataframe' %}
+                            <a href="javascript:void(0);" onclick="fetchData('{{ link.id }}')">{{ link.name }}</a>
+                        {% else %}
+                            <a href="/download/{{ link.id }}">{{ link.name }} (Download)</a>
+                        {% endif %}
                     {% endfor %}
                 </div>
                 <div class="content">
@@ -166,12 +122,20 @@ def index():
 @app.route('/get_dataframe/<df_id>', methods=['GET'])
 def get_dataframe(df_id):
     if df_id in dataframes:
-        # Convert the DataFrame to a list of dictionaries for easier JSON rendering
         df = dataframes[df_id]
         df_json = df.to_dict(orient='records')
         return jsonify({"data": df_json})
     return jsonify({"error": "DataFrame not found"}), 404
 
+@app.route('/download/<file_id>')
+def download_file(file_id):
+    if file_id in filestore:
+        return send_file(
+            BytesIO(filestore[file_id]),
+            as_attachment=True,
+            download_name=f"file_{file_id}.pcap"  # You might want to store original filenames
+        )
+    return "File not found", 404
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=8888)
