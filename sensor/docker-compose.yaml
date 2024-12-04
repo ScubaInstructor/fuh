@@ -3,10 +3,14 @@ services:
     build:
       context: .
       dockerfile: DOCKERFILE
-    env_file:
-      - path: .env
+    #env_file:
+    #  - path: .env
     network_mode: "host"
     cap_add:
       - NET_ADMIN
       - NET_RAW        
     restart: on-failure
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
+    cpus: 2

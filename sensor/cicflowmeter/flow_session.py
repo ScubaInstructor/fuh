@@ -11,7 +11,6 @@ from .utils import get_logger
 
 class FlowSession(DefaultSession):
     """Creates a list of network flows."""
-
     verbose = False
     fields = None
     output_mode = None
@@ -19,10 +18,9 @@ class FlowSession(DefaultSession):
 
     def __init__(self, *args, **kwargs):
         self.flows: dict[tuple, Flow] = {}
-        self.logger = get_logger(self.verbose)
+        self.logger = get_logger(True) # TODO for debug only
         self.packets_count = 0
         self.output_writer = output_writer_factory(self.output_mode, self.output)
-
         super(FlowSession, self).__init__(*args, **kwargs)
 
     def toPacketList(self):

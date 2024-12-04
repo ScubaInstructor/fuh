@@ -1,18 +1,17 @@
-FROM alpine:latest
+FROM ubuntu:latest
 
-# Installiere Python und pip
-RUN apk add --no-cache python3 py3-pip
-RUN apk add --no-cache build-base gcc python3-dev musl-dev
+# Aktualisiere das System und installiere Python und pip
+RUN apt-get update && apt-get upgrade -y
+RUN apt-get install -y python3 python3-pip
+RUN apt-get install -y libpcap-dev
 
 # Erstelle einen Symlink für Python
 RUN ln -sf python3 /usr/bin/python
 
 # Aktualisiere pip
-RUN pip3 install --upgrade pip --break-system-packages
-
+# RUN pip3 install --force-reinstall --upgrade pip --break-system-packages
 
 # Installiere Scapy und seine Abhängigkeiten
-RUN apk add --no-cache libpcap-dev
 RUN pip3 install scapy --break-system-packages
 RUN pip3 install numpy --break-system-packages
 RUN pip3 install pandas --break-system-packages
@@ -36,5 +35,8 @@ COPY ipca_mit_size_34.pkl /app
 
 # Setze das Arbeitsverzeichnis auf /app
 WORKDIR /app
+
+# For debugging mostly
+ENV AM_I_IN_A_DOCKER_CONTAINER=Yes
 
 CMD ["/usr/bin/python3", "sniffer.py"]

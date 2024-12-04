@@ -14,14 +14,16 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, line_buffering=True) # TODO ent
 from sklearn.ensemble import RandomForestClassifier
 from adapt import adapt_for_prediction
 from pandas import DataFrame
+from time import sleep
 
 # Laden der Umgebungsvariablen aus der .env-Datei
 load_dotenv()
 
-INDOCKER = True # Nur für debugging
+# For Debug Purpose
+INDOCKER = os.environ.get('AM_I_IN_A_DOCKER_CONTAINER', False)
 
 # Auslesen der INTERFACE-Variable
-INTERFACE = os.getenv('INTERFACE')
+SNIFFING_INTERFACE = os.getenv('SNIFFING_INTERFACE')
 REMOTE_HOST=os.getenv('REMOTE_HOST')
 REMOTE_USER=os.getenv('REMOTE_USER')
 REMOTE_PATH=os.getenv('REMOTE_PATH')
@@ -47,26 +49,30 @@ class My_Sniffer():
     
     def start(self):
         '''Starte den Sniffer und den Empfangs-Worker'''
-        #self.queue.put({0: "this is the beginning"})  # Füge eine Startnachricht zur Warteschlange hinzu TODO entfernen
         self.start_receiver_worker()  # Starte den Worker für den Empfang von Daten
-        
+        print("Starting sniffer")
         self.snif.start()  # Starte den Sniffer
+        
         try:
-            self.snif.join()  # Warte, bis der Sniffer stoppt (blockierend)
+            while True:
+                sleep(1)  # Kurze Pause, um CPU-Auslastung zu reduzieren
         except KeyboardInterrupt:
             print("Exiting")  # Ausgabe bei Tastaturunterbrechung
-            self.snif.stop()  # Stoppe den Sniffer
         finally:
-            self.snif.join()  # Stelle sicher, dass der Sniffer vollständig gestoppt wird
+            print("Stopping sniffer")
+            self.snif.stop()  # Stoppe den Sniffer
+            self.snif.join()  # Warte, bis der Sniffer vollständig gestoppt ist
     
     def output_function(self, data: Flow):
-        '''Diese Funktion wird aufgerufen, wenn ein Paket empfangen wird'''
+        print("out_func")
+        '''Diese Funktion wird aufgerufen, wenn ein Flow empfangen wird'''
         self.queue.put(data)  # Füge die empfangenen Daten zur Warteschlange hinzu
-        self.queue.join()  # Warte, bis alle Aufgaben in der Warteschlange bearbeitet sind
+        # self.queue.join()  # Warte, bis alle Aufgaben in der Warteschlange bearbeitet sind
 
     def get_intern_sniffer(self) -> AsyncSniffer:
         '''Erstelle den internen Sniffer'''
-        s: AsyncSniffer = sniffer.create_sniffer(input_file=None, input_interface=INTERFACE, output_mode="intern", output=self.output_function)
+        print(f"Creating sniffer on interface: {SNIFFING_INTERFACE}")
+        s: AsyncSniffer = sniffer.create_sniffer(input_file=None, input_interface=SNIFFING_INTERFACE, output_mode="intern", output=self.output_function)
         # s.count = 10  # Für Testzwecke (kann verwendet werden, um die Anzahl der Pakete zu begrenzen)
         return s
 
@@ -77,6 +83,7 @@ class My_Sniffer():
     def worker(self):
         '''Die Arbeit, die in einem separaten Thread erledigt wird'''
         while True:
+            print("hello from worker!")
             item = self.queue.get()  # Hole ein Element aus der Warteschlange
             print(f'Working on {item}')  # Ausgabe zur Anzeige, dass an dem Element gearbeitet wird
             # Prognose erstellen
