@@ -2,6 +2,7 @@ from flask import Flask, request, render_template_string, jsonify, send_file
 import pandas as pd
 import uuid
 from io import BytesIO
+import json
 
 app = Flask(__name__)
 
@@ -9,20 +10,27 @@ app = Flask(__name__)
 dataframes = {}
 filestore = {}
 
-@app.route('/upload', methods=['POST','GET'])
+@app.route('/upload', methods=['POST'])
 def upload():
-    if 'file' not in request.files:  
-        # Process JSON data
-        df = pd.DataFrame([request.get_json()])
-        df_id = str(uuid.uuid4())
-        dataframes[df_id] = df
-        return jsonify({"id": df_id})
-    else: 
-        # Process file upload
+    if 'file' in request.files and 'json' in request.files:
+        # Process both file and JSON data
         file = request.files['file']
-        files_id = str(uuid.uuid4())
-        filestore[files_id] = file.read()  # Store file content
-        return jsonify({"id": files_id})
+        json_data = json.loads(request.files['json'].read().decode('utf-8'))
+
+        # Generate unique IDs
+        file_id = str(uuid.uuid4())
+        df_id = str(uuid.uuid4())
+
+        # Store file content
+        filestore[file_id] = file.read()
+
+        # Process JSON data
+        df = pd.DataFrame([json_data])
+        dataframes[df_id] = df
+
+        return jsonify({"file_id": file_id, "dataframe_id": df_id})
+    else:
+        return jsonify({"error": "Missing file or JSON data"}), 400
 
 @app.route('/')
 def index():

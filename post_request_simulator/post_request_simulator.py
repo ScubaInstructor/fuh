@@ -4,6 +4,7 @@ from io import BytesIO
 import requests
 import joblib
 import numpy as np
+import json
 
 
 class HttpWriter():
@@ -22,20 +23,21 @@ class HttpWriter():
         """
         self.url = output_url
         self.session = requests.Session()
-
+      
     def write(self, data: list) -> None:
         """
-        Sendet zwei POST-Anfragen: eine für JSON-Daten (Flow-Daten) und eine für Datei-Daten (pcap-Dateie-Daten).
+        Sendet einen einzigen POST-Request mit Datei- und JSON-Daten.
 
         Args:
-            data (list): Ein Liste mit zwei Elementen:
+            data (list): Eine Liste mit zwei Elementen:
                 - data[0]: Datei-Daten (pcap-Datei als BytesIO)
                 - data[1]: JSON-Daten (Metadaten)
         """
-        self.session.post(self.url, files={'file': data[0]})
-        self.session.post(self.url, json=data[1])
-        
-
+        files = {
+            'file': ('flow.pcap', data[0], 'application/vnd.tcpdump.pcap'),
+            'json': ('data.json', json.dumps(data[1]), 'application/json')
+        }
+        self.session.post(self.url, files=files)
 
     def __del__(self):
         self.session.close()
