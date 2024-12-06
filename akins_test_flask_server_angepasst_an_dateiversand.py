@@ -10,6 +10,21 @@ app = Flask(__name__)
 dataframes = {}
 filestore = {}
 
+# @app.route('/upload', methods=['POST','GET'])
+# def upload():
+#     if 'file' not in request.files:  
+#         # Process JSON data
+#         df = pd.DataFrame([request.get_json()])
+#         df_id = str(uuid.uuid4())
+#         dataframes[df_id] = df
+#         return jsonify({"id": df_id})
+#     else: 
+#         # Process file upload
+#         file = request.files['file']
+#         files_id = str(uuid.uuid4())
+#         filestore[files_id] = file.read()  # Store file content
+#         return jsonify({"id": files_id})
+
 @app.route('/upload', methods=['POST'])
 def upload():
     if 'file' in request.files and 'json' in request.files:

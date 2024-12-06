@@ -33,7 +33,7 @@ OUTPUT_URL=os.getenv('OUTPUT_URL')
 if INDOCKER:
     LOCALPREFIX = "/app/"
 else: 
-    LOCALPREFIX = "/home/georg/Desktop/FaPra/python/fuh/sensor/"
+    LOCALPREFIX = os.getenv('LOCALPREFIX')
 MYSSH_FILE = LOCALPREFIX + MYSSH_FILE
 MODELPATH = LOCALPREFIX + "model.pkl" 
 SCALERPATH = LOCALPREFIX + "scaler.pkl"
@@ -96,12 +96,11 @@ class My_Sniffer():
             #if prediction: # TODO not ['BENIGN']
             if True: # TODO nur für debugging
                 print("prediction true")
-                # Verarbeite zu Datei
+                # Verarbeite zu Datei TODO hier muss die richtige Methode noch rein.
                 id = str(uuid4())
-                #flow_bytesIO = erstelle_datei(item[0])  # das BytesIO Objekt das eine .pcap Datei ist
-                #remote_file_path = REMOTE_PATH + id + ".pcap"    # Einzigartiger Dateiname evtl ist Datum besser?
-                #print(remote_file_path)
-                #sende_BytesIO_datei_per_scp(pcap_buffer=flow_bytesIO,ziel_host=REMOTE_HOST,
+                # flow_bytesIO = erstelle_datei(item[0])  # das BytesIO Objekt das eine .pcap Datei ist
+                # remote_file_path = REMOTE_PATH + id + ".pcap"    # Einzigartiger Dateiname evtl ist Datum besser?
+                # sende_BytesIO_datei_per_scp(pcap_buffer=flow_bytesIO,ziel_host=REMOTE_HOST,
                 #                            ziel_pfad=remote_file_path,username=REMOTE_USER,mySSHK=MYSSH_FILE)
                 erstelle_post_request(data=[item[0],item[1]],output_url=OUTPUT_URL)
                 print(f'Finished {item} mit UUID:{id}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist

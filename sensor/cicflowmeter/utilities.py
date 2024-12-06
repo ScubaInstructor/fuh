@@ -1,3 +1,4 @@
+import json
 import requests
 from cicflowmeter import flow
 from scapy.utils import PcapWriter
@@ -109,3 +110,27 @@ def erstelle_post_request(data: list, output_url: str):
     # - den Flow als JSON-Daten (Metadaten)
     # - Eine Liste der packets ohne die Richtung als Datei-Daten
     httpwriter.write([erstelle_datei(data[0]), data[1]])
+
+def erstelle_datei(flow) -> BytesIO:
+    """
+    Erstellt eine pcap-Datei aus einem Flow-Objekt und gibt sie als BytesIO-Objekt zurück.
+    
+    Args:
+        flow (flow): Ein Flow-Objekt mit Paketdaten.
+    
+    Returns:
+        io.BytesIO: Ein BytesIO-Objekt, das die pcap-Daten enthält.
+    """ 
+    packete = [p[0] for p in flow.packets]
+    
+    pcap_buffer = BytesIO()
+
+    # Schreiben der Pakete in das BytesIO-Objekt
+    pktdump = PcapWriter(pcap_buffer)
+    for pkt in packete:
+        pktdump.write(pkt)
+
+    # Zurücksetzen des Zeigers im BytesIO-Objekt
+    pcap_buffer.seek(0)
+
+    return pcap_buffer
