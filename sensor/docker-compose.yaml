@@ -9,7 +9,10 @@ services:
       - NET_RAW        
     restart: on-failure
     # folgendes stammt aus verschiedenen Tutorials hat aber keine Effekte gezeigt
-    #privileged: true 
+    privileged: true 
     #security_opt: 
     #  - seccomp:unconfined
     #cpus: 2
+    #environment:
+    #  - PYTHONUNBUFFERED=1
+    # user: root  # Setzt den Benutzer auf root

@@ -3,7 +3,7 @@ FROM ubuntu:latest
 # Aktualisiere das System und installiere Python und pip
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y python3 python3-pip
-RUN apt-get install -y libpcap-dev
+# RUN apt-get install -y libpcap-dev
 
 # Erstelle einen Symlink für Python
 RUN ln -sf python3 /usr/bin/python
@@ -19,7 +19,7 @@ RUN pip3 install scikit-learn --break-system-packages
 RUN pip3 install python-dotenv --break-system-packages
 RUN pip3 install paramiko imbalanced-learn --break-system-packages
 RUN pip3 install requests --break-system-packages
-
+# TODO make requirements.txt
 
 # Erstelle den /app Ordner
 RUN mkdir /app
@@ -41,4 +41,15 @@ WORKDIR /app
 # For debugging mostly
 ENV AM_I_IN_A_DOCKER_CONTAINER=Yes
 
-CMD ["/usr/bin/python3", "sniffer.py"]
+# not working options
+#ENV NUM_THREADS=4
+
+
+
+
+CMD ["/usr/bin/python3", "-u", "sniffer.py"]
+
+# Debugging
+# COPY debug_script.py /app
+# ENTRYPOINT ["tail", "-f", "/dev/null"]
+# Multiprocessing und Multithreading funktionieren nicht. Scapy direkt geht aber. 
