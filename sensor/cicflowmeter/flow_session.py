@@ -18,7 +18,7 @@ class FlowSession(DefaultSession):
 
     def __init__(self, *args, **kwargs):
         self.flows: dict[tuple, Flow] = {}
-        self.logger = get_logger(True) # TODO for debug only
+        self.logger = get_logger(self.verbose)
         self.packets_count = 0
         self.output_writer = output_writer_factory(self.output_mode, self.output)
         super(FlowSession, self).__init__(*args, **kwargs)
@@ -99,6 +99,6 @@ class FlowSession(DefaultSession):
                 and flow.duration < 90
             ):
                 continue
-            self.output_writer.write([flow, flow.get_data(self.fields)])
+            self.output_writer.write(data=flow)
             del self.flows[k]
             self.logger.debug(f"Flow Collected! Remain Flows = {len(self.flows)}")

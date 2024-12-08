@@ -1,0 +1,8 @@
+scapy==2.5
+numpy
+pandas
+scikit-learn
+python-dotenv
+paramiko 
+imbalanced-learn
+requests

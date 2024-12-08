@@ -76,7 +76,7 @@ class HttpWriter():
         self.url = output_url
         self.session = requests.Session()
 
-    def write(self, data: list) -> None:
+    def write(self, flow) -> None:
         """
         Sendet zwei POST-Anfragen: eine für JSON-Daten (Flow-Daten) und eine für Datei-Daten (pcap-Dateie-Daten).
 
@@ -85,15 +85,15 @@ class HttpWriter():
                 - data[0]: Datei-Daten (pcap-Datei als BytesIO)
                 - data[1]: JSON-Daten (Metadaten)
         """
-        self.session.post(self.url, files={'file': data[0]})
-        self.session.post(self.url, json=data[1])
+        self.session.post(self.url, files={'file': erstelle_datei(flow)})
+        self.session.post(self.url, json=flow.get_data())
         
 
 
     def __del__(self):
         self.session.close()
 
-def erstelle_post_request(data: list, output_url: str):
+def erstelle_post_request(flow, output_url: str):
     """
     Erstellt und sendet einen POST-Request mit den gegebenen Daten.
 
@@ -109,7 +109,7 @@ def erstelle_post_request(data: list, output_url: str):
     # Sendet einen POST-Request mit:
     # - den Flow als JSON-Daten (Metadaten)
     # - Eine Liste der packets ohne die Richtung als Datei-Daten
-    httpwriter.write([erstelle_datei(data[0]), data[1]])
+    httpwriter.write(flow)
 
 def erstelle_datei(flow) -> BytesIO:
     """

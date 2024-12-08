@@ -87,11 +87,12 @@ class My_Sniffer():
         while True:
             print("hello from worker!")
             item = self.queue.get()  # Hole ein Element aus der Warteschlange
+            # item ist der Flow, inclusive aller Packete!
             print(f'Working on {item}')  # Ausgabe zur Anzeige, dass an dem Element gearbeitet wird
-            # Prognose erstellen
-            flow = DataFrame([item[1]])
-            flow = adapt_for_prediction(data=flow,scaler=self.scaler,ipca=self.ipca,ipca_size=IPCASIZE)
-            prediction = self.model.predict(flow)
+            # Prognose auf Metadaten erstellen
+            flow_data = DataFrame([item.get_data()])
+            flow_data = adapt_for_prediction(data=flow_data,scaler=self.scaler,ipca=self.ipca,ipca_size=IPCASIZE)
+            prediction = self.model.predict(flow_data)
             print(f"Prediction ist: {prediction}")
             #if prediction: # TODO not ['BENIGN']
             if True: # TODO nur für debugging
@@ -102,7 +103,7 @@ class My_Sniffer():
                 # remote_file_path = REMOTE_PATH + id + ".pcap"    # Einzigartiger Dateiname evtl ist Datum besser?
                 # sende_BytesIO_datei_per_scp(pcap_buffer=flow_bytesIO,ziel_host=REMOTE_HOST,
                 #                            ziel_pfad=remote_file_path,username=REMOTE_USER,mySSHK=MYSSH_FILE)
-                erstelle_post_request(data=[item[0],item[1]],output_url=OUTPUT_URL)
+                erstelle_post_request(flow=item,output_url=OUTPUT_URL)
                 print(f'Finished {item} mit UUID:{id}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
             else:
                 print(f'Finished {item}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
