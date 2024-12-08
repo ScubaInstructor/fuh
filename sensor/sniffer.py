@@ -1,5 +1,5 @@
 import threading
-
+import base64
 from cicflowmeter import sniffer  # Importiere den Sniffer von cicflowmeter
 from cicflowmeter.flow import Flow
 from queue import Queue  # Importiere die Queue-Klasse für Thread-sichere Warteschlangen
@@ -16,6 +16,9 @@ from sklearn.ensemble import RandomForestClassifier
 from adapt import adapt_for_prediction
 from pandas import DataFrame
 from time import sleep
+from elasticsearch import Elasticsearch
+import json
+from datetime import datetime
 
 # Laden der Umgebungsvariablen aus der .env-Datei
 load_dotenv()
@@ -30,6 +33,14 @@ REMOTE_USER=os.getenv('REMOTE_USER')
 REMOTE_PATH=os.getenv('REMOTE_PATH')
 MYSSH_FILE=os.getenv('MYSSH_KEY')
 OUTPUT_URL=os.getenv('OUTPUT_URL')
+# Elastic
+ES_HOST = os.getenv('ES_HOST')  # Change this to your Elasticsearch host
+ES_PORT = int(os.getenv('ES_PORT'))        # Change this to your Elasticsearch port
+ES_INDEX = os.getenv('ES_INDEX')  # Index name for storing flow data
+# Get these values from your Elasticsearch installation
+ES_USERNAME = os.getenv('ES_USERNAME')  # Replace with your elastic user password
+ES_PASSWORD = os.getenv('ES_PASSWORD')  # Default superuser
+
 if INDOCKER:
     LOCALPREFIX = "/app/"
 else: 
@@ -84,6 +95,21 @@ class My_Sniffer():
     
     def worker(self):
         '''Die Arbeit, die in einem separaten Thread erledigt wird'''
+        # Initialize Elasticsearch client
+        es = Elasticsearch(
+            f"{ES_HOST}:{ES_PORT}",
+            basic_auth=(ES_USERNAME, ES_PASSWORD),  # Add authentication
+            verify_certs=False,
+            ssl_show_warn=False,
+            request_timeout=30,
+            retry_on_timeout=True
+        )
+        
+        # Create index if it doesn't exist
+        if not es.indices.exists(index=ES_INDEX):
+            es.indices.create(index=ES_INDEX, ignore=400)
+            print(f"Created new index: {ES_INDEX}")
+            
         while True:
             print("hello from worker!")
             item = self.queue.get()  # Hole ein Element aus der Warteschlange
@@ -94,16 +120,40 @@ class My_Sniffer():
             flow_data = adapt_for_prediction(data=flow_data,scaler=self.scaler,ipca=self.ipca,ipca_size=IPCASIZE)
             prediction = self.model.predict(flow_data)
             print(f"Prediction ist: {prediction}")
+            
             #if prediction: # TODO not ['BENIGN']
             if True: # TODO nur für debugging
                 print("prediction true")
                 # Verarbeite zu Datei TODO hier muss die richtige Methode noch rein.
                 id = str(uuid4())
-                # flow_bytesIO = erstelle_datei(item[0])  # das BytesIO Objekt das eine .pcap Datei ist
+                # Create a PCAP file
+                flow_bytesIO = erstelle_datei(item)  # das BytesIO Objekt das eine .pcap Datei ist
+                # Encode PCAP file to base64 since elasticsearch does not support binary data
+                pcap_base64 = base64.b64encode(flow_bytesIO.getvalue()).decode('utf-8')
+                try:
+                # Prepare document for Elasticsearch
+                    doc = {
+                        'id': id,
+                        'timestamp': datetime.now().isoformat(),
+                        'flow_data': item.get_data(),
+                        'prediction': prediction.tolist()[0],
+                        'source_ip': item.src_ip,
+                        'pcap_data': pcap_base64,  # Add the PCAP data as base64
+                        'pcap_metadata': {
+                            'packet_count': len(item.packets)
+                        }                        
+                    }
+                    
+                    # Send to Elasticsearch
+                    es.index(index=ES_INDEX, body=doc)
+                    print(f"Data sent to Elasticsearch successfully")
+                except Exception as e:
+                    print(f"Error sending data to Elasticsearch: {e}")
+                
                 # remote_file_path = REMOTE_PATH + id + ".pcap"    # Einzigartiger Dateiname evtl ist Datum besser?
                 # sende_BytesIO_datei_per_scp(pcap_buffer=flow_bytesIO,ziel_host=REMOTE_HOST,
                 #                            ziel_pfad=remote_file_path,username=REMOTE_USER,mySSHK=MYSSH_FILE)
-                erstelle_post_request(flow=item,output_url=OUTPUT_URL)
+                #erstelle_post_request(flow=item,output_url=OUTPUT_URL)
                 print(f'Finished {item} mit UUID:{id}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
             else:
                 print(f'Finished {item}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
