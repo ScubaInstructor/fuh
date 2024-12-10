@@ -14,6 +14,12 @@ filestore = {}
 
 @app.route('/upload', methods=['POST','GET'])
 def upload():
+    """
+    Angepasst für den Upload von Json und pcap Datei in zwei getrennten Postrequests.
+
+    Returns:
+        [flask:Response]: Json mit Datei oder Metadata
+    """
     if 'file' not in request.files:  
         # Process JSON data
         df = pd.DataFrame([request.get_json()])
@@ -26,31 +32,6 @@ def upload():
         files_id = str(uuid.uuid4())
         filestore[files_id] = file.read()  # Store file content
         return jsonify({"id": files_id})
-
-# @app.route('/upload', methods=['POST'])
-# def upload():
-#     # Überprüfen, ob sowohl die Datei als auch die JSON-Daten in der Anfrage vorhanden sind
-#     if 'file' in request.files and 'json' in request.files:
-#         # Datei und JSON-Daten verarbeiten
-#         file = request.files['file']
-#         json_data = json.loads(request.files['json'].read().decode('utf-8'))
-
-#         # Generiere eindeutige IDs
-#         file_id = str(uuid.uuid4())
-#         df_id = str(uuid.uuid4())
-
-#         # Speichere den Inhalt der Datei
-#         filestore[file_id] = file.read()
-
-#         # Verarbeite die JSON-Daten
-#         df = pd.DataFrame([json_data])
-#         dataframes[df_id] = df
-
-#         return jsonify({"file_id": file_id, "dataframe_id": df_id})
-#     else:
-#         return jsonify({"error": "Fehlende Datei oder JSON-Daten"}), 400
-
-
 
 @app.route('/')
 def index():
