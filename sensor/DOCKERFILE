@@ -34,7 +34,5 @@ WORKDIR /app
 
 # For debugging mostly
 ENV AM_I_IN_A_DOCKER_CONTAINER=Yes
-# Only Debugging! sendet alle Flows an den Server, nicht nur Anomalien!
-ENV DEBUGGING=Yes
 
 CMD ["/usr/bin/python3", "-u", "sniffer.py"]

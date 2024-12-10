@@ -22,7 +22,7 @@ load_dotenv()
 
 # For Debug Purpose
 INDOCKER = os.environ.get('AM_I_IN_A_DOCKER_CONTAINER', False)
-DEBUGGING =  os.environ.get('DEBUGGING', False)
+DEBUGGING = os.environ.get('DEBUGGING') == '1'
 # Auslesen der Environment-Variable
 SNIFFING_INTERFACE = os.getenv('SNIFFING_INTERFACE')
 REMOTE_HOST=os.getenv('REMOTE_HOST')

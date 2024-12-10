@@ -181,10 +181,11 @@ watch_process.join()
 
 from cicflowmeter.flow_session import FlowSession
 from scapy.all import AsyncSniffer
+
 setattr(FlowSession, "output_mode", "intern")
 
-def output_function(pkt):
-    print(f"Received packet: {pkt.summary()}")
+def output_function(s, pkt):
+    print(f"Received packet: {pkt}")
 
 setattr(FlowSession, "output", output_function)
 
