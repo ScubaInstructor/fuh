@@ -22,7 +22,7 @@ load_dotenv()
 
 # For Debug Purpose
 INDOCKER = os.environ.get('AM_I_IN_A_DOCKER_CONTAINER', False)
-
+DEBUGGING =  os.environ.get('DEBUGGING', False)
 # Auslesen der Environment-Variable
 SNIFFING_INTERFACE = os.getenv('SNIFFING_INTERFACE')
 REMOTE_HOST=os.getenv('REMOTE_HOST')
@@ -52,7 +52,8 @@ class My_Sniffer():
     def start(self):
         '''Starte den Sniffer und den Empfangs-Worker'''
         self.start_receiver_worker()  # Starte den Worker für den Empfang von Daten
-        print("Starting sniffer")
+        if DEBUGGING:
+            print("Starting sniffer")
         self.snif.start()  # Starte den Sniffer
         
         try:
@@ -66,14 +67,16 @@ class My_Sniffer():
             self.snif.join()  # Warte, bis der Sniffer vollständig gestoppt ist
     
     def output_function(self, data: Flow):
-        print("out_func")
+        if DEBUGGING:
+            print("out_func")
         '''Diese Funktion wird aufgerufen, wenn ein Flow empfangen wird'''
         self.queue.put(data)  # Füge die empfangenen Daten zur Warteschlange hinzu
         # self.queue.join()  # Warte, bis alle Aufgaben in der Warteschlange bearbeitet sind
 
     def get_intern_sniffer(self) -> AsyncSniffer:
         '''Erstelle den internen Sniffer'''
-        print(f"Creating sniffer on interface: {SNIFFING_INTERFACE}")
+        if DEBUGGING:
+            print(f"Creating sniffer on interface: {SNIFFING_INTERFACE}")
         s: AsyncSniffer = sniffer.create_sniffer(input_file=None, input_interface=SNIFFING_INTERFACE, output_mode="intern", output=self.output_function)
         # s.count = 10  # Für Testzwecke (kann verwendet werden, um die Anzahl der Pakete zu begrenzen)
         return s
@@ -85,18 +88,21 @@ class My_Sniffer():
     def worker(self):
         '''Die Arbeit, die in einem separaten Thread erledigt wird'''
         while True:
-            print("hello from worker!")
+            if DEBUGGING:
+                print("hello from worker!")
             item = self.queue.get()  # Hole ein Element aus der Warteschlange
             # item ist der Flow, inclusive aller Packete!
-            print(f'Working on {item}')  # Ausgabe zur Anzeige, dass an dem Element gearbeitet wird
+            if DEBUGGING:
+                print(f'Working on {item}')  # Ausgabe zur Anzeige, dass an dem Element gearbeitet wird
             # Prognose auf Metadaten erstellen
             flow_data = DataFrame([item.get_data()])
             flow_data = adapt_for_prediction(data=flow_data,scaler=self.scaler,ipca=self.ipca,ipca_size=IPCASIZE)
             prediction = self.model.predict(flow_data)
-            print(f"Prediction ist: {prediction}")
-            #if prediction: # TODO not ['BENIGN']
-            if True: # TODO nur für debugging
-                print("prediction true")
+            if DEBUGGING:
+                print(f"Prediction ist: {prediction}")
+            if prediction == ['BENIGN'] or DEBUGGING:
+                if DEBUGGING:
+                    print("prediction true")
                 # Verarbeite zu Datei TODO hier muss die richtige Methode noch rein.
                 id = str(uuid4())
                 # flow_bytesIO = erstelle_datei(item[0])  # das BytesIO Objekt das eine .pcap Datei ist
@@ -104,9 +110,11 @@ class My_Sniffer():
                 # sende_BytesIO_datei_per_scp(pcap_buffer=flow_bytesIO,ziel_host=REMOTE_HOST,
                 #                            ziel_pfad=remote_file_path,username=REMOTE_USER,mySSHK=MYSSH_FILE)
                 erstelle_post_request(flow=item,output_url=OUTPUT_URL)
-                print(f'Finished {item} mit UUID:{id}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
+                if DEBUGGING:
+                    print(f'Finished {item} mit UUID:{id}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
             else:
-                print(f'Finished {item}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
+                if DEBUGGING:
+                    print(f'Finished {item}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
             self.queue.task_done()  # Markiere das Element als bearbeitet
 
 

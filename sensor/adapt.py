@@ -5,7 +5,9 @@ from imblearn.over_sampling import SMOTE
 
 import numpy as np
 
-
+"""
+Funktionen für die Data Pipeline
+"""
 gemeinsame_columns = ['dst_port', 'flow_duration', 'tot_fwd_pkts', 'tot_bwd_pkts', 
                       'totlen_fwd_pkts', 'totlen_bwd_pkts', 'fwd_pkt_len_max', 
                       'fwd_pkt_len_min', 'fwd_pkt_len_mean', 'fwd_pkt_len_std', 
