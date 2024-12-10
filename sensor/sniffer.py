@@ -100,7 +100,7 @@ class My_Sniffer():
             prediction = self.model.predict(flow_data)
             if DEBUGGING:
                 print(f"Prediction ist: {prediction}")
-            if prediction == ['BENIGN'] or DEBUGGING:
+            if prediction != ['BENIGN'] or DEBUGGING:
                 if DEBUGGING:
                     print("prediction true")
                 # Verarbeite zu Datei TODO hier muss die richtige Methode noch rein.
