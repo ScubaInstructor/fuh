@@ -172,3 +172,21 @@ watch_process.join()
 #counter_process.join()
 
 # multiThreading und -processeing versucht klappt nicht...
+
+
+
+
+
+
+
+from cicflowmeter.flow_session import FlowSession
+from scapy.all import AsyncSniffer
+setattr(FlowSession, "output_mode", "intern")
+
+def output_function(pkt):
+    print(f"Received packet: {pkt.summary()}")
+
+setattr(FlowSession, "output", output_function)
+
+sniffer = AsyncSniffer(session=FlowSession, iface="enp12s0")
+sniffer.start()
