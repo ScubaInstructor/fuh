@@ -19,3 +19,4 @@ paramiko
 flask
 pytest
 pyshark
+elasticsearch

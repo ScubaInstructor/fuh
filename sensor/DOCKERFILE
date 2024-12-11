@@ -1,21 +1,21 @@
 FROM ubuntu:latest
 
-# Aktualisiere das System und installiere Python und pip
+# gget fresh packages and install python and pip 
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y python3 python3-pip
 
-# Erstelle einen Symlink für Python
+# symlinking python
 RUN ln -sf python3 /usr/bin/python
 
-# Erstelle den /app Ordner
+# create /app folder
 RUN mkdir /app
 
-# Kopiere requirements.txt
+# copy requirements.txt
 COPY requirements.txt /app
 RUN pip3 install -r /app/requirements.txt --break-system-packages
 
 
-# Kopiere die Dateien in den /app Ordner
+# Copying the necessary files to working folder
 COPY .env /app/.env
 COPY sniffer.py /app/sniffer.py
 COPY cicflowmeter /app/cicflowmeter
@@ -24,12 +24,7 @@ COPY model.pkl /app
 COPY scaler.pkl /app
 COPY ipca_mit_size_34.pkl /app
 
-# Nicht mehr verwendet
-# COPY sshkey /app 
-# COPY sshkey.pub /app
 
-
-# Setze das Arbeitsverzeichnis auf /app
 WORKDIR /app
 
 # For debugging mostly

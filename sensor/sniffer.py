@@ -1,17 +1,14 @@
 import threading
 import base64
-from cicflowmeter import sniffer  # Importiere den Sniffer von cicflowmeter
+from cicflowmeter import sniffer  
 from cicflowmeter.flow import Flow
-from queue import Queue  # Importiere die Queue-Klasse für Thread-sichere Warteschlangen
-from scapy.sendrecv import AsyncSniffer  # Importiere den asynchronen Sniffer von Scapy
+from queue import Queue  
+from scapy.sendrecv import AsyncSniffer  
 from dotenv import load_dotenv
 import os
 from joblib import load
-from cicflowmeter.utilities import erstelle_datei, sende_BytesIO_datei_per_scp, erstelle_post_request
+from cicflowmeter.utilities import erstelle_datei
 from uuid import uuid4
-import sys
-import io
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, line_buffering=True) # TODO entfernen
 from sklearn.ensemble import RandomForestClassifier
 from adapt import adapt_for_prediction
 from pandas import DataFrame
@@ -20,19 +17,14 @@ from elasticsearch import Elasticsearch
 import json
 from datetime import datetime
 
-# Laden der Umgebungsvariablen aus der .env-Datei
+# Loading of the .env file
 load_dotenv()
 
 # For Debug Purpose
 INDOCKER = os.environ.get('AM_I_IN_A_DOCKER_CONTAINER', False)
 DEBUGGING = os.environ.get('DEBUGGING') == '1'
-# Auslesen der Environment-Variable
+# Reading of the environmentvariables
 SNIFFING_INTERFACE = os.getenv('SNIFFING_INTERFACE')
-REMOTE_HOST=os.getenv('REMOTE_HOST')
-REMOTE_USER=os.getenv('REMOTE_USER')
-REMOTE_PATH=os.getenv('REMOTE_PATH')
-MYSSH_FILE=os.getenv('MYSSH_KEY')
-OUTPUT_URL=os.getenv('OUTPUT_URL')
 # Elastic
 ES_HOST = os.getenv('ES_HOST')  # Change this to your Elasticsearch host
 ES_PORT = int(os.getenv('ES_PORT'))        # Change this to your Elasticsearch port
@@ -45,7 +37,8 @@ if INDOCKER:
     LOCALPREFIX = "/app/"
 else: 
     LOCALPREFIX = os.getenv('LOCALPREFIX')
-MYSSH_FILE = LOCALPREFIX + MYSSH_FILE
+
+# Load the 
 MODELPATH = LOCALPREFIX + "model.pkl" 
 SCALERPATH = LOCALPREFIX + "scaler.pkl"
 IPCAPATH = LOCALPREFIX + "ipca_mit_size_34.pkl"
@@ -53,15 +46,15 @@ IPCASIZE = 34
 
 class My_Sniffer():
     def __init__(self) -> None:
-        '''Initialisiere den Sniffer und die Warteschlange'''
-        self.snif: AsyncSniffer = self.get_intern_sniffer()  # Erstelle eine Instanz des Sniffers
-        self.queue = Queue()  # Erstelle eine Thread-sichere Warteschlange
+        '''Initialise the sniffer and create the threadsafe queue for the FLoe-items'''
+        self.snif: AsyncSniffer = self.get_intern_sniffer()  # create an Instance of the sniffer 
+        self.queue = Queue() 
         self.model: RandomForestClassifier = load(MODELPATH)
         self.ipca = load(IPCAPATH) if IPCAPATH else IPCAPATH
         self.scaler = load(SCALERPATH)
     
     def start(self):
-        '''Starte den Sniffer und den Empfangs-Worker'''
+        '''start sniffer and worker-thread'''
         self.start_receiver_worker()  # Starte den Worker für den Empfang von Daten
         if DEBUGGING:
             print("Starting sniffer")
@@ -69,23 +62,23 @@ class My_Sniffer():
         
         try:
             while True:
-                sleep(1)  # Kurze Pause, um CPU-Auslastung zu reduzieren
+                sleep(1)  # to reduce cpu load # TODO check if necessary
         except KeyboardInterrupt:
-            print("Exiting")  # Ausgabe bei Tastaturunterbrechung
+            print("Exiting")  
         finally:
             print("Stopping sniffer")
-            self.snif.stop()  # Stoppe den Sniffer
-            self.snif.join()  # Warte, bis der Sniffer vollständig gestoppt ist
+            self.snif.stop()  
+            self.snif.join()  # wait to fully finish the sniffer
     
     def output_function(self, data: Flow):
         if DEBUGGING:
-            print("out_func")
-        '''Diese Funktion wird aufgerufen, wenn ein Flow empfangen wird'''
+            print("out_func reached")
+        '''this function will be called when a flow is completed and ready for further use'''
         self.queue.put(data)  # Füge die empfangenen Daten zur Warteschlange hinzu
         # self.queue.join()  # Warte, bis alle Aufgaben in der Warteschlange bearbeitet sind
 
     def get_intern_sniffer(self) -> AsyncSniffer:
-        '''Erstelle den internen Sniffer'''
+        '''create intern sniffer'''
         if DEBUGGING:
             print(f"Creating sniffer on interface: {SNIFFING_INTERFACE}")
         s: AsyncSniffer = sniffer.create_sniffer(input_file=None, input_interface=SNIFFING_INTERFACE, output_mode="intern", output=self.output_function)
@@ -93,11 +86,11 @@ class My_Sniffer():
         return s
 
     def start_receiver_worker(self):
-        '''Starte den Worker in einem separaten Thread'''
+        '''starting the worker thread'''
         threading.Thread(target=self.worker, daemon=True).start()  # Starte einen neuen Thread für den Worker
     
     def worker(self):
-        '''Die Arbeit, die in einem separaten Thread erledigt wird'''
+        '''the function which will be called to do the work on the flow'''
         # Initialize Elasticsearch client
         es = Elasticsearch(
             f"{ES_HOST}:{ES_PORT}",
@@ -116,21 +109,21 @@ class My_Sniffer():
         while True:
             if DEBUGGING:
                 print("hello from worker!")
-            item = self.queue.get()  # Hole ein Element aus der Warteschlange
-            # item ist der Flow, inclusive aller Packete!
+            item: Flow = self.queue.get()  # Hole ein Element aus der Warteschlange
+            # item from type Flow. It contains all the packages it comprises.
             if DEBUGGING:
-                print(f'Working on {item}')  # Ausgabe zur Anzeige, dass an dem Element gearbeitet wird
-            # Prognose auf Metadaten erstellen
-            flow_data = DataFrame([item.get_data()])
-            flow_data = adapt_for_prediction(data=flow_data,scaler=self.scaler,ipca=self.ipca,ipca_size=IPCASIZE)
-            prediction = self.model.predict(flow_data)
+                print(f'Working on {item}')  
+            # creating a prognosis on the Metadata
+            flow_data: dict = DataFrame([item.get_data()])
+            flow_data: DataFrame = adapt_for_prediction(data=flow_data,scaler=self.scaler,ipca=self.ipca,ipca_size=IPCASIZE)
+            prediction = self.model.predict(flow_data) # returns a numpy ndarray
 
             if DEBUGGING:
                 print(f"Prediction ist: {prediction}")
             if prediction != ['BENIGN'] or DEBUGGING:
                 if DEBUGGING:
                     print("prediction true")
-                # Verarbeite zu Datei TODO hier muss die richtige Methode noch rein.
+                # getting the attack data to the server TODO hier muss die richtige Methode noch rein.
                 id = str(uuid4())
                 # Create a PCAP file
                 flow_bytesIO = erstelle_datei(item)  # das BytesIO Objekt das eine .pcap Datei ist
@@ -156,14 +149,13 @@ class My_Sniffer():
                     print(f"Error sending data to Elasticsearch: {e}")
 
                 if DEBUGGING:
-                    print(f'Finished {item} mit UUID:{id}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
+                    print(f'Finished {item} mit UUID:{id}')  
             else:
                 if DEBUGGING:
-                    print(f'Finished {item}')  # Ausgabe zur Anzeige, dass die Arbeit an dem Element abgeschlossen ist
-            self.queue.task_done()  # Markiere das Element als bearbeitet
+                    print(f'Finished {item}')  
+            self.queue.task_done()  # to mark the item done 
 
 
 if __name__ == "__main__":
-    # threading.stack_size(4096*4096) # TODO checke ob das nötig ist
-    s = My_Sniffer()  # Erstelle eine Instanz des My_Sniffer
-    s.start()  # Starte den Sniffer und beginne mit dem Überwachen der Pakete
+    s = My_Sniffer() 
+    s.start()  

@@ -181,6 +181,7 @@ watch_process.join()
 
 from cicflowmeter.flow_session import FlowSession
 from scapy.all import AsyncSniffer
+from time import sleep
 
 setattr(FlowSession, "output_mode", "intern")
 
@@ -191,3 +192,5 @@ setattr(FlowSession, "output", output_function)
 
 sniffer = AsyncSniffer(session=FlowSession, iface="enp12s0")
 sniffer.start()
+sleep(2)
+sniffer.stop()

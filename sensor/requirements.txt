@@ -6,3 +6,4 @@ python-dotenv
 paramiko 
 imbalanced-learn
 requests
+elasticsearch
