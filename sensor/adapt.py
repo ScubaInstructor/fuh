@@ -6,7 +6,7 @@ from imblearn.over_sampling import SMOTE
 import numpy as np
 
 """
-Funktionen für die Data Pipeline
+Functions for the datapipeline
 """
 gemeinsame_columns = ['dst_port', 'flow_duration', 'tot_fwd_pkts', 'tot_bwd_pkts', 
                       'totlen_fwd_pkts', 'totlen_bwd_pkts', 'fwd_pkt_len_max', 
@@ -34,17 +34,16 @@ gemeinsame_columns = ['dst_port', 'flow_duration', 'tot_fwd_pkts', 'tot_bwd_pkts
 def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: IncrementalPCA, 
           ipca_size: int = None) -> pd.DataFrame:
     """
-    Bereitet Daten für Vorhersagen vor, indem nur benutzte Features ausgewählt werden, optional skaliert und durch PCA transformiert wird.
+    Prepares data for predictions by selecting only used features, optionally scaling, and transforming via PCA.
 
-    Args:
-        data (pd.DataFrame): Der Eingabe-Dataframe mit den zu verarbeitenden Daten.
-        scaler (StandardScaler): Ein vortrainierter StandardScaler oder None wenn ein StandardScaler auf diese Daten gefittet werden soll.
-        ipca (IncrementalPCA): Ein vortrainiertes IncrementalPCA-Objekt oder None, wenn keine PCA stattfinden soll.
-        ipca_size (int, optional): Die Anzahl der PCA-Komponenten oder None. Muss gesetzt werden, wenn ipca benutzt werden soll. Defaults to None.
-        include_useless_columns (bool, optional): *Deprecated* Ob zusätzliche Spalten hinzugefügt werden sollen. Defaults to False.
+    Args: 
+        data (pd.DataFrame): The input DataFrame containing the data to be processed. 
+        scaler (StandardScaler): A pre-trained StandardScaler or None if a StandardScaler should be fit to this data. 
+        ipca (IncrementalPCA): A pre-trained IncrementalPCA object or None if no PCA should be applied. 
+        ipca_size (int, optional): The number of PCA components or None. Must be set if ipca is used. Defaults to None.
 
-    Returns:
-        pd.DataFrame: Der transformierte Dataframe, bereit für Vorhersagen.
+    Returns: 
+        pd.DataFrame: The transformed DataFrame, ready for predictions.
     """
     
     if ipca: # check if ipca_size if set if we use ipca
@@ -69,18 +68,17 @@ def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
 def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: IncrementalPCA, 
           ipca_size: int= None) -> pd.DataFrame:
     """
-    Bereitet Daten für erneutes Training vor, , indem nur benutzte Features ausgewählt werden, 
-    optional skaliert und durch PCA transformiert wird. Es wird aber eine 'attack_type' Spalte hinzugefügt.
 
-    Args:
-        data (pd.DataFrame): Der Eingabe-Dataframe mit den zu verarbeitenden Daten.
-        scaler (StandardScaler): Ein vortrainierter StandardScaler oder None wenn ein StandardScaler auf diese Daten gefittet werden soll.
-        ipca (IncrementalPCA): Ein vortrainiertes IncrementalPCA-Objekt oder None, wenn keine PCA stattfinden soll.
-        ipca_size (int): Die Anzahl der PCA-Komponenten oder None. Muss gesetzt werden, wenn ipca benutzt werden soll. Defaults to None.
-        include_useless_columns (bool, optional): *Deprecated* Ob zusätzliche Spalten hinzugefügt werden sollen. Defaults to False.
+    Prepares data for re-training by selecting only used features, optionally scaling and transforming via PCA. An 'attack_type' column is added.
 
-    Returns:
-        pd.DataFrame: Der transformierte Dataframe, bereit für erneutes Training.
+    Args: 
+        data (pd.DataFrame): The input DataFrame containing the data to be processed. 
+        scaler (StandardScaler): A pre-trained StandardScaler or None if a StandardScaler should be fit to this data. 
+        ipca (IncrementalPCA): A pre-trained IncrementalPCA object or None if no PCA should be applied. 
+        ipca_size (int): The number of PCA components or None. Must be set if ipca is used. Defaults to None.
+
+    Returns: 
+        pd.DataFrame: The transformed DataFrame, ready for re-training.
     """
     
     if ipca: # check if ipca_size if set if we use ipca
@@ -101,7 +99,7 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
     else: # no ipca
         adapted_data = pd.DataFrame(scaled_features, columns=gemeinsame_columns)
     
-    # The Trainingdata is not from Attacks!
+    # The trainingdata is not from Attacks!
     cLength = len(adapted_data[adapted_data.columns[0]])
     e = ["BENIGN" for _ in range(cLength)] # Number for BENIGN is 0 if 'attack_number' is used
     adapted_data['attack_type'] = e
@@ -112,20 +110,19 @@ def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True,
                        balance_the_data: bool = True) -> tuple[
                            pd.DataFrame, StandardScaler, IncrementalPCA, int]:
     """
-    Bereitet CICIDS2017-Daten für das Training vor, einschließlich Skalierung, 
-    optionaler PCA und Datenbalancierung.
+    Prepares CICIDS2017 data for training, including scaling, optional PCA, and data balancing.
 
     Args:
-        data (pd.DataFrame): Der Eingabe-Dataframe mit CICIDS2017-Daten.
-        use_ipca (bool, optional): Ob IncrementalPCA verwendet werden soll. Defaults to True.
-        balance_the_data (bool, optional): Ob die Daten balanciert werden sollen. Defaults to True.
+        data (pd.DataFrame): The input DataFrame containing CICIDS2017 data.
+        use_ipca (bool, optional): Whether IncrementalPCA should be used. Defaults to True.
+        balance_the_data (bool, optional): Whether the data should be balanced. Defaults to True.
 
     Returns:
-        tuple: Ein Tupel bestehend aus:
-            - pd.DataFrame: Der transformierte und möglicherweise balancierte Dataframe.
-            - StandardScaler: Der gefittete StandardScaler.
-            - IncrementalPCA: Das trainierte IncrementalPCA-Objekt (oder None, wenn nicht verwendet).
-            - int: Die Anzahl der PCA-Komponenten (oder None, wenn PCA nicht verwendet wurde).
+        tuple: A tuple consisting of:
+            - pd.DataFrame: The transformed and possibly balanced DataFrame.
+            - StandardScaler: The fitted StandardScaler.
+            - IncrementalPCA: The trained IncrementalPCA object (or None if not used).
+            - int: The number of PCA components (or None if PCA was not used).
     """
 
     c = gemeinsame_columns + ['attack_type'] 
@@ -161,19 +158,19 @@ def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True,
 
 def balance_the_dataset(new_data):
     """
-    Balanciert den Datensatz durch Unterabtastung großer Angriffsklassen und Überabtastung kleiner Angriffsklassen.
+    Balances the dataset by undersampling large attack classes and oversampling small attack classes.
 
-    Diese Funktion führt folgende Schritte aus:
-    1. Wählt Klassen mit mehr als 1950 Samples aus.
-    2. Begrenzt große Klassen auf maximal 5000 Samples.
-    3. Wendet SMOTE (Synthetic Minority Over-sampling Technique) an, um kleinere Klassen auszugleichen.
-    4. Mischt den resultierenden Datensatz.
+    This function performs the following steps:
+    1. Selects classes with more than 1950 samples.
+    2. Limits large classes to a maximum of 5000 samples.
+    3. Applies SMOTE (Synthetic Minority Over-sampling Technique) to balance smaller classes.
+    4. Shuffles the resulting dataset.
 
     Args:
-        new_data (pd.DataFrame): Der ursprüngliche, unbalancierte Datensatz.
+        new_data (pd.DataFrame): The original, unbalanced dataset.
 
     Returns:
-        pd.DataFrame: Der balancierte Datensatz.
+        pd.DataFrame: The balanced dataset.
     """
     # Zähle die Häufigkeit jeder Klasse
     class_counts = new_data['attack_type'].value_counts()

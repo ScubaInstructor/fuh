@@ -5,50 +5,48 @@ from scapy.utils import PcapWriter
 from io import BytesIO
 import paramiko
 
-def erstelle_datei(flow: flow.Flow) -> BytesIO:
+def create_BytesIO_pcap_file(flow: flow.Flow) -> BytesIO:
     """
-    Erstellt eine pcap-Datei aus einem Flow-Objekt und gibt sie als BytesIO-Objekt zurück.
-    
-    Args:
-        flow (flow): Ein Flow-Objekt mit Paketdaten.
-    
-    Returns:
-        io.BytesIO: Ein BytesIO-Objekt, das die pcap-Daten enthält.
+    Creates a pcap file from a Flow object and returns it as a BytesIO object.
+
+    Args: 
+        flow (flow): A Flow object containing packet data.
+
+    Returns: 
+        io.BytesIO: A BytesIO object containing the pcap data.
     """ 
     packete = [p[0] for p in flow.packets]
     
     pcap_buffer = BytesIO()
 
-    # Schreiben der Pakete in das BytesIO-Objekt
+    
     pktdump = PcapWriter(pcap_buffer)
     for pkt in packete:
         pktdump.write(pkt)
 
-    # Zurücksetzen des Zeigers im BytesIO-Objekt
+    # Reset the pointer in the BytesIO object
     pcap_buffer.seek(0)
 
     return pcap_buffer
 
-def sende_BytesIO_datei_per_scp(pcap_buffer: BytesIO, ziel_host: str, ziel_pfad: str, username: str, mySSHK: str = '/app/sshkey'):
+def sende_BytesIO_datei_per_scp(pcap_buffer: BytesIO, target_host: str, target_path: str, username: str, mySSHK: str = '/app/sshkey'):
     """
-    Sendet eine pcap-Datei per SCP an einen Zielhost.
-    
-    Args:
-        pcap_buffer (io.BytesIO): Das BytesIO-Objekt mit den pcap-Daten.
-        ziel_host (str): Der Hostname oder die IP-Adresse des Zielhosts.
-        ziel_pfad (str): Der Pfad auf dem Zielhost, wohin die Datei gesendet werden soll.
+    Sends a pcap file via SCP to a target host.
+
+    Args: 
+        pcap_buffer (io.BytesIO): The BytesIO object containing the pcap data. 
+        target_host (str): The hostname or IP address of the target host. 
+        target_path (str): The path on the target host where the file should be sent
     """
-    # Beispiel für die Verwendung von Paramiko für SCP
     ssh = paramiko.SSHClient()
-    # Automatisch hostkey akzeptieren evtl zu unsicher?
+    # Automatically accept hostkey maybe too insecure?
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()) 
     try:
-        # Verbinden mit dem Zielhost
-        ssh.connect(ziel_host, username=username, key_filename=mySSHK, banner_timeout=30)
+        ssh.connect(target_host, username=username, key_filename=mySSHK, banner_timeout=30)
         
-        # SCP verwenden, um die Datei zu übertragen
+        # Use SCP to transfer the file
         with ssh.open_sftp() as sftp:
-            with sftp.file(ziel_pfad, 'wb') as remote_file:
+            with sftp.file(target_path, 'wb') as remote_file:
                 remote_file.write(pcap_buffer.getvalue())
     except paramiko.ssh_exception.AuthenticationException as ae:
         print("Authentication failed.")    
@@ -61,31 +59,31 @@ def sende_BytesIO_datei_per_scp(pcap_buffer: BytesIO, ziel_host: str, ziel_pfad:
 
 class HttpWriter():
     """
-    Eine Klasse zum Senden von HTTP POST-Anfragen.
-
-    Diese Klasse verwaltet eine Session für wiederholte Anfragen an eine bestimmte URL.
+    A class for sending HTTP POST requests. 
+    
+    This class maintains a session for repeated requests to a specific URL.
     """
 
     def __init__(self, output_url) -> None:
         """
-        Initialisiert den HttpWriter.
+        Initialise the HttpWriter.
 
         Args:
-            output_url (str): Die URL, an die die Anfragen gesendet werden sollen.
+            output_url (str): The URL to which the requests should be sent.
         """
         self.url = output_url
         self.session = requests.Session()
 
     def write(self, flow) -> None:
         """
-        Sendet zwei POST-Anfragen: eine für JSON-Daten (Flow-Daten) und eine für Datei-Daten (pcap-Dateie-Daten).
+        Sends two POST requests: one for JSON data (flow data) and one for file data (pcap file data).
 
         Args:
-            data (list): Ein Liste mit zwei Elementen:
-                - data[0]: Datei-Daten (pcap-Datei als BytesIO)
-                - data[1]: JSON-Daten (Metadaten)
+            data (list):A list with two elements:
+                - data[0]: File data (pcap file as BytesIO)
+                - data[1]: JSON-Data (Metadata)
         """
-        self.session.post(self.url, files={'file': erstelle_datei(flow)})
+        self.session.post(self.url, files={'file': create_BytesIO_pcap_file(flow)})
         self.session.post(self.url, json=flow.get_data())
         
 
@@ -93,44 +91,44 @@ class HttpWriter():
     def __del__(self):
         self.session.close()
 
-def erstelle_post_request(flow, output_url: str):
+def create_post_request(flow, output_url: str):
     """
-    Erstellt und sendet einen POST-Request mit den gegebenen Daten.
+    Creates and sends a POST request with the given data.
 
     Args:
-        data (list): Eine Liste mit zwei Elementen:
-            - data[0]: Flow-Object aus dem die Packete extrahiert werden sollen.
-            - data[1]: Flow (nur die reduzierten Daten)
-        output_url (str): Die URL, an die die Anfrage gesendet werden soll
+        data (list): A list with two elements
+            - data[0]: Flow-Object from which packets should be extracted
+            - data[1]: The metadata from the flow on which a prediction can be made.
+        output_url (str): The URL to send the request to
 
-    Diese Funktion extrahiert das erste Element jedes Pakets und sendet es zusammen mit den Metadaten.
+    This function extracts the first element of each package and sends it along with the metadata.    
     """
     httpwriter = HttpWriter(output_url=output_url)
-    # Sendet einen POST-Request mit:
-    # - den Flow als JSON-Daten (Metadaten)
-    # - Eine Liste der packets ohne die Richtung als Datei-Daten
+    # Sends a POST request with: 
+    # - the flow as JSON data (metadata) 
+    # - A list of packets without the direction as file data
     httpwriter.write(flow)
 
-def erstelle_datei(flow) -> BytesIO:
+def create_BytesIO_pcap_file(flow) -> BytesIO:
     """
-    Erstellt eine pcap-Datei aus einem Flow-Objekt und gibt sie als BytesIO-Objekt zurück.
+    Creates a pcap file from a Flow object and returns it as a BytesIO object.
     
     Args:
-        flow (flow): Ein Flow-Objekt mit Paketdaten.
+        flow (flow): A flow object with packet data.
     
     Returns:
-        io.BytesIO: Ein BytesIO-Objekt, das die pcap-Daten enthält.
+        io.BytesIO: A BytesIO object that contains the pcap data.
     """ 
     packete = [p[0] for p in flow.packets]
     
     pcap_buffer = BytesIO()
 
-    # Schreiben der Pakete in das BytesIO-Objekt
+    # Writing the packets to the BytesIO object
     pktdump = PcapWriter(pcap_buffer)
     for pkt in packete:
         pktdump.write(pkt)
 
-    # Zurücksetzen des Zeigers im BytesIO-Objekt
+    # Reset the pointer in the BytesIO object
     pcap_buffer.seek(0)
 
     return pcap_buffer

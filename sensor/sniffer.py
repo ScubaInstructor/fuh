@@ -7,7 +7,7 @@ from scapy.sendrecv import AsyncSniffer
 from dotenv import load_dotenv
 import os
 from joblib import load
-from cicflowmeter.utilities import erstelle_datei
+from cicflowmeter.utilities import create_BytesIO_pcap_file
 from uuid import uuid4
 from sklearn.ensemble import RandomForestClassifier
 from adapt import adapt_for_prediction
@@ -109,7 +109,7 @@ class My_Sniffer():
         while True:
             if DEBUGGING:
                 print("hello from worker!")
-            item: Flow = self.queue.get()  # Hole ein Element aus der Warteschlange
+            item: Flow = self.queue.get()  # Get a Flow item from the queue
             # item from type Flow. It contains all the packages it comprises.
             if DEBUGGING:
                 print(f'Working on {item}')  
@@ -126,7 +126,7 @@ class My_Sniffer():
                 # getting the attack data to the server TODO hier muss die richtige Methode noch rein.
                 id = str(uuid4())
                 # Create a PCAP file
-                flow_bytesIO = erstelle_datei(item)  # das BytesIO Objekt das eine .pcap Datei ist
+                flow_bytesIO = create_BytesIO_pcap_file(item)  # das BytesIO Objekt das eine .pcap Datei ist
                 # Encode PCAP file to base64 since elasticsearch does not support binary data
                 pcap_base64 = base64.b64encode(flow_bytesIO.getvalue()).decode('utf-8')
                 try:
