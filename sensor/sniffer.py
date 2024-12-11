@@ -10,7 +10,7 @@ from joblib import load
 from cicflowmeter.utilities import create_BytesIO_pcap_file
 from uuid import uuid4
 from sklearn.ensemble import RandomForestClassifier
-from adapt import adapt_for_prediction
+from pipelining_utilities import adapt_for_prediction
 from pandas import DataFrame
 from time import sleep
 from elasticsearch import Elasticsearch

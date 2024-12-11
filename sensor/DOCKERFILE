@@ -19,7 +19,7 @@ RUN pip3 install -r /app/requirements.txt --break-system-packages
 COPY .env /app/.env
 COPY sniffer.py /app/sniffer.py
 COPY cicflowmeter /app/cicflowmeter
-COPY adapt.py /app/adapt.py
+COPY pipelining_utilities.py /app/pipelining_utilities.py
 COPY model.pkl /app
 COPY scaler.pkl /app
 COPY ipca_mit_size_34.pkl /app
