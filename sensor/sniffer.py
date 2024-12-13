@@ -129,6 +129,7 @@ class My_Sniffer():
                 flow_bytesIO = create_BytesIO_pcap_file(item)  # das BytesIO Objekt das eine .pcap Datei ist
                 # Encode PCAP file to base64 since elasticsearch does not support binary data
                 pcap_base64 = base64.b64encode(flow_bytesIO.getvalue()).decode('utf-8')
+                
                 try:
                 # Prepare document for Elasticsearch
                     doc = {

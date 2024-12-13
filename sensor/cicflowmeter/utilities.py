@@ -4,6 +4,8 @@ from cicflowmeter import flow
 from scapy.utils import PcapWriter
 from io import BytesIO
 import paramiko
+from scapy.all import rdpcap
+
 
 def create_BytesIO_pcap_file(flow: flow.Flow) -> BytesIO:
     """
@@ -132,3 +134,24 @@ def create_BytesIO_pcap_file(flow) -> BytesIO:
     pcap_buffer.seek(0)
 
     return pcap_buffer
+
+def pcap_to_json(pcap_file: BytesIO) -> str:
+    """AI is creating summary for pcap_to_json
+
+    Args:
+        pcap_file (BytesIO): [description]
+
+    Returns:
+        str: [description]
+    """
+    packets = rdpcap(pcap_file)
+    packet_list = []
+    
+    for packet in packets:
+        packet_dict = {}
+        for field_name, value in packet.fields.items():
+            packet_dict[field_name] = str(value)
+        packet_list.append(packet_dict)
+    
+    json_data = json.dumps(packet_list, indent=4)
+    return json_data
