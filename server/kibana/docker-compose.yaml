@@ -77,7 +77,8 @@ services:
     environment:
       - node.name=es01
       - cluster.name=${CLUSTER_NAME}
-      - cluster.initial_master_nodes=es01 #,es02,es03
+      - cluster.initial_master_nodes=es01 #,es02,es03 # Uncomment for extra nodes
+      # Uncomment for extra nodes
       # - discovery.seed_hosts=es02,es03
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - bootstrap.memory_lock=true
@@ -108,7 +109,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 120
-
+  # Uncomment for extra nodes
   # es02:
   #   depends_on:
   #     - es01
@@ -195,6 +196,7 @@ services:
     depends_on:
       es01:
         condition: service_healthy
+      # Uncomment for extra nodes
       # es02:
       #   condition: service_healthy
       # es03:
@@ -227,6 +229,7 @@ volumes:
     driver: local
   esdata01:
     driver: local
+  # Uncomment for more nodes
   # esdata02:
   #   driver: local
   # esdata03:

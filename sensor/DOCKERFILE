@@ -1,19 +1,26 @@
-FROM ubuntu:latest
+FROM python:3.11-alpine
 
-# gget fresh packages and install python and pip 
-RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y python3 python3-pip
+# Install necessary dependencies (Alpine version of tshark)
+RUN apk update && apk add --no-cache \
+    tshark \
+    build-base \
+    musl-dev \
+    libffi-dev \
+    gcc \
+    g++ \
+    make
 
-# symlinking python
-RUN ln -sf python3 /usr/bin/python
-
-# create /app folder
+# Create /app folder
 RUN mkdir /app
 
-# copy requirements.txt
+# Copy requirements.txt
 COPY requirements.txt /app
-RUN pip3 install -r /app/requirements.txt --break-system-packages
 
+# Install Python packages from requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Symlink python3 to python
+RUN ln -sf /usr/local/bin/python3 /usr/bin/python
 
 # Copying the necessary files to working folder
 COPY .env /app/.env
@@ -30,4 +37,4 @@ WORKDIR /app
 # For debugging mostly
 ENV AM_I_IN_A_DOCKER_CONTAINER=Yes
 
-CMD ["/usr/bin/python3", "-u", "sniffer.py"]
+CMD ["/usr/local/bin/python3", "-u", "sniffer.py"]

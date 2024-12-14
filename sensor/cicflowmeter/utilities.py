@@ -5,33 +5,10 @@ from scapy.utils import PcapWriter
 from io import BytesIO
 import paramiko
 from scapy.all import rdpcap
+from subprocess import run
 
 
-def create_BytesIO_pcap_file(flow: flow.Flow) -> BytesIO:
-    """
-    Creates a pcap file from a Flow object and returns it as a BytesIO object.
-
-    Args: 
-        flow (flow): A Flow object containing packet data.
-
-    Returns: 
-        io.BytesIO: A BytesIO object containing the pcap data.
-    """ 
-    packete = [p[0] for p in flow.packets]
-    
-    pcap_buffer = BytesIO()
-
-    
-    pktdump = PcapWriter(pcap_buffer)
-    for pkt in packete:
-        pktdump.write(pkt)
-
-    # Reset the pointer in the BytesIO object
-    pcap_buffer.seek(0)
-
-    return pcap_buffer
-
-def sende_BytesIO_datei_per_scp(pcap_buffer: BytesIO, target_host: str, target_path: str, username: str, mySSHK: str = '/app/sshkey'):
+def send_BytesIO_datei_over_scp(pcap_buffer: BytesIO, target_host: str, target_path: str, username: str, mySSHK: str = '/app/sshkey'):
     """
     Sends a pcap file via SCP to a target host.
 
@@ -111,7 +88,7 @@ def create_post_request(flow, output_url: str):
     # - A list of packets without the direction as file data
     httpwriter.write(flow)
 
-def create_BytesIO_pcap_file(flow) -> BytesIO:
+def create_BytesIO_pcap_file(flow: flow.Flow) -> BytesIO:
     """
     Creates a pcap file from a Flow object and returns it as a BytesIO object.
     
@@ -134,24 +111,22 @@ def create_BytesIO_pcap_file(flow) -> BytesIO:
     pcap_buffer.seek(0)
 
     return pcap_buffer
+ 
 
-def pcap_to_json(pcap_file: BytesIO) -> str:
-    """AI is creating summary for pcap_to_json
+def flow_to_json(flow) -> str:  
+    """
+    Create Json out of a Flow objeckt with the help of tshark.
 
     Args:
-        pcap_file (BytesIO): [description]
-
+        flow ([Flow]): The Flow objekt to be transformed
+    
     Returns:
-        str: [description]
+        str: the created Json
+
     """
-    packets = rdpcap(pcap_file)
-    packet_list = []
-    
-    for packet in packets:
-        packet_dict = {}
-        for field_name, value in packet.fields.items():
-            packet_dict[field_name] = str(value)
-        packet_list.append(packet_dict)
-    
-    json_data = json.dumps(packet_list, indent=4)
-    return json_data
+    pcap_datei = create_BytesIO_pcap_file(flow=flow)
+    command = ['tshark', '-T', 'ek', '-r', '-']
+    json_packages_bytes = run(command, input=pcap_datei.getvalue(), capture_output=True)
+    json_packages_string = json_packages_bytes.stdout.decode()
+    json_packages_json = json.dumps(json_packages_string)
+    return json_packages_json

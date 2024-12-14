@@ -7,7 +7,7 @@ from scapy.sendrecv import AsyncSniffer
 from dotenv import load_dotenv
 import os
 from joblib import load
-from cicflowmeter.utilities import create_BytesIO_pcap_file
+from cicflowmeter.utilities import create_BytesIO_pcap_file, flow_to_json
 from uuid import uuid4
 from sklearn.ensemble import RandomForestClassifier
 from pipelining_utilities import adapt_for_prediction
@@ -87,7 +87,7 @@ class My_Sniffer():
 
     def start_receiver_worker(self):
         '''starting the worker thread'''
-        threading.Thread(target=self.worker, daemon=True).start()  # Starte einen neuen Thread für den Worker
+        threading.Thread(target=self.worker, daemon=True).start()  # Start a new thread for worker
     
     def worker(self):
         '''the function which will be called to do the work on the flow'''
@@ -126,9 +126,11 @@ class My_Sniffer():
                 # getting the attack data to the server TODO hier muss die richtige Methode noch rein.
                 id = str(uuid4())
                 # Create a PCAP file
-                flow_bytesIO = create_BytesIO_pcap_file(item)  # das BytesIO Objekt das eine .pcap Datei ist
-                # Encode PCAP file to base64 since elasticsearch does not support binary data
-                pcap_base64 = base64.b64encode(flow_bytesIO.getvalue()).decode('utf-8')
+                # flow_bytesIO = create_BytesIO_pcap_file(item)  # the pcap file as BytesIO object  DEPRECATED
+                # Encode PCAP file to base64 since elasticsearch does not support binary data DEPRECATED
+                # pcap_base64 = base64.b64encode(flow_bytesIO.getvalue()).decode('utf-8')
+                # Encode Flow item  to Json for transfer to kibana
+                pcap_json = flow_to_json(item)
                 
                 try:
                 # Prepare document for Elasticsearch
@@ -138,7 +140,7 @@ class My_Sniffer():
                         'flow_data': item.get_data(),
                         'prediction': prediction.tolist()[0],
                         'source_ip': item.src_ip,
-                        'pcap_data': pcap_base64,  # Add the PCAP data as base64
+                        'pcap_data': pcap_json,  # Add the PCAP data as Json
                         'pcap_metadata': {
                             'packet_count': len(item.packets)
                         }                        
