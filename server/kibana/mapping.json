@@ -2172,6 +2172,9 @@
       "prediction": {
         "type": "text"
       },
+      "sensor_name": {
+        "type": "text"
+      },
       "source_ip": {
         "type": "text"
       },

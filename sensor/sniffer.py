@@ -30,8 +30,9 @@ ES_HOST = os.getenv('ES_HOST')  # Change this to your Elasticsearch host
 ES_PORT = int(os.getenv('ES_PORT'))        # Change this to your Elasticsearch port
 ES_INDEX = os.getenv('ES_INDEX')  # Index name for storing flow data
 # Get these values from your Elasticsearch installation
-ES_USERNAME = os.getenv('ES_USERNAME')  # Replace with your elastic user password
-ES_PASSWORD = os.getenv('ES_PASSWORD')  # Default superuser
+ES_API_KEY = os.getenv('ES_API_KEY')  # API key for access to elastic 
+SENSOR_NAME = os.getenv('SENSOR_NAME')  # Unique name to identify this sensor
+
 
 if INDOCKER:
     LOCALPREFIX = "/app/"
@@ -94,7 +95,7 @@ class My_Sniffer():
         # Initialize Elasticsearch client
         es = Elasticsearch(
             f"{ES_HOST}:{ES_PORT}",
-            basic_auth=(ES_USERNAME, ES_PASSWORD),  # Add authentication
+            api_key=ES_API_KEY,  # Authentication via API-key
             verify_certs=False,
             ssl_show_warn=False,
             request_timeout=30,
@@ -136,6 +137,7 @@ class My_Sniffer():
                 # Prepare document for Elasticsearch
                     doc = {
                         'id': id,
+                        'sensor_name': SENSOR_NAME, # unique Sensorname
                         'timestamp': datetime.now().isoformat(),
                         'flow_data': item.get_data(),
                         'prediction': prediction.tolist()[0],
