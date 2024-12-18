@@ -21,6 +21,8 @@ services:
       - certs:/usr/share/elasticsearch/config/certs
       - ./mapping.json:/usr/share/elasticsearch/mapping.json
       - ./dashboard.ndjson:/usr/share/elasticsearch/dashboard.ndjson
+      - ./space.ndjson:/usr/share/elasticsearch/space.ndjson
+      - ./network_analyst_role.ndjson:/usr/share/elasticsearch/network_analyst_role.ndjson
     user: "0"
     command: >
       bash -c '
@@ -55,13 +57,19 @@ services:
         find . -type d -exec chmod 750 \{\} \;;
         find . -type f -exec chmod 640 \{\} \;;
         echo "Waiting for Elasticsearch availability";
-        until curl -s --cacert config/certs/ca/ca.crt https://es01:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
+        until curl -s --cacert config/certs/ca/ca.crt https://es01:${ES_PORT} | grep -q "missing authentication credentials"; do sleep 30; done;
         echo "Setting kibana_system password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:${ES_PORT}/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
         echo "Importing network_flow mapping";
-        until curl -u elastic:${ELASTIC_PASSWORD} -X PUT "https://es01:9200/network_flows" -H "Content-Type: application/json" -d @/usr/share/elasticsearch/mapping.json --insecure; do sleep 10; done;
+        until curl -u elastic:${ELASTIC_PASSWORD} -X PUT "https://es01:${ES_PORT}/network_flows" -H "Content-Type: application/json" -d @/usr/share/elasticsearch/mapping.json --insecure; do sleep 10; done;
         echo "Importing Dashboard";
-        until curl -X POST "http://kibana:5601/api/saved_objects/_import?overwrite=true" -H "kbn-xsrf: true" -u elastic:${ELASTIC_PASSWORD} --form file=@/usr/share/elasticsearch/dashboard.ndjson; do sleep 10; done;
+        until curl -X POST "https://kibana:${KIBANA_PORT}/api/saved_objects/_import?overwrite=true" -H "kbn-xsrf: true" -u elastic:${ELASTIC_PASSWORD} --form file=@/usr/share/elasticsearch/dashboard.ndjson --insecure; do sleep 10; done;
+        echo "Importing Space";
+        until curl -X POST "https://kibana:${KIBANA_PORT}/api/spaces/space" -H "Content-Type: application/json" -H "elastic-api-version: 2023-10-31" -H "kbn-xsrf: true" -u elastic:${ELASTIC_PASSWORD} --insecure -d  @/usr/share/elasticsearch/space.ndjson; do sleep 10; done;
+        echo "Importing Role";
+        until curl -X PUT "https://kibana:${KIBANA_PORT}/api/security/role/network_analyst" -H "Content-Type: application/json; Elastic-Api-Version=2023-10-31" -H "elastic-api-version: 2023-10-31" -H "kbn-xsrf: true" -u elastic:${ELASTIC_PASSWORD} --insecure -d @/usr/share/elasticsearch/network_analyst_role.ndjson; do sleep 30; done;
+        echo "Importing User";
+        until curl -X PUT "https://es01:${ES_PORT}/_security/user/${NETWORK_ANALYST}" -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" -d "{ \"password\" : \"${NETWORK_ANALYST_PASSWORD}\" , \"roles\" : [\"dashboard_only\" , \"network_analyst\" ]}" --insecure; do sleep 30; done;
         echo "All done!";
       '
     healthcheck:
@@ -110,7 +118,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'",
+          "curl -s --cacert config/certs/ca/ca.crt https://localhost:${ES_PORT} | grep -q 'missing authentication credentials'",
         ]
       interval: 10s
       timeout: 10s
@@ -210,11 +218,15 @@ services:
     image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
     volumes:
       - certs:/usr/share/kibana/config/certs
+      - ./kibana_certs:/usr/share/kibana/config/kibana_certs
       - kibanadata:/usr/share/kibana/data
     ports:
       - ${KIBANA_PORT}:5601
     environment:
       - SERVERNAME=kibana
+      - SERVER_SSL_ENABLED=true
+      - SERVER_SSL_CERTIFICATE=/usr/share/kibana/config/kibana_certs/kibana.crt
+      - SERVER_SSL_KEY=/usr/share/kibana/config/kibana_certs/kibana.key
       - ELASTICSEARCH_HOSTS=https://es01:9200
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
@@ -224,7 +236,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
+          "curl -s -I https://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
         ]
       interval: 10s
       timeout: 10s
