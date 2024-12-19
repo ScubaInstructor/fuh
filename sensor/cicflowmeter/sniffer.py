@@ -8,9 +8,9 @@ from cicflowmeter.flow_session import FlowSession
 def create_sniffer(
     input_file, input_interface, output_mode, output, fields=None, verbose=False
 ):
-    assert (input_file is None) ^ (
-        input_interface is None
-    ), "Either provide interface input or file input not both"
+    # assert (input_file is None) ^ (
+    #     input_interface is None
+    # ), "Either provide interface input or file input not both"
     if fields is not None:
         fields = fields.split(",")
 
@@ -28,14 +28,21 @@ def create_sniffer(
             store=False,
         )
     else:
-        return AsyncSniffer(
-            iface=input_interface,
-            filter="ip and (tcp or udp)",
-            prn=None,
-            session=FlowSession,
-            store=False,
-        )
-
+        if input_interface == None:
+            return AsyncSniffer(
+                filter="ip and (tcp or udp)",
+                prn=None,
+                session=FlowSession,
+                store=False,
+            )
+        else: 
+            return AsyncSniffer(
+                iface=input_interface,
+                filter="ip and (tcp or udp)",
+                prn=None,
+                session=FlowSession,
+                store=False,
+            )
 
 def main():
     parser = argparse.ArgumentParser()
