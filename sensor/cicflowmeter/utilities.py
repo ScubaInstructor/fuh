@@ -125,8 +125,8 @@ def flow_to_json(flow) -> str:
 
     """
     pcap_datei = create_BytesIO_pcap_file(flow=flow)
-    command = ['tshark', '-T', 'ek', '-r', '-']
+    command = ['tshark', '-T', 'ek', '-r', '-'] # maybe switch to ek instead of json
     json_packages_bytes = run(command, input=pcap_datei.getvalue(), capture_output=True)
-    json_packages_string = json_packages_bytes.stdout.decode()
-    json_packages_json = json.dumps(json_packages_string)
-    return json_packages_json
+    json_packages_string = json_packages_bytes.stdout.decode('utf-8')
+    # json_packages_json = json.dumps(json_packages_string) # remove as it is double encoded else
+    return json_packages_string

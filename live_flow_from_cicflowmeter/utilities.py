@@ -3,6 +3,8 @@ from cicflowmeter import flow
 from scapy.utils import PcapWriter
 from io import BytesIO
 import paramiko
+from subprocess import run
+
 
 def erstelle_datei(flow: flow.Flow) -> BytesIO:
     """
@@ -109,3 +111,20 @@ def erstelle_post_request(data: list, output_url: str):
     # - den Flow als JSON-Daten (Metadaten)
     # - Eine Liste der packets ohne die Richtung als Datei-Daten
     httpwriter.write([erstelle_datei(data[0]), data[1]])
+
+def flow_to_json(flow) -> str:  
+    """
+    Create Json out of a Flow objeckt with the help of tshark.
+
+    Args:
+        flow ([Flow]): The Flow objekt to be transformed
+    
+    Returns:
+        str: the created Json
+
+    """
+    pcap_datei = erstelle_datei(flow=flow)
+    command = ['tshark', '-T', 'json', '-r', '-'] # maybe switch to ek instead of json
+    json_packages_bytes = run(command, input=pcap_datei.getvalue(), capture_output=True)
+    json_packages_string = json_packages_bytes.stdout.decode('utf-8')
+    return json_packages_string
