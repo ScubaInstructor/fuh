@@ -104,9 +104,9 @@ class My_Sniffer():
         
         # Create index if it doesn't exist
         # this must be removed, as we need special mappings and pipelines...
-        if not es.indices.exists(index=ES_INDEX):
-            es.indices.create(index=ES_INDEX, ignore=400)
-            print(f"Created new index: {ES_INDEX}")
+        # if not es.indices.exists(index=ES_INDEX):
+        #     es.indices.create(index=ES_INDEX, ignore=400)
+        #     print(f"Created new index: {ES_INDEX}")
             
         while True:
             if DEBUGGING:
