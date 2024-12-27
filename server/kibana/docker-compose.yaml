@@ -23,6 +23,7 @@ services:
       - ./dashboard.ndjson:/usr/share/elasticsearch/dashboard.ndjson
       - ./space.ndjson:/usr/share/elasticsearch/space.ndjson
       - ./network_analyst_role.ndjson:/usr/share/elasticsearch/network_analyst_role.ndjson
+      - ./sensor-api-key.txt:/usr/share/elasticsearch/sensor-api-key.txt
     user: "0"
     command: >
       bash -c '
@@ -76,9 +77,9 @@ services:
           echo "Copying Dashboard to newly created space"
           until curl -X POST https://kibana:${KIBANA_PORT}/api/spaces/_copy_saved_objects -H "Content-Type: application/json; Elastic-Api-Version=2023-10-31"  -H "elastic-api-version: 2023-10-31" -H "kbn-xsrf: true" -u elastic:${ELASTIC_PASSWORD} --insecure  -d "{ \"spaces\":[\"network-analysts-dashboard\"], \"objects\":[{\"id\":\"dd1dae1e-9956-43bc-9d09-5c0c626a339f\", \"type\":\"dashboard\"}],\"includeReferences\": true}" ;do sleep 10; done;
           echo "Importing Role";
-          until curl -X PUT "https://kibana:${KIBANA_PORT}/api/security/role/network_analyst" -H "Content-Type: application/json; Elastic-Api-Version=2023-10-31" -H "elastic-api-version: 2023-10-31" -H "kbn-xsrf: true" -u elastic:${ELASTIC_PASSWORD} --insecure -d @/usr/share/elasticsearch/network_analyst_role.ndjson; do sleep 30; done;
+          until curl -X PUT "https://kibana:${KIBANA_PORT}/api/security/role/network_analyst" -H "Content-Type: application/json; Elastic-Api-Version=2023-10-31" -H "elastic-api-version: 2023-10-31" -H "kbn-xsrf: true" -u elastic:${ELASTIC_PASSWORD} --insecure -d @/usr/share/elasticsearch/network_analyst_role.ndjson; do sleep 10; done;
           echo "Importing User";
-          until curl -X PUT "https://es01:${ES_PORT}/_security/user/${NETWORK_ANALYST}" -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" -d "{ \"password\" : \"${NETWORK_ANALYST_PASSWORD}\" , \"roles\" : [\"dashboard_only\" , \"network_analyst\" ]}" --insecure; do sleep 30; done;
+          until curl -X PUT "https://es01:${ES_PORT}/_security/user/${NETWORK_ANALYST}" -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" -d "{ \"password\" : \"${NETWORK_ANALYST_PASSWORD}\" , \"roles\" : [\"dashboard_only\" , \"network_analyst\" ]}" --insecure; do sleep 10; done;
           echo "Writing api-token for ${NETWORK_FLOW_INDEX_NAME}" into file sensor-api-key.txt;
           until curl -X POST "https://es01:${ES_PORT}/_security/api_key" -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" --insecure -d "{
             \"name\": \"generated_from_setup\",  
@@ -92,9 +93,9 @@ services:
                 ]
               }
             }
-          }" | sed -e "s/.*encoded\":/KEY:/" | sed -e "s/}//" > sensor-api-key.txt; do sleep 10; done;
+          }" | sed -e "s/.*encoded\":/KEY:/" | sed -e "s/}//" > /usr/share/elasticsearch/sensor-api-key.txt; do sleep 10; done;
           echo "All done!";
-          echo "Use this api-key: $(cat sensor-api-key.txt) for your sensors! ";
+          echo "Use this api-key: $(cat /usr/share/elasticsearch/sensor-api-key.txt) for your sensors! ";
         else
           echo "-- Not the first container startup, so other initialisation is skipped  --"
         fi
