@@ -1,40 +1,52 @@
-FROM python:3.11-alpine
+# Base image
+FROM ubuntu:24.04
 
-# Install necessary dependencies (Alpine version of tshark)
-RUN apk update && apk add --no-cache \
+# Set environment variable for non-interactive installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install necessary dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
     tshark \
-    build-base \
-    musl-dev \
+    build-essential \
     libffi-dev \
     gcc \
     g++ \
-    make
+    curl \
+    make \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create /app folder
+# Create the /app directory
 RUN mkdir /app
 
 # Copy requirements.txt
-COPY requirements.txt /app
+COPY requirements.txt /app/
 
 # Install Python packages from requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+RUN pip3 install --no-cache-dir -r /app/requirements.txt --break-system-packages
 
 # Symlink python3 to python
-RUN ln -sf /usr/local/bin/python3 /usr/bin/python
+RUN ln -sf /usr/bin/python3 /usr/bin/python
 
-# Copying the necessary files to working folder
+RUN curl -L -O https://artifacts.elastic.co/downloads/beats/packetbeat/packetbeat-8.17.0-amd64.deb
+RUN dpkg -i packetbeat-8.17.0-amd64.deb
+RUN apt remove curl -y
+
+# Copy the necessary files to the working directory
 COPY .env /app/.env
 COPY sniffer.py /app/sniffer.py
 COPY cicflowmeter /app/cicflowmeter
 COPY pipelining_utilities.py /app/pipelining_utilities.py
-COPY model.pkl /app
-COPY scaler.pkl /app
-COPY ipca_mit_size_34.pkl /app
+COPY model.pkl /app/model.pkl
+COPY scaler.pkl /app/scaler.pkl
+COPY ipca_mit_size_34.pkl /app/ipca_mit_size_34.pkl
 
-
+# Set the working directory
 WORKDIR /app
 
-# For debugging mostly
+# For debugging purposes
 ENV AM_I_IN_A_DOCKER_CONTAINER=Yes
 
-CMD ["/usr/local/bin/python3", "-u", "sniffer.py"]
+# Start the sniffer script
+CMD ["python", "-u", "sniffer.py"]
