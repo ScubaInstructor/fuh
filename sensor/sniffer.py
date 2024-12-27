@@ -38,6 +38,7 @@ if INDOCKER:
     LOCALPREFIX = "/app/"
 else: 
     LOCALPREFIX = os.getenv('LOCALPREFIX')
+    LOCALPREFIX = "./fuh/sensor/" if LOCALPREFIX == None else LOCALPREFIX
 
 # Load the 
 MODELPATH = LOCALPREFIX + "model.pkl" 
@@ -129,6 +130,11 @@ class My_Sniffer():
                 # getting the attack data to the server 
                 id = str(uuid4())
                 # Create a PCAP file
+                flow_bytesIO = create_BytesIO_pcap_file(item)  # the pcap file as BytesIO object  DEPRECATED
+
+                # Encode PCAP file to base64 since elasticsearch does not support binary data DEPRECATED
+                # pcap_base64 = base64.b64encode(flow_bytesIO.getvalue()).decode('utf-8')
+
                 # Encode Flow item  to Json for transfer to kibana
                 pcap_json = flow_to_json(item)
                 
