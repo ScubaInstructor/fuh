@@ -24,6 +24,7 @@ services:
       - ./space.ndjson:/usr/share/elasticsearch/space.ndjson
       - ./network_analyst_role.ndjson:/usr/share/elasticsearch/network_analyst_role.ndjson
       - ./sensor-api-key.txt:/usr/share/elasticsearch/sensor-api-key.txt
+      - ./packetbeat.yml:/usr/share/elasticsearch/packetbeat.yml
     user: "0"
     command: >
       bash -c '
@@ -61,6 +62,8 @@ services:
         fi;
         echo "Setting file permissions"
         chown -R root:root config/certs;
+        chown root:root /usr/share/elasticsearch/packetbeat.yml;
+        chmod 700 /usr/share/elasticsearch/packetbeat.yml;
         find . -type d -exec chmod 750 \{\} \;;
         find . -type f -exec chmod 640 \{\} \;;
         echo "Waiting for Elasticsearch availability";
@@ -289,31 +292,6 @@ services:
       - certs:/usr/share/packetbeat/certs:ro
       - ./packetbeat.yml:/usr/share/packetbeat/packetbeat.yml:ro
       - ./pcap_folder:/usr/share/packetbeat/pcaps:ro
-    command: ["packetbeat", "setup", "e"]
-    #command: ["packetbeat", "-t", "-I", "/usr/share/packetbeat/pcaps/test.pcap", "-c", "/usr/share/packetbeat/packetbeat.yml", "-e"]
-    environment:
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - ELASTICSEARCH_HOSTS=https://es01:9200
-      - ELASTICSEARCH_USERNAME=elastic
-      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=/usr/share/packetbeat/certs/ca/ca.crt
-      - KIBANA_HOST=https://kibana:5601
-      - KIBANA_SSL_CERTIFICATEAUTHORITIES=/usr/share/packetbeat/certs/ca/ca.crt
-
-  packetbeat:
-    depends_on:
-      es01:
-        condition: service_healthy
-      kibana:
-        condition: service_healthy
-    image: docker.elastic.co/beats/packetbeat:${STACK_VERSION}
-    container_name: packetbeat
-    user: root
-    cap_add: 
-      - NET_ADMIN
-      - NET_RAW
-    volumes:
-      - certs:/usr/share/packetbeat/certs:ro
-      - ./packetbeat.yml:/usr/share/packetbeat/packetbeat.yml:ro
     command: ["packetbeat", "setup", "e"]
     #command: ["packetbeat", "-t", "-I", "/usr/share/packetbeat/pcaps/test.pcap", "-c", "/usr/share/packetbeat/packetbeat.yml", "-e"]
     environment:
