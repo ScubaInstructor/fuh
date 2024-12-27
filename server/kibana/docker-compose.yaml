@@ -261,8 +261,8 @@ services:
       - certs:/usr/share/packetbeat/certs:ro
       - ./packetbeat.yml:/usr/share/packetbeat/packetbeat.yml:ro
       - ./pcap_folder:/usr/share/packetbeat/pcaps:ro
-    #command: ["packetbeat", "-e", "-d", "*", "-I", "pcaps/test.pcap"]
-    command: ["packetbeat", "-I", "/usr/share/packetbeat/pcaps/test.pcap", "-c", "/usr/share/packetbeat/packetbeat.yml", "-e"]
+    command: ["packetbeat", "setup", "e"]
+    #command: ["packetbeat", "-t", "-I", "/usr/share/packetbeat/pcaps/test.pcap", "-c", "/usr/share/packetbeat/packetbeat.yml", "-e"]
     environment:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - ELASTICSEARCH_HOSTS=https://es01:9200
