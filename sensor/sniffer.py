@@ -104,9 +104,10 @@ class My_Sniffer():
         )
         
         # Create index if it doesn't exist
-        if not es.indices.exists(index=ES_INDEX):
-            es.indices.create(index=ES_INDEX, ignore=400)
-            print(f"Created new index: {ES_INDEX}")
+        # this must be removed, as we need special mappings and pipelines...
+        # if not es.indices.exists(index=ES_INDEX):
+        #     es.indices.create(index=ES_INDEX, ignore=400)
+        #     print(f"Created new index: {ES_INDEX}")
             
         while True:
             if DEBUGGING:
@@ -119,22 +120,28 @@ class My_Sniffer():
             flow_data: dict = DataFrame([item.get_data()])
             flow_data: DataFrame = adapt_for_prediction(data=flow_data,scaler=self.scaler,ipca=self.ipca,ipca_size=IPCASIZE)
             prediction = self.model.predict(flow_data) # returns a numpy ndarray
+            proba = self.model.predict_proba(flow_data)
 
             if DEBUGGING:
-                print(f"Prediction ist: {prediction}")
-            if prediction != ['BENIGN'] or DEBUGGING:
+                print(f"Prediction is: {prediction} with certainty of {proba.max()}")
+            if prediction != ['BENIGN'] or proba.max() < 0.8 or proba.max() - proba.mean() < 0.6 or DEBUGGING:
                 if DEBUGGING:
-                    print("prediction true")
-                # getting the attack data to the server TODO hier muss die richtige Methode noch rein.
+                    print("Flow will be sent")
+                # getting the attack data to the server 
                 id = str(uuid4())
                 # Create a PCAP file
                 flow_bytesIO = create_BytesIO_pcap_file(item)  # the pcap file as BytesIO object  DEPRECATED
 
                 # Encode PCAP file to base64 since elasticsearch does not support binary data DEPRECATED
                 # pcap_base64 = base64.b64encode(flow_bytesIO.getvalue()).decode('utf-8')
+
                 # Encode Flow item  to Json for transfer to kibana
                 pcap_json = flow_to_json(item)
                 
+                # prepare the dict with the probabilities
+                probabilities = {}
+                for i in range(len(proba[0])):
+                    probabilities[self.model.classes_[i]] = proba[0][i]
                 try:
                 # Prepare document for Elasticsearch
                     doc = {
@@ -143,12 +150,16 @@ class My_Sniffer():
                         'timestamp': datetime.now().isoformat(),
                         'flow_data': item.get_data(),
                         'prediction': prediction.tolist()[0],
-                        'source_ip': item.src_ip,
+                        'probabilities': probabilities,
+                        'has_been_seen':False,
+                        'source_ip': item.src_ip, # TODO check if neccessary!
                         'pcap_data': pcap_json,  # Add the PCAP data as Json
                         'pcap_metadata': {
                             'packet_count': len(item.packets)
                         }                        
-                    }                    
+                    }   
+                    if DEBUGGING:
+                        print(f"Document to be sent: {doc}")                 
                     # Send to Elasticsearch
                     es.index(index=ES_INDEX, body=doc)
                     print(f"Data sent to Elasticsearch successfully")

@@ -2176,10 +2176,16 @@
         "type": "text"
       },
       "source_ip": {
-        "type": "text"
+        "type": "ip"
       },
       "timestamp": {
         "type": "date"
+      }, 
+      "has_been_seen": {
+        "type": "boolean"
+      },
+      "probabilities":{
+        "type": "object"
       }
     }
   }
