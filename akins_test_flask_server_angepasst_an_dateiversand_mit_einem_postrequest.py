@@ -199,7 +199,7 @@ def details(df_id):
                     <form method="POST">
                         <label for="selected_attack_class">Select Attack Class:</label>
                         <select name="selected_attack_class" id="selected_attack_class">
-                            <option value="">Select...</option>
+                            <option value="" disabled selected>Select...</option>
                             <option value="BENIGN">BENIGN</option>
                             <option value="BOT">BOT</option>
                             <option value="DOS">DOS</option>
