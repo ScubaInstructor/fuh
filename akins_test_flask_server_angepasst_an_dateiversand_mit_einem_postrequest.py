@@ -14,8 +14,9 @@ probabilities_store = {}
 predictions_store = {}
 sensor_names = {}
 timestamps = {}
-attack_classes = {}  # Store selected attack classes
-requests_log = []  # Log for storing request information
+attack_classes = {} # Store selected attack classes
+has_been_seen = {}  # Store if entries have been seen
+requests_log = []   # Log for storing request information
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -39,11 +40,12 @@ def upload():
         df = pd.DataFrame([json_data])
         dataframes[df_id] = df
 
-        # Store probabilities, predictions, sensor names, and timestamp
+        # Store probabilities, predictions, sensor names, timestamp and a field for has_been_seen
         probabilities_store[df_id] = probabilities_data
         predictions_store[df_id] = prediction_data
         sensor_names[df_id] = sensor_name_data
         timestamps[df_id] = timestamp_data['timestamp']  # Store the timestamp
+        has_been_seen[df_id] = False
 
         # Log the request
         requests_log.append({'file_id': file_id, 'dataframe_id': df_id})
@@ -87,6 +89,7 @@ def index():
             </head>
             <body>
                 <h1>Requests Log</h1>
+                <button onclick="location.href='/retrain'" style="margin-bottom: 20px;">Retrain</button>
                 <table>
                     <thead>
                         <tr>
@@ -98,12 +101,14 @@ def index():
                     </thead>
                     <tbody>
                         {% for entry in requests %}
-                            <tr>
-                                <td><a href="/details/{{ entry.dataframe_id }}">{{ entry.timestamp }}</a></td>
-                                <td>{{ entry.sensor_name }}</td>
-                                <td>{{ entry.prediction }}</td>
-                                <td>{{ entry.attack_class if entry.attack_class else "unklassifiziert" }}</td>
-                            </tr>
+                            {% if not has_been_seen[entry.dataframe_id] %}
+                                <tr>
+                                    <td><a href="/details/{{ entry.dataframe_id }}">{{ entry.timestamp }}</a></td>
+                                    <td>{{ entry.sensor_name }}</td>
+                                    <td>{{ entry.prediction }}</td>
+                                    <td>{{ entry.attack_class if entry.attack_class else "unklassifiziert" }}</td>
+                                </tr>
+                            {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -115,7 +120,7 @@ def index():
             'prediction': predictions_store[entry['dataframe_id']],
             'attack_class': attack_classes.get(entry['dataframe_id'], None),
             'dataframe_id': entry['dataframe_id']
-        } for entry in requests_log])
+        } for entry in requests_log], has_been_seen=has_been_seen)
 
 @app.route('/details/<df_id>', methods=['GET', 'POST'])
 def details(df_id):
@@ -127,7 +132,7 @@ def details(df_id):
         
         # Save the selected attack class for later retrieval on the overview page
         attack_classes[df_id] = selected_attack_class
-        
+        has_been_seen[df_id] = True
         return redirect(url_for('index'))  # Redirect to the overview page after selection
         
     probabilities = probabilities_store.get(df_id, {})
@@ -266,6 +271,12 @@ def details(df_id):
        timestamp=timestamp,
        file_download_link=file_download_link)
 
+@app.route('/retrain')
+def some_function():
+    # Hier kannst du die Funktion definieren, die beim Klicken auf den Button ausgeführt werden soll.
+    print("Button wurde gedrückt!")
+    return redirect(url_for('index'))  # Back to index
+
 @app.route('/get_dataframe/<df_id>', methods=['GET'])
 def get_dataframe(df_id):
     if df_id in dataframes:
@@ -285,4 +296,4 @@ def download_file(file_id):
     return "File not found", 404
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=8888)
