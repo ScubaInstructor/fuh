@@ -27,19 +27,24 @@ class HttpWriter():
       
     def write(self, data: list) -> None:
         """
-        Sendet einen einzigen POST-Request mit Datei- und JSON-Daten.
+        Sends a single POST-Request With file, Json, time and String Data.
 
         Args:
-            data (list): Eine Liste mit zwei Elementen:
+            data (list): A List of Elements to be transferred
                 - data[0]: Datei-Daten (pcap-Datei als Json)
                 - data[1]: JSON-Daten (Metadaten)
-                - data[2]: dict () Predictions
+                - data[2]: dict (Probabilities)
+                - data[3]: str () Prediction
+                - data[4]: str () Sensor Name
+
         """
         files = {
             'file': ('flow.pcap', data[0], 'application/vnd.tcpdump.pcap'),
             'json': ('data.json', json.dumps(data[1]), 'application/json'),
-            'predictions': ('predictions.json', json.dumps(data[2]), 'application/json'),  # Hier wird das dict als JSON gesendet
-            'timestamp' : ('timestamp', json.dumps(data[3]), 'application/json')
+            'probabilities': ('probabilities.json', json.dumps(data[2]), 'application/json'), 
+            'timestamp' : ('timestamp.json', json.dumps(data[3]), 'application/json'),
+            'prediction': ('prediction.txt', data[4], 'text/plain'),  
+            'sensor_name': ('sensor_name.txt', data[5], 'text/plain')  
         }
         self.session.post(self.url, files=files)
 
@@ -62,10 +67,12 @@ def erstelle_post_request(flow, output_url: str):
     # - Eine Liste der packets ohne die Richtung als Datei-Daten
     metadata = flow.get_data()
     pcap_json = pcap_to_json(erstelle_datei(flow=flow))
-    predictions = {"BENIGN":0.8, "DOS":0.1, "Web Attack":0, "Bot":0.1}
+    probabilities = {"BENIGN":0.8, "DOS":0.1, "Web Attack":0, "Bot":0.1}
     timestamp =  {'timestamp': datetime.now().isoformat()}
+    prediction = "BENIGN"
+    sensor_name = "Sensor"
 
-    httpwriter.write([erstelle_datei(flow=flow), metadata, predictions, timestamp])
+    httpwriter.write([erstelle_datei(flow=flow), metadata, probabilities, timestamp, prediction, sensor_name])
 
 def erstelle_datei(flow) -> BytesIO:
     """
