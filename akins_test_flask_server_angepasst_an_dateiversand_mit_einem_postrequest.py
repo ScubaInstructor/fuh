@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template_string, jsonify, send_file
+from flask import Flask, request, render_template_string, jsonify, send_file, redirect, url_for
 import pandas as pd
 import uuid
 from io import BytesIO
@@ -14,6 +14,7 @@ probabilities_store = {}
 predictions_store = {}
 sensor_names = {}
 timestamps = {}
+attack_classes = {}  # Store selected attack classes
 requests_log = []  # Log for storing request information
 
 @app.route('/upload', methods=['POST'])
@@ -53,7 +54,7 @@ def upload():
 
 @app.route('/')
 def index():
-    # Generate HTML content for all available timestamps with sensor names and predictions
+    # Generate HTML content for all available timestamps with sensor names and predictions in a table format
     return render_template_string("""
         <html>
             <head>
@@ -62,11 +63,22 @@ def index():
                     body {
                         font-family: Arial, sans-serif;
                     }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                    }
+                    th, td {
+                        padding: 10px;
+                        text-align: left;
+                        border: 1px solid #ddd;
+                    }
+                    th {
+                        background-color: #f2f2f2;
+                    }
                     a {
-                        display: block;
-                        margin: 10px 0;
-                        text-decoration: none;
                         color: #007BFF;
+                        text-decoration: none;
                     }
                     a:hover {
                         text-decoration: underline;
@@ -75,25 +87,49 @@ def index():
             </head>
             <body>
                 <h1>Requests Log</h1>
-                {% for entry in requests %}
-                    <a href="/details/{{ entry.dataframe_id }}">
-                        {{ entry.timestamp }} - {{ entry.sensor_name }} - {{ entry.prediction }}
-                    </a>
-                {% endfor %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Datum</th>
+                            <th>Sensor</th>
+                            <th>Vorgeschlagene Klasse</th>
+                            <th>Klasse</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in requests %}
+                            <tr>
+                                <td><a href="/details/{{ entry.dataframe_id }}">{{ entry.timestamp }}</a></td>
+                                <td>{{ entry.sensor_name }}</td>
+                                <td>{{ entry.prediction }}</td>
+                                <td>{{ entry.attack_class if entry.attack_class else "unklassifiziert" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </body>
         </html>
     """, requests=[{
             'timestamp': timestamps[entry['dataframe_id']],
             'sensor_name': sensor_names[entry['dataframe_id']],
             'prediction': predictions_store[entry['dataframe_id']],
+            'attack_class': attack_classes.get(entry['dataframe_id'], None),
             'dataframe_id': entry['dataframe_id']
         } for entry in requests_log])
 
-@app.route('/details/<df_id>')
+@app.route('/details/<df_id>', methods=['GET', 'POST'])
 def details(df_id):
     if df_id not in dataframes:
         return "DataFrame not found", 404
 
+    if request.method == 'POST':
+        selected_attack_class = request.form.get('selected_attack_class')
+        
+        # Save the selected attack class for later retrieval on the overview page
+        attack_classes[df_id] = selected_attack_class
+        
+        return redirect(url_for('index'))  # Redirect to the overview page after selection
+        
     probabilities = probabilities_store.get(df_id, {})
     prediction = predictions_store.get(df_id, '')
     sensor_name = sensor_names.get(df_id, '')
@@ -111,59 +147,65 @@ def details(df_id):
                 <style>
                     body {
                         font-family: Arial, sans-serif;
+                        display: flex; /* Use flexbox for layout */
+                    }
+                    .left-column {
+                        flex: 1; /* Take up remaining space */
+                        padding-right: 20px; /* Add some space between columns */
+                    }
+                    .right-column {
+                        width: 300px; /* Fixed width for the chart column */
                     }
                     h1 {
                         margin-bottom: 20px;
                     }
-                    .table-responsive {
-                        overflow-x: auto; /* Enable horizontal scrolling */
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-bottom: 20px;
-                    }
-                    th, td {
-                        padding: 8px;
-                        text-align: center;
-                        border: 1px solid #ddd;
-                    }
-                    th {
-                        background-color: #f2f2f2;
-                    }
                     canvas {
-                        max-width: 300px; /* Set a maximum width for the chart */
+                        max-width: 100%; /* Ensure the chart fits within its container */
                         height: auto; /* Maintain aspect ratio */
-                        margin-bottom: 10px; /* Add some space below the chart */
                     }
                 </style>
             </head>
             <body>
-                <h1>Details for {{ timestamp }}</h1>
+                <div class="left-column">
+                    <h1>Details for {{ timestamp }}</h1>
 
-                <h3>Prediction</h3>
-                <p>{{ prediction }}</p>
+                    <h3>Prediction</h3>
+                    <p>{{ prediction }}</p>
 
-                <h3>Sensor Name</h3>
-                <p>{{ sensor_name }}</p>
-                                  
-                <!-- Download link for the PCAP file -->
-                <h3>Download PCAP File</h3>
-                <a href="{{ file_download_link }}">Download flow.pcap</a>
-                                  
-                <h3>Probabilities</h3>
-                <div id="probabilities-table">
-                    {% if probabilities %}
-                        <pre>{{ probabilities | tojson(indent=4) }}</pre>
-                    {% else %}
-                        <p>No probabilities available.</p>
-                    {% endif %}
+                    <h3>Sensor Name</h3>
+                    <p>{{ sensor_name }}</p>
+
+                    <h3>Probabilities</h3>
+                    <div id="probabilities-table">
+                        {% if probabilities %}
+                            <pre>{{ probabilities | tojson(indent=4) }}</pre>
+                        {% else %}
+                            <p>No probabilities available.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Dropdown menu for selecting attack class -->
+                    <form method="POST">
+                        <label for="selected_attack_class">Select Attack Class:</label>
+                        <select name="selected_attack_class" id="selected_attack_class">
+                            <option value="">Select...</option>
+                            <option value="BENIGN">BENIGN</option>
+                            <option value="BOT">BOT</option>
+                            <option value="DOS">DOS</option>
+                            <option value="WEB ATTACK">WEB ATTACK</option>
+                        </select>
+                        <button type="submit">Submit</button>
+                    </form>
+
+                    <!-- Download link for the PCAP file -->
+                    <h3>Download PCAP File</h3>
+                    <a href="{{ file_download_link }}">Download flow.pcap</a>
                 </div>
 
-                <!-- Placeholder for the pie chart -->
-                <canvas id="probabilities-chart" width="400" height="400"></canvas>
-
-                
+                <div class="right-column">
+                    <!-- Placeholder for the pie chart -->
+                    <canvas id="probabilities-chart" width="300" height="300"></canvas>
+                </div>
 
                 <script>
                     // Prepare data for pie chart (assuming probabilities are in key-value pairs)
