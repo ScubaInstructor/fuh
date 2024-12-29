@@ -41,6 +41,7 @@ COPY pipelining_utilities.py /app/pipelining_utilities.py
 COPY model.pkl /app/model.pkl
 COPY scaler.pkl /app/scaler.pkl
 COPY ipca_mit_size_34.pkl /app/ipca_mit_size_34.pkl
+COPY packetbeat.yml /app/packetbeat.yml
 
 # Set the working directory
 WORKDIR /app

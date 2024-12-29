@@ -6,6 +6,7 @@ from queue import Queue
 from scapy.sendrecv import AsyncSniffer  
 from dotenv import load_dotenv
 import os
+import tempfile
 from joblib import load
 from cicflowmeter.utilities import create_BytesIO_pcap_file, flow_to_json
 from uuid import uuid4
@@ -16,6 +17,7 @@ from time import sleep
 from elasticsearch import Elasticsearch
 import json
 from datetime import datetime
+import subprocess
 
 # Loading of the .env file
 load_dotenv()
@@ -38,13 +40,14 @@ if INDOCKER:
     LOCALPREFIX = "/app/"
 else: 
     LOCALPREFIX = os.getenv('LOCALPREFIX')
-    LOCALPREFIX = "./fuh/sensor/" if LOCALPREFIX == None else LOCALPREFIX
+    LOCALPREFIX = "./sensor/" if LOCALPREFIX == None else LOCALPREFIX
 
 # Load the 
 MODELPATH = LOCALPREFIX + "model.pkl" 
 SCALERPATH = LOCALPREFIX + "scaler.pkl"
 IPCAPATH = LOCALPREFIX + "ipca_mit_size_34.pkl"
 IPCASIZE = 34
+PACKETBEATPATH = LOCALPREFIX + "packetbeat.yml"
 
 class My_Sniffer():
     def __init__(self) -> None:
@@ -130,8 +133,20 @@ class My_Sniffer():
                 # getting the attack data to the server 
                 id = str(uuid4())
                 # Create a PCAP file
-                flow_bytesIO = create_BytesIO_pcap_file(item)  # the pcap file as BytesIO object  DEPRECATED
-
+                pcap_file = create_BytesIO_pcap_file(item)  # the pcap file as BytesIO object  DEPRECATED
+                print("pcap byte io file created")
+                # Create temp file and write pcap content
+                with open("temp.pcap", "wb") as f:
+                    f.write(pcap_file.getbuffer())
+                    print("pcap file created")
+                try:
+                    cmd = ["packetbeat", "-t", "-I", f.name, "-c", PACKETBEATPATH, "-v"]
+                    subprocess.call(cmd)
+                    print("subprocess started")
+                finally:
+                    # Clean up temp file
+                    os.unlink(f.name)
+                    print("temp file deleted")
                 # Encode PCAP file to base64 since elasticsearch does not support binary data DEPRECATED
                 # pcap_base64 = base64.b64encode(flow_bytesIO.getvalue()).decode('utf-8')
 
