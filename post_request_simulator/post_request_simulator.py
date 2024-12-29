@@ -1,4 +1,5 @@
 # post_request_simulator.py
+from datetime import datetime
 from scapy.utils import PcapWriter
 from io import BytesIO
 import requests
@@ -32,10 +33,13 @@ class HttpWriter():
             data (list): Eine Liste mit zwei Elementen:
                 - data[0]: Datei-Daten (pcap-Datei als Json)
                 - data[1]: JSON-Daten (Metadaten)
+                - data[2]: dict () Predictions
         """
         files = {
-            'file_json': ('flow.pcap', data[0], 'application/vnd.tcpdump.pcap'),
-            'metadata_json': ('data.json', json.dumps(data[1]), 'application/json')
+            'file': ('flow.pcap', data[0], 'application/vnd.tcpdump.pcap'),
+            'json': ('data.json', json.dumps(data[1]), 'application/json'),
+            'predictions': ('predictions.json', json.dumps(data[2]), 'application/json'),  # Hier wird das dict als JSON gesendet
+            'timestamp' : ('timestamp', json.dumps(data[3]), 'application/json')
         }
         self.session.post(self.url, files=files)
 
@@ -58,7 +62,10 @@ def erstelle_post_request(flow, output_url: str):
     # - Eine Liste der packets ohne die Richtung als Datei-Daten
     metadata = flow.get_data()
     pcap_json = pcap_to_json(erstelle_datei(flow=flow))
-    httpwriter.write([pcap_json, metadata])
+    predictions = {"BENIGN":0.8, "DOS":0.1, "Web Attack":0, "Bot":0.1}
+    timestamp =  {'timestamp': datetime.now().isoformat()}
+
+    httpwriter.write([erstelle_datei(flow=flow), metadata, predictions, timestamp])
 
 def erstelle_datei(flow) -> BytesIO:
     """
@@ -99,7 +106,7 @@ def pcap_to_json(pcap_file):
     return json_data
 
 def test_erstelle_post_request():
-        flow = joblib.load("post_request_simulator/flow1.pkl")
+        flow = joblib.load("post_request_simulator/flow2.pkl")
         erstelle_post_request(flow=flow, output_url=REMOTE_URL)
 
 
