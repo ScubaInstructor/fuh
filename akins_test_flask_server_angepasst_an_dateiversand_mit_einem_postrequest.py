@@ -36,15 +36,16 @@ def upload():
         # Store file content
         filestore[file_id] = file.read()
 
-        # Process JSON data into DataFrame
-        df = pd.DataFrame([json_data])
-        dataframes[df_id] = df
+        # Store JSON data 
+        dataframes[df_id] = json_data
 
-        # Store probabilities, predictions, sensor names, timestamp and a field for has_been_seen
+        # Store probabilities, predictions, sensor names, timestamp and has_been_seen
         probabilities_store[df_id] = probabilities_data
         predictions_store[df_id] = prediction_data
         sensor_names[df_id] = sensor_name_data
         timestamps[df_id] = timestamp_data['timestamp']  # Store the timestamp
+        
+        # Initialize has_been_seen for this ID to False
         has_been_seen[df_id] = False
 
         # Log the request
@@ -131,9 +132,14 @@ def details(df_id):
         selected_attack_class = request.form.get('selected_attack_class')
         
         # Save the selected attack class for later retrieval on the overview page
-        attack_classes[df_id] = selected_attack_class
-        has_been_seen[df_id] = True
-        return redirect(url_for('index'))  # Redirect to the overview page after selection
+        if selected_attack_class == "NEW_CLASS":
+            new_class_name = request.form.get('new_class_name')
+            attack_classes[df_id] = new_class_name
+        else:
+            attack_classes[df_id] = selected_attack_class        
+        
+        has_been_seen[df_id] = True         # Mark this request as seen
+        return redirect(url_for('index'))   # Redirect to the overview page after selection
         
     probabilities = probabilities_store.get(df_id, {})
     prediction = predictions_store.get(df_id, '')
@@ -198,7 +204,16 @@ def details(df_id):
                             <option value="BOT">BOT</option>
                             <option value="DOS">DOS</option>
                             <option value="WEB ATTACK">WEB ATTACK</option>
-                        </select>
+                            <!-- Option to create a new class -->
+                            <option value="NEW_CLASS">Create New Class</option> 
+                        </select><br />
+                        
+                        <!-- Input field for new class if selected -->
+                        <div id="new-class-input" style="display:none;">
+                            <label for="new_class_name">New Class Name:</label><br />
+                            <input type="text" name="new_class_name" id="new_class_name" placeholder="Enter new class name" />
+                        </div>
+                                  
                         <button type="submit">Submit</button>
                     </form>
 
@@ -211,6 +226,20 @@ def details(df_id):
                     <!-- Placeholder for the pie chart -->
                     <canvas id="probabilities-chart" width="300" height="300"></canvas>
                 </div>
+                
+                <!-- JavaScript to show/hide new class input based on dropdown selection -->
+                <script type="text/javascript">
+                    const selectElement = document.getElementById('selected_attack_class');
+                    const newClassInputDiv = document.getElementById('new-class-input');
+
+                    selectElement.addEventListener('change', function() {
+                        if (this.value === 'NEW_CLASS') {
+                            newClassInputDiv.style.display = 'block';
+                        } else {
+                            newClassInputDiv.style.display = 'none';
+                        }
+                    });
+                </script>
 
                 <script>
                     // Prepare data for pie chart (assuming probabilities are in key-value pairs)
@@ -273,17 +302,19 @@ def details(df_id):
 
 @app.route('/retrain')
 def some_function():
-    # Hier kannst du die Funktion definieren, die beim Klicken auf den Button ausgeführt werden soll.
+    classified_ids = [i for i in has_been_seen if has_been_seen[i]]
+    trainingdata = [(dataframes[i] , attack_classes[i] ) for i in classified_ids]
+    print(trainingdata)
     print("Button wurde gedrückt!")
     return redirect(url_for('index'))  # Back to index
 
-@app.route('/get_dataframe/<df_id>', methods=['GET'])
-def get_dataframe(df_id):
-    if df_id in dataframes:
-        df = dataframes[df_id]
-        df_json = df.to_dict(orient='records')
-        return jsonify({"data": df_json})
-    return jsonify({"error": "DataFrame not found"}), 404
+# @app.route('/get_dataframe/<df_id>', methods=['GET'])
+# def get_dataframe(df_id):
+#     if df_id in dataframes:
+#         df = dataframes[df_id]
+#         df_json = df.to_dict(orient='records')
+#         return jsonify({"data": df_json})
+#     return jsonify({"error": "DataFrame not found"}), 404
 
 @app.route('/download/<file_id>')
 def download_file(file_id):
