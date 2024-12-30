@@ -61,7 +61,7 @@ def index():
     return render_template_string("""
         <html>
             <head>
-                <title>Requests Log</title>
+                <title>Abnormal Flows</title>
                 <style>
                     body {
                         font-family: Arial, sans-serif;
@@ -89,15 +89,14 @@ def index():
                 </style>
             </head>
             <body>
-                <h1>Requests Log</h1>
-                <button onclick="location.href='/retrain'" style="margin-bottom: 20px;">Retrain</button>
+                <h1>Abnormal Flows</h1>
                 <table>
                     <thead>
                         <tr>
-                            <th>Datum</th>
+                            <th>Date</th>
                             <th>Sensor</th>
-                            <th>Vorgeschlagene Klasse</th>
-                            <th>Klasse</th>
+                            <th>Predicted Class</th>
+                            <th>Class</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -107,12 +106,13 @@ def index():
                                     <td><a href="/details/{{ entry.dataframe_id }}">{{ entry.timestamp }}</a></td>
                                     <td>{{ entry.sensor_name }}</td>
                                     <td>{{ entry.prediction }}</td>
-                                    <td>{{ entry.attack_class if entry.attack_class else "unklassifiziert" }}</td>
+                                    <td>{{ entry.attack_class if entry.attack_class else "unclassified" }}</td>
                                 </tr>
                             {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
+                <button onclick="location.href='/classified_requests'" style="margin-top: 20px;">Show classified Flows</button>
             </body>
         </html>
     """, requests=[{
@@ -305,7 +305,7 @@ def some_function():
     classified_ids = [i for i in has_been_seen if has_been_seen[i]]
     trainingdata = [(dataframes[i] , attack_classes[i] ) for i in classified_ids]
     print(trainingdata)
-    print("Button wurde gedrückt!")
+    print("DEBUG: Button pushed")
     return redirect(url_for('index'))  # Back to index
 
 # @app.route('/get_dataframe/<df_id>', methods=['GET'])
@@ -325,6 +325,69 @@ def download_file(file_id):
             download_name=f"flow.pcap"  
         )
     return "File not found", 404
+
+@app.route('/classified_requests')
+def classified_requests():
+    # HTML for classified Flows
+    return render_template_string("""
+        <html>
+            <head>
+                <title>Klassifizierte Anfragen</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                    }
+                    th, td {
+                        padding: 10px;
+                        text-align: left;
+                        border: 1px solid #ddd;
+                    }
+                    th {
+                        background-color: #f2f2f2;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Classified Flows</h1>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Sensor</th>
+                            <th>Predicted Class</th>
+                            <th>Class</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in requests %}
+                            {% if has_been_seen[entry.dataframe_id] %}
+                                <tr>
+                                    <td><a href="/details/{{ entry.dataframe_id }}">{{ entry.timestamp }}</a></td>
+                                    <td>{{ entry.sensor_name }}</td>
+                                    <td>{{ entry.prediction }}</td>
+                                    <td>{{ entry.attack_class if entry.attack_class else "unklassifiziert" }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button onclick="location.href='/'" style="margin-top: 20px;">Start Page</button>
+                <button onclick="location.href='/retrain'" style="margin-bottom: 20px;">Retrain</button>
+            </body>
+        </html>
+    """, requests=[{
+            'timestamp': timestamps[entry['dataframe_id']],
+            'sensor_name': sensor_names[entry['dataframe_id']],
+            'prediction': predictions_store[entry['dataframe_id']],
+            'attack_class': attack_classes.get(entry['dataframe_id'], None),
+            'dataframe_id': entry['dataframe_id']
+        } for entry in requests_log], has_been_seen=has_been_seen)
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=8888)
