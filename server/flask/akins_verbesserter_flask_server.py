@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, render_template_string, jsonify, send_file, redirect, url_for
 import uuid
 from io import BytesIO
@@ -62,14 +62,14 @@ def index():
     # get the relevant timestamps 
     current_time = datetime.now()
     recent_requests = [entry for entry in requests_log if 
-                    current_time - datetime.strptime(timestamps[entry['dataframe_id']], '%Y-%m-%d %H:%M:%S.%f') <= timedelta(minutes=60)]
+                    current_time - datetime.strptime(timestamps[entry['dataframe_id']], '%Y-%m-%dT%H:%M:%S.%f') <= timedelta(minutes=60)]
 
     # create a list of timestamps and counters
-    timestamps_list = [datetime.strptime(timestamps[entry['dataframe_id']], '%Y-%m-%d %H:%M:%S.%f') for entry in recent_requests]
+    timestamps_list = [datetime.strptime(timestamps[entry['dataframe_id']], '%Y-%m-%dT%H:%M:%S.%f') for entry in recent_requests]
     counts = np.arange(1, len(timestamps_list) + 1)
 
     # CReate barchart
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(10, 2))
     plt.bar(timestamps_list, counts, width=0.01)  # Breite anpassen für bessere Sichtbarkeit
     plt.xlabel('Timestamps')
     plt.ylabel('Anzahl der Requests')
