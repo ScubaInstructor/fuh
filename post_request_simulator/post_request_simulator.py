@@ -113,7 +113,7 @@ def pcap_to_json(pcap_file):
     return json_data
 
 def test_erstelle_post_request():
-        flow = joblib.load("post_request_simulator/flow2.pkl")
+        flow = joblib.load("/home/georg/Desktop/FaPra/python/fuh/post_request_simulator/flow2.pkl")
         erstelle_post_request(flow=flow, output_url=REMOTE_URL)
 
 

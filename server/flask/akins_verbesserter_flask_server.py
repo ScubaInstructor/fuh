@@ -94,95 +94,64 @@ def index():
     plt.savefig('static/timeline_chart.png')  # Path must exist!
     plt.close()
 
-
     # Generate HTML content for all available timestamps with sensor names and predictions in a table format
     return render_template_string("""
         <html>
-            <head>
-                <title>Abnormal Flows</title>
-                
-                <h2>Zeitstrahl der letzten 60 Minuten</h2>
-                <img src="/static/timeline_chart.png" alt="Zeitstrahl" />
-
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 20px;
-                    }
-                    th, td {
-                        padding: 10px;
-                        text-align: left;
-                        border: 1px solid #ddd;
-                    }
-                    th {
-                        background-color: #f2f2f2;
-                    }
-                    a {
-                        color: #007BFF;
-                        text-decoration: none;
-                    }
-                    a:hover {
-                        text-decoration: underline;
-                    }
-                </style>
-            </head>
-            <body>
-                <h1>Abnormal Flows</h1>
-                <table>
+        <head>
+            <title>Abnormal Flows</title>
+            <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+        </head>
+        <body class="bg-gray-100">
+            <div class="container mx-auto p-4">
+                <h1 class="text-3xl font-bold mb-4">Abnormal Flows</h1>
+                <h2 class="text-xl mb-4">Zeitstrahl der letzten 60 Minuten</h2>
+                <img src="/static/timeline_chart.png" alt="Zeitstrahl" class="mb-4 rounded shadow-lg" />
+                <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
                     <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Sensor</th>
-                            <th>Predicted Class</th>
-                            <th>Class</th>
+                        <tr class="bg-gray-200 text-gray-600">
+                            <th class="py-2 px-4 border-b">Datum</th>
+                            <th class="py-2 px-4 border-b">Sensor</th>
+                            <th class="py-2 px-4 border-b">Vorgeschlagene Klasse</th>
+                            <th class="py-2 px-4 border-b">Klasse</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for entry in requests %}
                             {% if not has_been_seen[entry.dataframe_id] %}
-                                <tr>
-                                    <td><a href="/details/{{ entry.dataframe_id }}">{{ entry.timestamp }}</a></td>
-                                    <td>{{ entry.sensor_name }}</td>
-                                    <td>{{ entry.prediction }}</td>
-                                    <td>{{ entry.attack_class if entry.attack_class else "unclassified" }}</td>
+                                <tr class="hover:bg-gray-100">
+                                    <td class="py-2 px-4 border-b"><a href="/details/{{ entry.dataframe_id }}" class="text-blue-500 hover:underline">{{ entry.timestamp }}</a></td>
+                                    <td class="py-2 px-4 border-b">{{ entry.sensor_name }}</td>
+                                    <td class="py-2 px-4 border-b">{{ entry.prediction }}</td>
+                                    <td class="py-2 px-4 border-b">{{ entry.attack_class if entry.attack_class else "unklassifiziert" }}</td>
                                 </tr>
                             {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
-                <button onclick="location.href='/classified_requests'" style="margin-top: 20px;">Show classified Flows</button>
-            </body>
+                <button onclick="location.href='/classified_requests'" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Show classified Flows</button>
+            </div>
+        </body>
         </html>
     """, requests=[{
-            'timestamp': timestamps[entry['dataframe_id']],
-            'sensor_name': sensor_names[entry['dataframe_id']],
-            'prediction': predictions_store[entry['dataframe_id']],
-            'attack_class': attack_classes.get(entry['dataframe_id'], None),
-            'dataframe_id': entry['dataframe_id']
-        } for entry in requests_log], has_been_seen=has_been_seen)
+        'timestamp': timestamps[entry['dataframe_id']],
+        'sensor_name': sensor_names[entry['dataframe_id']],
+        'prediction': predictions_store[entry['dataframe_id']],
+        'attack_class': attack_classes.get(entry['dataframe_id'], None),
+        'dataframe_id': entry['dataframe_id']
+    } for entry in requests_log], has_been_seen=has_been_seen)
+
 
 @app.route('/details/<df_id>', methods=['GET', 'POST'])
 def details(df_id):
     if df_id not in dataframes:
         return "DataFrame not found", 404
-
+    
     if request.method == 'POST':
         selected_attack_class = request.form.get('selected_attack_class')
-        
-        # Save the selected attack class for later retrieval on the overview page
-        if selected_attack_class == "NEW_CLASS":
-            new_class_name = request.form.get('new_class_name')
-            attack_classes[df_id] = new_class_name
-        else:
-            attack_classes[df_id] = selected_attack_class        
-        
-        has_been_seen[df_id] = True         # Mark this request as seen
-        return redirect(url_for('index'))   # Redirect to the overview page after selection
-        
+        attack_classes[df_id] = selected_attack_class
+        has_been_seen[df_id] = True
+        return redirect(url_for('index'))
+
     probabilities = probabilities_store.get(df_id, {})
     prediction = predictions_store.get(df_id, '')
     sensor_name = sensor_names.get(df_id, '')
@@ -194,153 +163,153 @@ def details(df_id):
 
     return render_template_string("""
         <html>
-            <head>
-                <title>Details for {{ timestamp }}</title>
-                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        display: flex; /* Use flexbox for layout */
-                    }
-                    .left-column {
-                        flex: 1; /* Take up remaining space */
-                        padding-right: 20px; /* Add some space between columns */
-                    }
-                    .right-column {
-                        width: 300px; /* Fixed width for the chart column */
-                    }
-                    h1 {
-                        margin-bottom: 20px;
-                    }
-                    canvas {
-                        max-width: 100%; /* Ensure the chart fits within its container */
-                        height: auto; /* Maintain aspect ratio */
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="left-column">
-                    <h1>Details for {{ timestamp }}</h1>
+        <head>
+            <title>Details for {{ timestamp }}</title>
+            <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        </head>
+        <body class="bg-gray-100">
+            <div class="container mx-auto p-4">
+                <h1 class="text-xl font-bold mb-4">Details for {{ timestamp }}</h1>
 
-                    <h3>Prediction</h3>
-                    <p>{{ prediction }}</p>
+                <!-- Details Section -->
+                <h3 class="text-lg font-semibold mt-4">Prediction</h3>
+                <p>{{ prediction }}</p>
 
-                    <h3>Sensor Name</h3>
-                    <p>{{ sensor_name }}</p>
+                <h3 class="text-lg font-semibold mt-4">Sensor Name</h3>
+                <p>{{ sensor_name }}</p>
+                <div class="flex">
+                    <div class="left-column flex-1 pr-4">
 
-                    <h3>Probabilities</h3>
-                    <div id="probabilities-table">
+                        <!-- Dynamische Probabilities-Tabelle -->
+                        <h3 class="text-lg font-semibold mt-4">Probabilities</h3>
                         {% if probabilities %}
-                            <pre>{{ probabilities | tojson(indent=4) }}</pre>
+                            <table class="min-w-full max-w-4xl mx-auto bg-white border border-gray-300 rounded-lg shadow-md mt-4">
+                                <thead>
+                                    <tr class="bg-gray-200 text-gray-600">
+                                        <th class="py-2 px-4 border-b">Class</th>
+                                        <th class="py-2 px-4 border-b">Probability</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for key, value in probabilities.items() %}
+                                        <tr class="hover:bg-gray-100">
+                                            <td class="py-2 px-4 border-b">{{ key }}</td>
+                                            <td class="py-2 px-4 border-b">{{ value }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         {% else %}
                             <p>No probabilities available.</p>
                         {% endif %}
+
+                        <h3 class="mt-6">Download PCAP File</h3>
+                        <a href="{{ file_download_link }}" class="inline-block bg-blue-500 text-white 
+                                  font-bold py-2 px-4 rounded hover:bg-blue-600">Download flow.pcap</a>
+
                     </div>
 
+                    <div class="right-column w-1/3">
+                        <!-- Canvas for Pie Chart -->
+                        <div class="mt-6">
+                            <canvas id="probabilities-chart" width="300" height="300"></canvas>
+                        </div>
+
+                    
                     <!-- Dropdown menu for selecting attack class -->
-                    <form method="POST">
-                        <label for="selected_attack_class">Select Attack Class:</label>
-                        <select name="selected_attack_class" id="selected_attack_class">
+                    <form method="POST" class="mt-4">
+                        <label for="selected_attack_class" class="block text-sm font-medium text-gray-700">Select Attack Class:</label>
+                        <select name="selected_attack_class" id="selected_attack_class" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
                             <option value="" disabled selected>Select...</option>
-                            <option value="BENIGN">BENIGN</option>
-                            <option value="BOT">BOT</option>
-                            <option value="DOS">DOS</option>
-                            <option value="WEB ATTACK">WEB ATTACK</option>
-                            <!-- Option to create a new class -->
-                            <option value="NEW_CLASS">Create New Class</option> 
+                            {% for prediction in predictions %}
+                                <option value="{{ prediction }}">{{ prediction }}</option>
+                            {% endfor %}
+                            <option value="NEW_CLASS">Create New Class</option>
                         </select><br />
-                        
+
                         <!-- Input field for new class if selected -->
                         <div id="new-class-input" style="display:none;">
-                            <label for="new_class_name">New Class Name:</label><br />
-                            <input type="text" name="new_class_name" id="new_class_name" placeholder="Enter new class name" />
+                            <label for="new_class_name" class="block text-sm font-medium text-gray-700 mt-2">New Class Name:</label><br />
+                            <input type="text" name="new_class_name" id="new_class_name" placeholder="Enter new class name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"/>
                         </div>
-                                  
-                        <button type="submit">Submit</button>
+
+                        <!-- Submit button -->
+                        <button type="submit" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Submit</button>
                     </form>
+                    <!-- JavaScript to show/hide new class input based on dropdown selection -->
+                    <script type="text/javascript">
+                        const selectElement = document.getElementById('selected_attack_class');
+                        const newClassInputDiv = document.getElementById('new-class-input');
+                        
+                        selectElement.addEventListener('change', function() {
+                            if (this.value === 'NEW_CLASS') {
+                                newClassInputDiv.style.display = 'block';
+                            } else {
+                                newClassInputDiv.style.display = 'none';
+                            }
+                        });
+                    </script>
+                                  
+                    <!-- JavaScript to create the pie chart -->
+                    <script>
+                        const probabilitiesData = {{ probabilities | tojson }};
+                        const labels = Object.keys(probabilitiesData);
+                        const dataValues = Object.values(probabilitiesData);
 
-                    <!-- Download link for the PCAP file -->
-                    <h3>Download PCAP File</h3>
-                    <a href="{{ file_download_link }}">Download flow.pcap</a>
-                </div>
-
-                <div class="right-column">
-                    <!-- Placeholder for the pie chart -->
-                    <canvas id="probabilities-chart" width="300" height="300"></canvas>
-                </div>
-                
-                <!-- JavaScript to show/hide new class input based on dropdown selection -->
-                <script type="text/javascript">
-                    const selectElement = document.getElementById('selected_attack_class');
-                    const newClassInputDiv = document.getElementById('new-class-input');
-
-                    selectElement.addEventListener('change', function() {
-                        if (this.value === 'NEW_CLASS') {
-                            newClassInputDiv.style.display = 'block';
-                        } else {
-                            newClassInputDiv.style.display = 'none';
-                        }
-                    });
-                </script>
-
-                <script>
-                    // Prepare data for pie chart (assuming probabilities are in key-value pairs)
-                    const probabilitiesData = {{ probabilities | tojson }};
-                    
-                    const labels = Object.keys(probabilitiesData);
-                    const dataValues = Object.values(probabilitiesData);
-
-                    // Create pie chart
-                    const ctx = document.getElementById('probabilities-chart');
-                    
-                    const chart = new Chart(ctx, {
-                        type: 'pie',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Probabilities',
-                                data: dataValues,
-                                backgroundColor: [
-                                    'rgba(255, 99, 132, 0.2)',
-                                    'rgba(54, 162, 235, 0.2)',
-                                    'rgba(255, 206, 86, 0.2)',
-                                    'rgba(75, 192, 192, 0.2)',
-                                    'rgba(153, 102, 255, 0.2)',
-                                    'rgba(255, 159, 64, 0.2)'
-                                ],
-                                borderColor: [
-                                    'rgba(255, 99, 132, 1)',
-                                    'rgba(54, 162, 235, 1)',
-                                    'rgba(255, 206, 86, 1)',
-                                    'rgba(75, 192, 192, 1)',
-                                    'rgba(153, 102, 255, 1)',
-                                    'rgba(255, 159, 64, 1)'
-                                ],
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: {
-                                    position: 'top',
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Probability Distribution'
+                        const ctx = document.getElementById('probabilities-chart');
+                        const chart = new Chart(ctx, {
+                            type: 'pie',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Probability Distribution',
+                                    data: dataValues,
+                                    backgroundColor: [
+                                        'rgba(255, 99, 132, 0.2)',
+                                        'rgba(54, 162, 235, 0.2)',
+                                        'rgba(255, 206, 86, 0.2)',
+                                        'rgba(75, 192, 192, 0.2)',
+                                        'rgba(153, 102, 255, 0.2)',
+                                        'rgba(255, 159, 64, 0.2)'
+                                    ],
+                                    borderColor: [
+                                        'rgba(255, 99, 132, 1)',
+                                        'rgba(54, 162, 235, 1)',
+                                        'rgba(255, 206, 86, 1)',
+                                        'rgba(75, 192, 192, 1)',
+                                        'rgba(153, 102, 255, 1)',
+                                        'rgba(255, 159, 64, 1)'
+                                    ],
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: {
+                                        position: 'top',
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Probability Distribution'
+                                    }
                                 }
                             }
-                        }
-                    });
-                </script>
-
-            </body>
+                        });
+                    </script>
+                </div>
+                                  
+        </body>
         </html>
     """, probabilities=probabilities,
        prediction=prediction,
        sensor_name=sensor_name,
        timestamp=timestamp,
        file_download_link=file_download_link)
+
+
+
 
 @app.route('/retrain')
 def some_function():
