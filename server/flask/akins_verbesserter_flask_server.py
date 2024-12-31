@@ -6,6 +6,9 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 
+import matplotlib
+matplotlib.use('Agg')  # Verwende den Agg-Backend
+
 app = Flask(__name__)
 
 # Dictionaries to store dataframes, files, probabilities, predictions and timestamps with unique IDs
@@ -58,27 +61,37 @@ def upload():
 
 @app.route('/')
 def index():
+    current_time = datetime.now()
+    timestamps_list = []
+    counts = []
 
     # get the relevant timestamps 
-    current_time = datetime.now()
-    recent_requests = [entry for entry in requests_log if 
-                    current_time - datetime.strptime(timestamps[entry['dataframe_id']], '%Y-%m-%dT%H:%M:%S.%f') <= timedelta(minutes=60)]
+    for entry in requests_log:
+        entry_time = datetime.strptime(timestamps[entry['dataframe_id']], '%Y-%m-%dT%H:%M:%S.%f')
+        if current_time - entry_time <= timedelta(minutes=60):
+            timestamps_list.append(entry_time)
+            counts.append(1)
 
     # create a list of timestamps and counters
-    timestamps_list = [datetime.strptime(timestamps[entry['dataframe_id']], '%Y-%m-%dT%H:%M:%S.%f') for entry in recent_requests]
-    counts = np.arange(1, len(timestamps_list) + 1)
+    time_bins = [current_time - timedelta(minutes=i) for i in range(60)]
+    count_bins = [0] * 60
 
-    # CReate barchart
+    for timestamp in timestamps_list:
+        for i in range(60):
+            if timestamp >= (current_time - timedelta(minutes=i + 1)) and timestamp < (current_time - timedelta(minutes=i)):
+                count_bins[i] += 1
+
+    # Create barchart
     plt.figure(figsize=(10, 2))
-    plt.bar(timestamps_list, counts, width=0.01)  # Breite anpassen für bessere Sichtbarkeit
+    plt.bar(time_bins[::-1], count_bins[::-1], width=0.00015)  # Set width for better visualisation
     plt.xlabel('Timestamps')
-    plt.ylabel('Anzahl der Requests')
-    plt.title('Requests in den letzten 60 Minuten')
+    plt.ylabel('Count of Flows')
+    plt.title('Last 60 Minutes')
     plt.xticks(rotation=45)
     plt.tight_layout()
 
     # Save the image
-    plt.savefig('static/timeline_chart.png')  # Stelle sicher, dass der Pfad existiert
+    plt.savefig('static/timeline_chart.png')  # Path must exist!
     plt.close()
 
 
