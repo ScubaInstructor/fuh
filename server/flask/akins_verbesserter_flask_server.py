@@ -109,10 +109,10 @@ def index():
                 <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
                     <thead>
                         <tr class="bg-gray-200 text-gray-600">
-                            <th class="py-2 px-4 border-b">Datum</th>
+                            <th class="py-2 px-4 border-b">Date</th>
                             <th class="py-2 px-4 border-b">Sensor</th>
-                            <th class="py-2 px-4 border-b">Vorgeschlagene Klasse</th>
-                            <th class="py-2 px-4 border-b">Klasse</th>
+                            <th class="py-2 px-4 border-b">Predicted class</th>
+                            <th class="py-2 px-4 border-b">Class</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -149,6 +149,12 @@ def details(df_id):
     # The Submit button for classification
     if request.method == 'POST':
         selected_attack_class = request.form.get('selected_attack_class')
+
+        # If it is an newly created class
+        if selected_attack_class == "NEW_CLASS":
+            new_class_name = request.form.get('new_class_name')
+            selected_attack_class = new_class_name
+        
         attack_classes[df_id] = selected_attack_class
         has_been_seen[df_id] = True
         # add new class to all unseen flows for possible prediction
@@ -228,7 +234,6 @@ def details(df_id):
 
                     
                     <!-- Dropdown menu for selecting attack class -->
-                    <!-- TODO new classes should be known for all new flows! -->
                     <form method="POST" class="mt-4">
                         <label for="selected_attack_class" class="block text-sm font-medium text-gray-700">Select Attack Class:</label>
                         <select name="selected_attack_class" id="selected_attack_class" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
@@ -265,8 +270,9 @@ def details(df_id):
                     <!-- JavaScript to create the pie chart -->
                     <script>
                         const probabilitiesData = {{ probabilities | tojson }};
-                        const labels = Object.keys(probabilitiesData);
-                        const dataValues = Object.values(probabilitiesData);
+                        const filteredEntries = Object.entries(probabilitiesData).filter(([key, value]) => value >= 0); //Don't use newly created classes!
+                        const labels = filteredEntries.map(entry => entry[0]); // Labels
+                        const dataValues = filteredEntries.map(entry => entry[1]); // Values
 
                         const ctx = document.getElementById('probabilities-chart');
                         const chart = new Chart(ctx, {
@@ -354,7 +360,8 @@ def classified_requests():
     return render_template_string("""
         <html>
             <head>
-                <title>Klassifizierte Anfragen</title>
+                <title>Already classified anomalies</title>
+                <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
                 <style>
                     body {
                         font-family: Arial, sans-serif;
@@ -375,20 +382,20 @@ def classified_requests():
                 </style>
             </head>
             <body>
-                <h1>Classified Flows</h1>
-                <table>
+                <h1 class="text-3xl font-bold mb-4">Already classified anomalies</h1>
+                <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
                     <thead>
-                        <tr>
+                        <tr class="bg-gray-200 text-gray-600">
                             <th>Date</th>
                             <th>Sensor</th>
-                            <th>Predicted Class</th>
+                            <th>Predicted class</th>
                             <th>Class</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for entry in requests %}
                             {% if has_been_seen[entry.dataframe_id] %}
-                                <tr>
+                                <tr class="hover:bg-gray-100">
                                     <td><a href="/details/{{ entry.dataframe_id }}">{{ entry.timestamp }}</a></td>
                                     <td>{{ entry.sensor_name }}</td>
                                     <td>{{ entry.prediction }}</td>
@@ -398,8 +405,8 @@ def classified_requests():
                         {% endfor %}
                     </tbody>
                 </table>
-                <button onclick="location.href='/'" style="margin-top: 20px;">Start Page</button>
-                <button onclick="location.href='/retrain'" style="margin-bottom: 20px;">Retrain</button>
+                <button onclick="location.href='/'" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Start Page</button>
+                <button onclick="location.href='/retrain'" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Retrain</button>
             </body>
         </html>
     """, requests=[{
