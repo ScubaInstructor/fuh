@@ -91,7 +91,7 @@ def index():
     plt.tight_layout()
 
     # Save the image
-    plt.savefig('static/timeline_chart.png')  # Path must exist!
+    plt.savefig('static/timeline_chart.png')  # TODO make more consistent! Path must exist!
     plt.close()
 
     # Generate HTML content for all available timestamps with sensor names and predictions in a table format
@@ -146,11 +146,19 @@ def details(df_id):
     if df_id not in dataframes:
         return "DataFrame not found", 404
     
+    # The Submit button for classification
     if request.method == 'POST':
         selected_attack_class = request.form.get('selected_attack_class')
         attack_classes[df_id] = selected_attack_class
         has_been_seen[df_id] = True
+        # add new class to all unseen flows for possible prediction
+        for entry in requests_log:
+            if has_been_seen[entry['dataframe_id']] == False:
+                probabilities: dict = probabilities_store[entry['dataframe_id']]
+                probabilities[selected_attack_class] = -1
+
         return redirect(url_for('index'))
+
 
     probabilities = probabilities_store.get(df_id, {})
     prediction = predictions_store.get(df_id, '')
@@ -193,10 +201,12 @@ def details(df_id):
                                 </thead>
                                 <tbody>
                                     {% for key, value in probabilities.items() %}
-                                        <tr class="hover:bg-gray-100">
-                                            <td class="py-2 px-4 border-b">{{ key }}</td>
-                                            <td class="py-2 px-4 border-b">{{ value }}</td>
-                                        </tr>
+                                        {% if value >= 0 %}
+                                            <tr class="hover:bg-gray-100">
+                                                <td class="py-2 px-4 border-b">{{ key }}</td>
+                                                <td class="py-2 px-4 border-b">{{ value }}</td>
+                                            </tr>
+                                        {% endif %}
                                     {% endfor %}
                                 </tbody>
                             </table>
@@ -218,12 +228,13 @@ def details(df_id):
 
                     
                     <!-- Dropdown menu for selecting attack class -->
+                    <!-- TODO new classes should be known for all new flows! -->
                     <form method="POST" class="mt-4">
                         <label for="selected_attack_class" class="block text-sm font-medium text-gray-700">Select Attack Class:</label>
                         <select name="selected_attack_class" id="selected_attack_class" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
                             <option value="" disabled selected>Select...</option>
-                            {% for prediction in predictions %}
-                                <option value="{{ prediction }}">{{ prediction }}</option>
+                            {% for key, value in probabilities.items() %}
+                                <option value="{{ key }}">{{ key }}</option>
                             {% endfor %}
                             <option value="NEW_CLASS">Create New Class</option>
                         </select><br />
