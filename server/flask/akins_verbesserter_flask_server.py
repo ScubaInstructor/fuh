@@ -362,51 +362,35 @@ def classified_requests():
             <head>
                 <title>Already classified anomalies</title>
                 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 20px;
-                    }
-                    th, td {
-                        padding: 10px;
-                        text-align: left;
-                        border: 1px solid #ddd;
-                    }
-                    th {
-                        background-color: #f2f2f2;
-                    }
-                </style>
             </head>
-            <body>
-                <h1 class="text-3xl font-bold mb-4">Already classified anomalies</h1>
-                <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
-                    <thead>
-                        <tr class="bg-gray-200 text-gray-600">
-                            <th>Date</th>
-                            <th>Sensor</th>
-                            <th>Predicted class</th>
-                            <th>Class</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for entry in requests %}
-                            {% if has_been_seen[entry.dataframe_id] %}
-                                <tr class="hover:bg-gray-100">
-                                    <td><a href="/details/{{ entry.dataframe_id }}">{{ entry.timestamp }}</a></td>
-                                    <td>{{ entry.sensor_name }}</td>
-                                    <td>{{ entry.prediction }}</td>
-                                    <td>{{ entry.attack_class if entry.attack_class else "unklassifiziert" }}</td>
-                                </tr>
-                            {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <button onclick="location.href='/'" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Start Page</button>
-                <button onclick="location.href='/retrain'" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Retrain</button>
+            <body class="bg-gray-100">
+                <div class="container mx-auto p-4">
+                    <h1 class="text-3xl font-bold mb-4">Already classified anomalies</h1>
+                    <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600">
+                                <th class="py-2 px-4 border-b">Date</th>
+                                <th class="py-2 px-4 border-b">Sensor</th>
+                                <th class="py-2 px-4 border-b">Predicted class</th>
+                                <th class="py-2 px-4 border-b">Class</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in requests %}
+                                {% if has_been_seen[entry.dataframe_id] %}
+                                    <tr class="hover:bg-gray-100">
+                                        <td class="py-2 px-4 border-b"><a href="/details/{{ entry.dataframe_id }}" class="text-blue-500 hover:underline">{{ entry.timestamp }}</a></td>
+                                        <td class="py-2 px-4 border-b">{{ entry.sensor_name }}</td>
+                                        <td class="py-2 px-4 border-b">{{ entry.prediction }}</td>
+                                        <td class="py-2 px-4 border-b">{{ entry.attack_class if entry.attack_class else "unklassifiziert" }}</td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <button onclick="location.href='/'" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Start Page</button>
+                    <button onclick="location.href='/retrain'" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Retrain</button>
+                </div>
             </body>
         </html>
     """, requests=[{
