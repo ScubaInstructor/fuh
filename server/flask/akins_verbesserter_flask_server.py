@@ -18,21 +18,34 @@ probabilities_store = {}
 predictions_store = {}
 sensor_names = {}
 timestamps = {}
+sensor_ports = {}
+partner_ips = {}
+partner_ports = {}
 attack_classes = {} # Store selected attack classes
 has_been_seen = {}  # Store if entries have been seen
 requests_log = []   # Log for storing request information
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    if 'file' in request.files and 'json' in request.files and 'probabilities' in request.files and 'timestamp' in request.files and 'prediction' in request.files and 'sensor_name' in request.files:
+    if ('file' in request.files and 
+            'json' in request.files and 
+            'probabilities' in request.files  and 
+            'timestamp' in request.files and 
+            'prediction' in request.files and 
+            'sensor_name' in request.files and
+            'sensor_port' in request.files and
+            'partner_ip' in request.files and
+            'partner_port' in request.files):
         # Process both file and JSON data
         file = request.files['file']
         json_data = json.loads(request.files['json'].read().decode('utf-8'))
         probabilities_data = json.loads(request.files['probabilities'].read().decode('utf-8'))
         timestamp_data = json.loads(request.files['timestamp'].read().decode('utf-8'))
-        prediction_data = request.files['prediction'].read().decode('utf-8')
-        sensor_name_data = request.files['sensor_name'].read().decode('utf-8')
-
+        prediction = request.files['prediction'].read().decode('utf-8')
+        sensor_name = request.files['sensor_name'].read().decode('utf-8')
+        sensor_port = request.files['sensor_port'].read().decode('utf-8')
+        partner_ip = request.files['partner_ip'].read().decode('utf-8')
+        partner_port = request.files['partner_port'].read().decode('utf-8')
         # Generate unique IDs
         file_id = str(uuid.uuid4())
         df_id = str(uuid.uuid4())
@@ -45,10 +58,13 @@ def upload():
 
         # Store probabilities, predictions, sensor names, timestamp and has_been_seen
         probabilities_store[df_id] = probabilities_data
-        predictions_store[df_id] = prediction_data
-        sensor_names[df_id] = sensor_name_data
+        predictions_store[df_id] = prediction
+        sensor_names[df_id] = sensor_name
         timestamps[df_id] = timestamp_data['timestamp']  # Store the timestamp
-        
+        sensor_ports[df_id] = sensor_port
+        partner_ips[df_id] = partner_ip
+        partner_ports[df_id] = partner_port
+
         # Initialize has_been_seen for this ID to False
         has_been_seen[df_id] = False
 
@@ -122,7 +138,7 @@ def index():
                                     <td class="py-2 px-4 border-b"><a href="/details/{{ entry.dataframe_id }}" class="text-blue-500 hover:underline">{{ entry.timestamp }}</a></td>
                                     <td class="py-2 px-4 border-b">{{ entry.sensor_name }}</td>
                                     <td class="py-2 px-4 border-b">{{ entry.prediction }}</td>
-                                    <td class="py-2 px-4 border-b">{{ entry.attack_class if entry.attack_class else "unklassifiziert" }}</td>
+                                    <td class="py-2 px-4 border-b">{{ entry.attack_class if entry.attack_class else "unclassified" }}</td>
                                 </tr>
                             {% endif %}
                         {% endfor %}
@@ -170,6 +186,9 @@ def details(df_id):
     prediction = predictions_store.get(df_id, '')
     sensor_name = sensor_names.get(df_id, '')
     timestamp = timestamps.get(df_id, '')
+    sensor_port = sensor_ports.get(df_id, '')
+    partner_ip = partner_ips.get(df_id, '')
+    partner_port = partner_ports.get(df_id, '')
 
     # Get the associated file ID to create a download link
     file_entry = next((entry for entry in requests_log if entry['dataframe_id'] == df_id), None)
@@ -186,15 +205,14 @@ def details(df_id):
             <div class="container mx-auto p-4">
                 <h1 class="text-xl font-bold mb-4">Details for {{ timestamp }}</h1>
 
-                <!-- Details Section -->
-                <h3 class="text-lg font-semibold mt-4">Prediction</h3>
-                <p>{{ prediction }}</p>
-
-                <h3 class="text-lg font-semibold mt-4">Sensor Name</h3>
-                <p>{{ sensor_name }}</p>
                 <div class="flex">
                     <div class="left-column flex-1 pr-4">
 
+                        <h3 class="text-lg font-semibold mt-4">Prediction</h3>
+                        <p>{{ prediction }}</p>
+
+                        <h3 class="text-lg font-semibold mt-4">Sensor Name</h3>
+                        <p>{{ sensor_name }}</p>
                         <!-- Dynamische Probabilities-Tabelle -->
                         <h3 class="text-lg font-semibold mt-4">Probabilities</h3>
                         {% if probabilities %}
@@ -222,50 +240,68 @@ def details(df_id):
 
                         <h3 class="mt-6">Download PCAP File</h3>
                         <a href="{{ file_download_link }}" class="inline-block bg-blue-500 text-white 
-                                  font-bold py-2 px-4 rounded hover:bg-blue-600">Download flow.pcap</a>
+                                font-bold py-2 px-4 rounded hover:bg-blue-600">Download flow.pcap</a>
+                        
+                        <!-- Dropdown menu for selecting attack class -->
+                        <form method="POST" class="mt-4">
+                            <label for="selected_attack_class" class="block text-sm font-medium text-gray-700">Select Attack Class:</label>
+                            <select name="selected_attack_class" id="selected_attack_class" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                                <option value="" disabled selected>Select...</option>
+                                {% for key, value in probabilities.items() %}
+                                    <option value="{{ key }}">{{ key }}</option>
+                                {% endfor %}
+                                <option value="NEW_CLASS">Create New Class</option>
+                            </select><br />
+
+                            <!-- Input field for new class if selected -->
+                            <div id="new-class-input" style="display:none;">
+                                <label for="new_class_name" class="block text-sm font-medium text-gray-700 mt-2">New Class Name:</label><br />
+                                <input type="text" name="new_class_name" id="new_class_name" placeholder="Enter new class name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"/>
+                            </div>
+
+                            <!-- Submit button -->
+                            <button type="submit" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Submit</button>
+                        </form>
+                        <!-- JavaScript to show/hide new class input based on dropdown selection -->
+                        <script type="text/javascript">
+                            const selectElement = document.getElementById('selected_attack_class');
+                            const newClassInputDiv = document.getElementById('new-class-input');
+                            
+                            selectElement.addEventListener('change', function() {
+                                if (this.value === 'NEW_CLASS') {
+                                    newClassInputDiv.style.display = 'block';
+                                } else {
+                                    newClassInputDiv.style.display = 'none';
+                                }
+                            });
+                        </script>
 
                     </div>
 
                     <div class="right-column w-1/3">
+                        
+                         <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md mt-4"> 
+                            <thead> 
+                                <tr class="bg-gray-200 text-gray-600"> 
+                                    <th class="py-2 px-4 border-b">{{sensor_name}}</th> 
+                                    <th class="py-2 px-4 border-b">{{partner_ip}}</th> 
+                                </tr>
+                            </thead> 
+                            <tbody> 
+                                <tr class="hover:bg-gray-100"> 
+                                    <td class="py-2 px-4 border-b">{{sensor_port}}</td>  
+                                    <td class="py-2 px-4 border-b">{{partner_port}}</td> 
+                                </tr>
+                            </tbody> 
+                        </table>          
+                        
                         <!-- Canvas for Pie Chart -->
                         <div class="mt-6">
                             <canvas id="probabilities-chart" width="300" height="300"></canvas>
                         </div>
 
                     
-                    <!-- Dropdown menu for selecting attack class -->
-                    <form method="POST" class="mt-4">
-                        <label for="selected_attack_class" class="block text-sm font-medium text-gray-700">Select Attack Class:</label>
-                        <select name="selected_attack_class" id="selected_attack_class" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-                            <option value="" disabled selected>Select...</option>
-                            {% for key, value in probabilities.items() %}
-                                <option value="{{ key }}">{{ key }}</option>
-                            {% endfor %}
-                            <option value="NEW_CLASS">Create New Class</option>
-                        </select><br />
-
-                        <!-- Input field for new class if selected -->
-                        <div id="new-class-input" style="display:none;">
-                            <label for="new_class_name" class="block text-sm font-medium text-gray-700 mt-2">New Class Name:</label><br />
-                            <input type="text" name="new_class_name" id="new_class_name" placeholder="Enter new class name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"/>
-                        </div>
-
-                        <!-- Submit button -->
-                        <button type="submit" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Submit</button>
-                    </form>
-                    <!-- JavaScript to show/hide new class input based on dropdown selection -->
-                    <script type="text/javascript">
-                        const selectElement = document.getElementById('selected_attack_class');
-                        const newClassInputDiv = document.getElementById('new-class-input');
-                        
-                        selectElement.addEventListener('change', function() {
-                            if (this.value === 'NEW_CLASS') {
-                                newClassInputDiv.style.display = 'block';
-                            } else {
-                                newClassInputDiv.style.display = 'none';
-                            }
-                        });
-                    </script>
+                    
                                   
                     <!-- JavaScript to create the pie chart -->
                     <script>
@@ -323,7 +359,10 @@ def details(df_id):
        prediction=prediction,
        sensor_name=sensor_name,
        timestamp=timestamp,
-       file_download_link=file_download_link)
+       file_download_link=file_download_link,
+       sensor_port=sensor_port,
+       partner_ip=partner_ip,
+       partner_port=partner_port)
 
 
 

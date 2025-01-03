@@ -20,3 +20,4 @@ flask
 pytest
 pyshark
 elasticsearch
+python-geoip-geolite2
