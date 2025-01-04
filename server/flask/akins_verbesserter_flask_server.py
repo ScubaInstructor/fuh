@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import glob
-from flask import Flask, request, render_template_string, jsonify, send_file, redirect, url_for
+from flask import Flask, request, render_template_string, jsonify, send_file, redirect, url_for,send_from_directory
 import uuid
 from io import BytesIO
 import json
@@ -32,6 +32,13 @@ requests_log = []   # Log for storing request information
 G = GeoIP2Fast(verbose=False)
 #G.update_all()
 static_path = abspath(join(getcwd(), 'static/'))
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -305,20 +312,14 @@ def details(df_id):
                     <!-- Right Column -->
                     <div class="right-column w-1/3">
                         
-                         <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md mt-4"> 
+                        <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md mt-4"> 
                             <thead> 
                                 <tr class="bg-gray-200 text-gray-600"> 
-                                    <th class="py-2 px-4 border-b">{{sensor_name}}</th>
+                                    <th class="py-2 px-4 border-b items-center"> <img src="/static/group2_icon.png" alt="{{group2_icon}}" class="w-9 h-9 ml-2"/>{{sensor_name}}</th>
                                     {% if private_ip %}
-                                        <th class="py-2 px-4 border-b flex items-center"> 
-                                            {{partner_ip}} 
-                                            <img src="/static/private.png" alt="{{partner_ip}}" class="w-16 h-9 ml-2"/> <!-- Bild mit Tailwind-Klassen -->
-                                        </th>
+                                        <th class="py-2 px-4 border-b items-center"> {{partner_ip}} <img src="/static/private.png" alt="{{partner_ip}}" class="w-16 h-9 ml-2"/> </th>
                                     {% else %}
-                                        <th class="py-2 px-4 border-b flex items-center"> 
-                                            {{partner_ip}} 
-                                            <img src="/static/{{ flag_country_code }}.png" alt="{{partner_ip}}" class="w-16 h-9 ml-2"/> <!-- Bild mit Tailwind-Klassen -->
-                                        </th>
+                                        <th class="py-2 px-4 border-b items-center"> {{partner_ip}} <img src="/static/{{ flag_country_code }}.png" alt="{{partner_ip}}" class="w-16 h-9 ml-2"/></th>
                                     {% endif %} 
                                 </tr>
                             </thead> 
