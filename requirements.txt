@@ -21,3 +21,4 @@ pytest
 pyshark
 elasticsearch
 geoip2fast
+flagpy

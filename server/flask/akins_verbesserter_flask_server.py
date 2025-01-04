@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from os.path import abspath, join
 from os import getcwd
+from geoip2fast import GeoIP2Fast
+from flagpy import get_flag_img
 
 import matplotlib
 matplotlib.use('Agg')  # Verwende den Agg-Backend
@@ -26,6 +28,9 @@ partner_ports = {}
 attack_classes = {} # Store selected attack classes
 has_been_seen = {}  # Store if entries have been seen
 requests_log = []   # Log for storing request information
+G = GeoIP2Fast(verbose=False)
+#G.update_all()
+static_path = abspath(join(getcwd(), 'static/'))
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -109,8 +114,8 @@ def index():
     plt.tight_layout()
 
     # Save the image
-    static_path = abspath(join(getcwd(), 'server/'))
-    plt.savefig('static/timeline_chart.png')  # TODO make more consistent! Path must exist!
+    
+    plt.savefig(join(static_path,'timeline_chart.png'))  # TODO make more consistent! Path must exist!
     plt.close()
 
     # Generate HTML content for all available timestamps with sensor names and predictions in a table format
@@ -196,7 +201,13 @@ def details(df_id):
     # Get the associated file ID to create a download link
     file_entry = next((entry for entry in requests_log if entry['dataframe_id'] == df_id), None)
     file_download_link = f"/download/{file_entry['file_id']}" if file_entry else "#"
-
+    ip_lookup = G.lookup(partner_ip)
+    private_ip = ip_lookup.is_private
+    if not ip_lookup.is_private:
+        flag = get_flag_img(ip_lookup.country_name)
+        flag.save(f'{static_path}/{ip_lookup.country_code}.png')
+    else: 
+        flag = open(f'{static_path}/private.png')
     return render_template_string("""
         <html>
         <head>
@@ -280,14 +291,19 @@ def details(df_id):
                         </script>
 
                     </div>
+                                  
 
+                    <!-- Right Column -->
                     <div class="right-column w-1/3">
                         
                          <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md mt-4"> 
                             <thead> 
                                 <tr class="bg-gray-200 text-gray-600"> 
-                                    <th class="py-2 px-4 border-b">{{sensor_name}}</th> 
-                                    <th class="py-2 px-4 border-b">{{partner_ip}}</th> 
+                                    <th class="py-2 px-4 border-b">{{sensor_name}}</th>
+                                    <th class="py-2 px-4 border-b flex items-center"> 
+                                        {{partner_ip}} 
+                                        <img src="/static/private.png" alt="{{partner_ip}}" class="w-16 h-9 ml-2"/> <!-- Bild mit Tailwind-Klassen -->
+                                    </th>
                                 </tr>
                             </thead> 
                             <tbody> 
@@ -365,7 +381,10 @@ def details(df_id):
        file_download_link=file_download_link,
        sensor_port=sensor_port,
        partner_ip=partner_ip,
-       partner_port=partner_port)
+       partner_port=partner_port,
+       flag=flag,
+       private_ip=private_ip # TODO Hier arbeiten
+       )
 
 
 
