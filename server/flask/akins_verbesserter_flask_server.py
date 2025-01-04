@@ -5,6 +5,8 @@ from io import BytesIO
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+from os.path import abspath, join
+from os import getcwd
 
 import matplotlib
 matplotlib.use('Agg')  # Verwende den Agg-Backend
@@ -107,6 +109,7 @@ def index():
     plt.tight_layout()
 
     # Save the image
+    static_path = abspath(join(getcwd(), 'server/'))
     plt.savefig('static/timeline_chart.png')  # TODO make more consistent! Path must exist!
     plt.close()
 
@@ -244,7 +247,7 @@ def details(df_id):
                         
                         <!-- Dropdown menu for selecting attack class -->
                         <form method="POST" class="mt-4">
-                            <label for="selected_attack_class" class="block text-sm font-medium text-gray-700">Select Attack Class:</label>
+                                <label for="selected_attack_class" class="block text-sm font-medium text-gray-700">Select Attack Class:</label>
                             <select name="selected_attack_class" id="selected_attack_class" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
                                 <option value="" disabled selected>Select...</option>
                                 {% for key, value in probabilities.items() %}
