@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import glob
 from flask import Flask, request, render_template_string, jsonify, send_file, redirect, url_for
 import uuid
 from io import BytesIO
@@ -205,10 +206,17 @@ def details(df_id):
     # Create the flag for the ip-address
     ip_lookup = G.lookup(partner_ip)
     private_ip = ip_lookup.is_private
-    flag = get_flag_img(ip_lookup.country_name)
-    if not ip_lookup.is_private:
-        flag_path = f'{static_path}/{ip_lookup.country_code}.png'
-        flag.save(flag_path)
+    flag_country_code = ip_lookup.country_code
+    found = False
+    for file in glob.glob("*.png"):
+        if file.split('.')[0] == flag_country_code:
+            found = True
+            break
+    if not found:
+        if not ip_lookup.is_private:
+            flag = get_flag_img(ip_lookup.country_name)
+            flag_path = f'{static_path}/{ip_lookup.country_code}.png'
+            flag.save(flag_path)
     return render_template_string("""
         <html>
         <head>
@@ -309,7 +317,7 @@ def details(df_id):
                                     {% else %}
                                         <th class="py-2 px-4 border-b flex items-center"> 
                                             {{partner_ip}} 
-                                            <img src="/static/{{ flag }}" alt="{{partner_ip}}" class="w-16 h-9 ml-2"/> <!-- Bild mit Tailwind-Klassen -->
+                                            <img src="/static/{{ flag_country_code }}.png" alt="{{partner_ip}}" class="w-16 h-9 ml-2"/> <!-- Bild mit Tailwind-Klassen -->
                                         </th>
                                     {% endif %} 
                                 </tr>
@@ -390,7 +398,7 @@ def details(df_id):
        sensor_port=sensor_port,
        partner_ip=partner_ip,
        partner_port=partner_port,
-       flag=flag,
+       flag_country_code=flag_country_code,
        private_ip=private_ip # If Country flag must be used
        )
 

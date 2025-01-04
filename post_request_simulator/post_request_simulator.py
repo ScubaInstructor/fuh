@@ -75,7 +75,7 @@ def erstelle_post_request(flow, output_url: str):
     prediction = "BENIGN"
     sensor_name = "Sensor"
     sensor_port = '5335'
-    partner_ip = '155.12.22.13'
+    partner_ip = '165.12.22.13'
     partner_port = '6124'
     httpwriter.write([erstelle_datei(flow=flow), metadata, probabilities, timestamp, prediction, sensor_name, sensor_port, partner_ip, partner_port])
 
