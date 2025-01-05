@@ -114,7 +114,7 @@ def index():
 
     # Create barchart
     plt.figure(figsize=(10, 2))
-    plt.bar(time_bins[::-1], count_bins[::-1], width=0.00015)  # Set width for better visualisation
+    plt.bar(time_bins[::-1], count_bins[::-1], width=0.0005)  # Set width for better visualisation
     plt.xlabel('Timestamps')
     plt.ylabel('Count of Flows')
     plt.title('Last 60 Minutes')
@@ -135,9 +135,9 @@ def index():
         </head>
         <body class="bg-gray-100">
             <div class="container mx-auto p-4">
-                <h1 class="text-3xl font-bold mb-4">Abnormal Flows</h1>
-                <h2 class="text-xl mb-4">Zeitstrahl der letzten 60 Minuten</h2>
-                <img src="/static/timeline_chart.png" alt="Zeitstrahl" class="mb-4 rounded shadow-lg" />
+                <h1 class="text-3xl font-bold mb-4">Abnormal Flows <img src="/static/group2_icon.png" alt="{{group2_icon}}" class="w-36 h-36 inline-block mr-2"/></h1>
+                <h2 class="text-xl mb-4">Timeline of the last 60 minutes</h2>
+                <img src="/static/timeline_chart.png" alt="Timeline" class="mb-4 rounded shadow-lg" />
                 <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
                     <thead>
                         <tr class="bg-gray-200 text-gray-600">
@@ -311,15 +311,20 @@ def details(df_id):
 
                     <!-- Right Column -->
                     <div class="right-column w-1/3">
-                        
                         <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md mt-4"> 
                             <thead> 
                                 <tr class="bg-gray-200 text-gray-600"> 
-                                    <th class="py-2 px-4 border-b items-center"> <img src="/static/group2_icon.png" alt="{{group2_icon}}" class="w-9 h-9 ml-2"/>{{sensor_name}}</th>
+                                    <th class="py-2 px-4 border-b items-center">
+                                        <img src="/static/group2_icon.png" alt="{{group2_icon}}" class="w-12 h-12 inline-block mr-2"/> {{sensor_name}}
+                                    </th>
                                     {% if private_ip %}
-                                        <th class="py-2 px-4 border-b items-center"> {{partner_ip}} <img src="/static/private.png" alt="{{partner_ip}}" class="w-16 h-9 ml-2"/> </th>
+                                        <th class="py-2 px-4 border-b items-center">
+                                            {{partner_ip}} <img src="/static/private.png" alt="{{partner_ip}}" class="w-16 h-9 inline-block ml-2"/>
+                                        </th>
                                     {% else %}
-                                        <th class="py-2 px-4 border-b items-center"> {{partner_ip}} <img src="/static/{{ flag_country_code }}.png" alt="{{partner_ip}}" class="w-16 h-9 ml-2"/></th>
+                                        <th class="py-2 px-4 border-b items-center">
+                                            {{partner_ip}} <img src="/static/{{ flag_country_code }}.png" alt="{{partner_ip}}" class="w-16 h-9 inline-block ml-2"/>
+                                        </th>
                                     {% endif %} 
                                 </tr>
                             </thead> 
@@ -329,16 +334,12 @@ def details(df_id):
                                     <td class="py-2 px-4 border-b">{{partner_port}}</td> 
                                 </tr>
                             </tbody> 
-                        </table>          
-                        
-                        <!-- Canvas for Pie Chart -->
-                        <div class="mt-6">
-                            <canvas id="probabilities-chart" width="300" height="300"></canvas>
-                        </div>
-
+                        </table>              
                     
-                    
-                                  
+                    <!-- Canvas for Pie Chart -->
+                    <div class="mt-6">
+                        <canvas id="probabilities-chart" width="300" height="300"></canvas>
+                    </div>
                     <!-- JavaScript to create the pie chart -->
                     <script>
                         const probabilitiesData = {{ probabilities | tojson }};
