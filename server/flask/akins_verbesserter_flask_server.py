@@ -18,6 +18,7 @@ load_dotenv()
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
+from forms import LoginForm
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db' 
@@ -53,19 +54,20 @@ G = GeoIP2Fast(verbose=False)
 #G.update_all()
 static_path = abspath(join(getcwd(), 'static/'))
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+    form = LoginForm()  # Create an instance of the form
+    if form.validate_on_submit():  # Check if the form is submitted and valid
+        username = form.username.data
+        password = form.password.data
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password + user.salt): 
             login_user(user)
             return redirect(url_for('index'))  
         else:
             flash('Invalid username or password')
-    return render_template('login.html')
-
+    return render_template('login.html', form=form)  # Pass the form to the template
 
 @app.route('/logout')
 @login_required

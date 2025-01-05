@@ -25,3 +25,4 @@ flagpy
 Flask-Login 
 Flask-SQLAlchemy
 Werkzeug
+Flask-WTF
