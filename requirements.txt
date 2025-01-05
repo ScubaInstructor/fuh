@@ -22,3 +22,6 @@ pyshark
 elasticsearch
 geoip2fast
 flagpy
+Flask-Login 
+Flask-SQLAlchemy
+Werkzeug

@@ -1,20 +1,40 @@
 from datetime import datetime, timedelta
 import glob
-from flask import Flask, request, render_template_string, jsonify, send_file, redirect, url_for,send_from_directory
+from flask import Flask, request, render_template_string, jsonify, send_file, redirect, url_for, send_from_directory, flash,render_template
 import uuid
 from io import BytesIO
 import json
 import matplotlib.pyplot as plt
-import numpy as np
 from os.path import abspath, join
-from os import getcwd
+from os import getcwd, getenv
 from geoip2fast import GeoIP2Fast
 from flagpy import get_flag_img
-
 import matplotlib
-matplotlib.use('Agg')  # Verwende den Agg-Backend
+from dotenv import load_dotenv
+matplotlib.use('Agg') 
+load_dotenv()
+
+
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db' 
+app.config['SECRET_KEY'] = getenv('your_secret_key')
+db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password = db.Column(db.String(150), nullable=False)
+    salt = db.Column(db.String(150), nullable=False)  # Salt for the password
+
+# CReate the user database
+with app.app_context():
+    db.create_all()
 
 # Dictionaries to store dataframes, files, probabilities, predictions and timestamps with unique IDs
 dataframes = {}
@@ -33,11 +53,33 @@ G = GeoIP2Fast(verbose=False)
 #G.update_all()
 static_path = abspath(join(getcwd(), 'static/'))
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password, password + user.salt): 
+            login_user(user)
+            return redirect(url_for('index'))  
+        else:
+            flash('Invalid username or password')
+    return render_template('login.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for(app.root_path, 'login'))
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
 
 
 @app.route('/upload', methods=['POST'])
@@ -90,7 +132,9 @@ def upload():
     else:
         return jsonify({"error": "Missing file or JSON data"}), 400
 
+
 @app.route('/')
+@login_required
 def index():
     current_time = datetime.now()
     timestamps_list = []
@@ -135,31 +179,33 @@ def index():
         </head>
         <body class="bg-gray-100">
             <div class="container mx-auto p-4">
-                <h1 class="text-3xl font-bold mb-4">Abnormal Flows <img src="/static/group2_icon.png" alt="{{group2_icon}}" class="w-36 h-36 inline-block mr-2"/></h1>
+                <h1 class="text-3xl font-bold mb-4">Abnormal Flows <img src="/static/group2_icon.png" alt="Icon of Group 2" class="w-36 h-36 inline-block mr-2"/></h1>
                 <h2 class="text-xl mb-4">Timeline of the last 60 minutes</h2>
-                <img src="/static/timeline_chart.png" alt="Timeline" class="mb-4 rounded shadow-lg" />
-                <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
-                    <thead>
-                        <tr class="bg-gray-200 text-gray-600">
-                            <th class="py-2 px-4 border-b">Date</th>
-                            <th class="py-2 px-4 border-b">Sensor</th>
-                            <th class="py-2 px-4 border-b">Predicted class</th>
-                            <th class="py-2 px-4 border-b">Class</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for entry in requests %}
-                            {% if not has_been_seen[entry.dataframe_id] %}
-                                <tr class="hover:bg-gray-100">
-                                    <td class="py-2 px-4 border-b"><a href="/details/{{ entry.dataframe_id }}" class="text-blue-500 hover:underline">{{ entry.timestamp }}</a></td>
-                                    <td class="py-2 px-4 border-b">{{ entry.sensor_name }}</td>
-                                    <td class="py-2 px-4 border-b">{{ entry.prediction }}</td>
-                                    <td class="py-2 px-4 border-b">{{ entry.attack_class if entry.attack_class else "unclassified" }}</td>
-                                </tr>
-                            {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="overflow-x-auto">   
+                    <img src="/static/timeline_chart.png" alt="Timeline" class="min-w-full mb-4 rounded shadow-lg" />            
+                    <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600">
+                                <th class="py-2 px-4 border-b">Date</th>
+                                <th class="py-2 px-4 border-b">Sensor</th>
+                                <th class="py-2 px-4 border-b">Predicted class</th>
+                                <th class="py-2 px-4 border-b">Class</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in requests %}
+                                {% if not has_been_seen[entry.dataframe_id] %}
+                                    <tr class="hover:bg-gray-100">
+                                        <td class="py-2 px-4 border-b"><a href="/details/{{ entry.dataframe_id }}" class="text-blue-500 hover:underline">{{ entry.timestamp }}</a></td>
+                                        <td class="py-2 px-4 border-b">{{ entry.sensor_name }}</td>
+                                        <td class="py-2 px-4 border-b">{{ entry.prediction }}</td>
+                                        <td class="py-2 px-4 border-b">{{ entry.attack_class | e if entry.attack_class else "unclassified" }}</td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 <button onclick="location.href='/classified_requests'" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Show classified Flows</button>
             </div>
         </body>
@@ -173,7 +219,9 @@ def index():
     } for entry in requests_log], has_been_seen=has_been_seen)
 
 
+
 @app.route('/details/<df_id>', methods=['GET', 'POST'])
+@login_required
 def details(df_id):
     if df_id not in dataframes:
         return "DataFrame not found", 404
@@ -257,7 +305,7 @@ def details(df_id):
                                     {% for key, value in probabilities.items() %}
                                         {% if value >= 0 %}
                                             <tr class="hover:bg-gray-100">
-                                                <td class="py-2 px-4 border-b">{{ key }}</td>
+                                                <td class="py-2 px-4 border-b">{{ key | e}}</td>
                                                 <td class="py-2 px-4 border-b">{{ value }}</td>
                                             </tr>
                                         {% endif %}
@@ -286,7 +334,9 @@ def details(df_id):
                             <!-- Input field for new class if selected -->
                             <div id="new-class-input" style="display:none;">
                                 <label for="new_class_name" class="block text-sm font-medium text-gray-700 mt-2">New Class Name:</label><br />
-                                <input type="text" name="new_class_name" id="new_class_name" placeholder="Enter new class name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"/>
+                                <input type="text" name="new_class_name" id="new_class_name" placeholder="Enter new class name" 
+                                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                                    pattern="^[A-Za-z0-9_]+$" required title="Only letters, numbers and underscore are allowed"/>
                             </div>
 
                             <!-- Submit button -->
@@ -315,15 +365,15 @@ def details(df_id):
                             <thead> 
                                 <tr class="bg-gray-200 text-gray-600"> 
                                     <th class="py-2 px-4 border-b items-center">
-                                        <img src="/static/group2_icon.png" alt="{{group2_icon}}" class="w-12 h-12 inline-block mr-2"/> {{sensor_name}}
+                                        <img src="/static/group2_icon.png" alt=""Icon of this project"  class="w-12 h-12 inline-block mr-2"/> {{sensor_name}}
                                     </th>
                                     {% if private_ip %}
                                         <th class="py-2 px-4 border-b items-center">
-                                            {{partner_ip}} <img src="/static/private.png" alt="{{partner_ip}}" class="w-16 h-9 inline-block ml-2"/>
+                                            {{partner_ip}} <img src="/static/private.png" alt=""Flag for {{partner_ip}}" class="w-16 h-9 inline-block ml-2"/>
                                         </th>
                                     {% else %}
                                         <th class="py-2 px-4 border-b items-center">
-                                            {{partner_ip}} <img src="/static/{{ flag_country_code }}.png" alt="{{partner_ip}}" class="w-16 h-9 inline-block ml-2"/>
+                                            {{partner_ip}} <img src="/static/{{ flag_country_code }}.png" alt="Flag for {{partner_ip}}" class="w-16 h-9 inline-block ml-2"/>
                                         </th>
                                     {% endif %} 
                                 </tr>
@@ -406,8 +456,8 @@ def details(df_id):
 
 
 
-
 @app.route('/retrain')
+@login_required
 def some_function():
     classified_ids = [i for i in has_been_seen if has_been_seen[i]]
     trainingdata = [(dataframes[i] , attack_classes[i] ) for i in classified_ids]
@@ -423,7 +473,10 @@ def some_function():
 #         return jsonify({"data": df_json})
 #     return jsonify({"error": "DataFrame not found"}), 404
 
+
+
 @app.route('/download/<file_id>')
+@login_required
 def download_file(file_id):
     if file_id in filestore:
         return send_file(
@@ -433,7 +486,9 @@ def download_file(file_id):
         )
     return "File not found", 404
 
+
 @app.route('/classified_requests')
+@login_required
 def classified_requests():
     # HTML for classified Flows
     return render_template_string("""
@@ -461,7 +516,7 @@ def classified_requests():
                                         <td class="py-2 px-4 border-b"><a href="/details/{{ entry.dataframe_id }}" class="text-blue-500 hover:underline">{{ entry.timestamp }}</a></td>
                                         <td class="py-2 px-4 border-b">{{ entry.sensor_name }}</td>
                                         <td class="py-2 px-4 border-b">{{ entry.prediction }}</td>
-                                        <td class="py-2 px-4 border-b">{{ entry.attack_class if entry.attack_class else "unklassifiziert" }}</td>
+                                        <td class="py-2 px-4 border-b">{{ entry.attack_class | e if entry.attack_class else "unklassifiziert" }}</td>
                                     </tr>
                                 {% endif %}
                             {% endfor %}
