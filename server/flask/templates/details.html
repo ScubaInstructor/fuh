@@ -99,11 +99,11 @@
                     <thead> 
                         <tr class="bg-gray-200 text-gray-600"> 
                             <th class="py-2 px-4 border-b items-center">
-                                <img src="/static/group2_icon.png" alt=""Icon of this project"  class="w-12 h-12 inline-block mr-2"/> {{sensor_name}}
+                                <img src="/static/group2_icon.png" alt="Icon of this project" class="w-12 h-12 inline-block mr-2"/> {{sensor_name}}
                             </th>
                             {% if private_ip %}
                                 <th class="py-2 px-4 border-b items-center">
-                                    {{partner_ip}} <img src="/static/private.png" alt=""Flag for {{partner_ip}}" class="w-16 h-9 inline-block ml-2"/>
+                                    {{partner_ip}} <img src="/static/private.png" alt="Flag for {{partner_ip}}" class="w-16 h-9 inline-block ml-2"/>
                                 </th>
                             {% else %}
                                 <th class="py-2 px-4 border-b items-center">
@@ -114,13 +114,15 @@
                     </thead> 
                     <tbody> 
                         <tr class="hover:bg-gray-100"> 
-                            <td class="py-2 px-4 border-b">{{sensor_port}}</td>  
-                            <td class="py-2 px-4 border-b">{{partner_port}}</td> 
+                            <td class="py-2 px-4 border-b text-center">Port</td>
+                            <td class="py-2 px-4 border-b text-center">Port</td>
+                        </tr>
+                        <tr class="hover:bg-gray-100"> 
+                            <td class="py-2 px-4 border-b text-center">{{sensor_port}}</td>  
+                            <td class="py-2 px-4 border-b text-center">{{partner_port}}</td> 
                         </tr>
                     </tbody> 
-                </table>              
-            
-
+                </table>
                 <!-- Canvas for Pie Chart -->
                 <div class="mt-6">
                     <canvas id="probabilities-chart" width="300" height="300"></canvas>
@@ -177,3 +179,4 @@
         </div>                     
     </div>  
 </body>
+</html>
