@@ -4,6 +4,8 @@ from cicflowmeter import sniffer
 from cicflowmeter.flow import Flow
 from queue import Queue  
 from scapy.sendrecv import AsyncSniffer  
+from scapy import interfaces
+from scapy.all import get_if_addr
 from dotenv import load_dotenv
 import os
 from joblib import load
@@ -142,6 +144,18 @@ class My_Sniffer():
                 probabilities = {}
                 for i in range(len(proba[0])):
                     probabilities[self.model.classes_[i]] = proba[0][i]
+                
+                # get ip and port numbers of flow
+                my_ip = get_if_addr(interfaces.conf.iface)
+                print(f"my_ip: {my_ip} {type(my_ip)}, dest_ip: {item.dest_ip} {type(item.dest_ip)}")
+                if item.dest_ip == my_ip:
+                    partner_ip = item.src_ip
+                    sensor_port = item.dest_port
+                    partner_port = item.src_port
+                else: 
+                    partner_ip = item.dest_ip
+                    sensor_port = item.src_port
+                    partner_port = item.dest_port
                 try:
                 # Prepare document for Elasticsearch
                     doc = {
@@ -152,7 +166,8 @@ class My_Sniffer():
                         'prediction': prediction.tolist()[0],
                         'probabilities': probabilities,
                         'has_been_seen':False,
-                        'source_ip': item.src_ip, # TODO check if neccessary!
+                        'source_ip': partner_ip, # Ip of the other endpoint of the flow
+
                         'pcap_data': pcap_json,  # Add the PCAP data as Json
                         'pcap_metadata': {
                             'packet_count': len(item.packets)

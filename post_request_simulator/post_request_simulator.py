@@ -44,7 +44,10 @@ class HttpWriter():
             'probabilities': ('probabilities.json', json.dumps(data[2]), 'application/json'), 
             'timestamp' : ('timestamp.json', json.dumps(data[3]), 'application/json'),
             'prediction': ('prediction.txt', data[4], 'text/plain'),  
-            'sensor_name': ('sensor_name.txt', data[5], 'text/plain')  
+            'sensor_name': ('sensor_name.txt', data[5], 'text/plain'),
+            'sensor_port': ('sensor_port.txt', data[6], 'text/plain'),
+            'partner_ip': ('partner_ip.txt', data[7], 'text/plain'),
+            'partner_port': ('partner_port.txt', data[8], 'text/plain')
         }
         self.session.post(self.url, files=files)
 
@@ -71,8 +74,10 @@ def erstelle_post_request(flow, output_url: str):
     timestamp =  {'timestamp': datetime.now().isoformat()}
     prediction = "BENIGN"
     sensor_name = "Sensor"
-
-    httpwriter.write([erstelle_datei(flow=flow), metadata, probabilities, timestamp, prediction, sensor_name])
+    sensor_port = '5335'
+    partner_ip = '165.12.22.13'
+    partner_port = '6124'
+    httpwriter.write([erstelle_datei(flow=flow), metadata, probabilities, timestamp, prediction, sensor_name, sensor_port, partner_ip, partner_port])
 
 def erstelle_datei(flow) -> BytesIO:
     """
