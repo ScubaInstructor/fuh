@@ -228,6 +228,7 @@ def details(df_id):
     ip_lookup = G.lookup(partner_ip)
     private_ip = ip_lookup.is_private
     flag_country_code = ip_lookup.country_code
+    flag_country_name = ip_lookup.country_name
     found = False
     for file in glob.glob("*.png"):
         if file.split('.')[0] == flag_country_code:
@@ -248,7 +249,8 @@ def details(df_id):
         partner_ip=partner_ip,
         partner_port=partner_port,
         flag_country_code=flag_country_code,
-        private_ip=private_ip # If Country flag must be used
+        private_ip=private_ip, # If Country flag must be used
+        flag_country_name=flag_country_name # If Country flag must be used
         )
 
 
