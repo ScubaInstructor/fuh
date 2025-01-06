@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Details for {{ timestamp }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-xl font-bold mb-4">Details for {{ timestamp }}</h1>
+
+        <div class="flex">
+            <div class="left-column flex-1 pr-4">
+
+                <h3 class="text-lg font-semibold mt-4">Prediction</h3>
+                <p>{{ prediction }}</p>
+
+                <h3 class="text-lg font-semibold mt-4">Sensor Name</h3>
+                <p>{{ sensor_name }}</p>
+                <!-- Dynamische Probabilities-Tabelle -->
+                <h3 class="text-lg font-semibold mt-4">Probabilities</h3>
+                {% if probabilities %}
+                    <table class="min-w-full max-w-4xl mx-auto bg-white border border-gray-300 rounded-lg shadow-md mt-4">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600">
+                                <th class="py-2 px-4 border-b">Class</th>
+                                <th class="py-2 px-4 border-b">Probability</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, value in probabilities.items() %}
+                                {% if value >= 0 %}
+                                    <tr class="hover:bg-gray-100">
+                                        <td class="py-2 px-4 border-b">{{ key | e}}</td>
+                                        <td class="py-2 px-4 border-b">{{ value }}</td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No probabilities available.</p>
+                {% endif %}
+
+                <h3 class="mt-6">Download PCAP File</h3>
+                <a href="{{ file_download_link }}" class="inline-block bg-blue-500 text-white 
+                        font-bold py-2 px-4 rounded hover:bg-blue-600">Download flow.pcap</a>
+                
+                <!-- Dropdown menu for selecting attack class -->
+                <form method="POST" class="mt-4">
+                    <label for="selected_attack_class" class="block text-sm font-medium text-gray-700">Select Attack Class:</label>
+                    <select name="selected_attack_class" id="selected_attack_class" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                        <option value="" disabled selected>Select...</option>
+                        {% for key, value in probabilities.items() %}
+                            <option value="{{ key }}">{{ key }}</option>
+                        {% endfor %}
+                        <option value="NEW_CLASS">Create New Class</option>
+                    </select><br />
+
+                    <!-- Input field for new class if selected -->
+                    <div id="new-class-input" style="display:none;">
+                        <label for="new_class_name" class="block text-sm font-medium text-gray-700 mt-2">New Class Name:</label><br />
+                        <input type="text" name="new_class_name" id="new_class_name" placeholder="Enter new class name" 
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                            pattern="^[A-Za-z0-9_]+$" required title="Only letters, numbers and underscore are allowed"/>
+                    </div>
+
+                    <!-- Submit button -->
+                    <button type="submit" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Submit</button>
+                </form>
+                <!-- JavaScript to show/hide new class input based on dropdown selection -->
+                <script type="text/javascript">
+                    const selectElement = document.getElementById('selected_attack_class');
+                    const newClassInputDiv = document.getElementById('new-class-input');
+                    const newClassInputField = document.getElementById('new_class_name');
+                    
+                    selectElement.addEventListener('change', function() {
+                        if (this.value === 'NEW_CLASS') {
+                            newClassInputDiv.style.display = 'block';
+                            newClassInputField.setAttribute('required', 'required'); // Set required attribute
+                        } else {
+                            newClassInputDiv.style.display = 'none';
+                            newClassInputField.removeAttribute('required'); // Remove required attribute
+                        }
+                    });
+                </script>
+
+            </div>
+                            
+
+            <!-- Right Column -->
+            <div class="right-column w-1/3">
+                <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md mt-4"> 
+                    <thead> 
+                        <tr class="bg-gray-200 text-gray-600"> 
+                            <th class="py-2 px-4 border-b items-center">
+                                <img src="/static/group2_icon.png" alt=""Icon of this project"  class="w-12 h-12 inline-block mr-2"/> {{sensor_name}}
+                            </th>
+                            {% if private_ip %}
+                                <th class="py-2 px-4 border-b items-center">
+                                    {{partner_ip}} <img src="/static/private.png" alt=""Flag for {{partner_ip}}" class="w-16 h-9 inline-block ml-2"/>
+                                </th>
+                            {% else %}
+                                <th class="py-2 px-4 border-b items-center">
+                                    {{partner_ip}} <img src="/static/{{ flag_country_code }}.png" alt="Flag for {{partner_ip}}" class="w-16 h-9 inline-block ml-2"/>
+                                </th>
+                            {% endif %} 
+                        </tr>
+                    </thead> 
+                    <tbody> 
+                        <tr class="hover:bg-gray-100"> 
+                            <td class="py-2 px-4 border-b">{{sensor_port}}</td>  
+                            <td class="py-2 px-4 border-b">{{partner_port}}</td> 
+                        </tr>
+                    </tbody> 
+                </table>              
+            
+
+                <!-- Canvas for Pie Chart -->
+                <div class="mt-6">
+                    <canvas id="probabilities-chart" width="300" height="300"></canvas>
+                </div>
+                <!-- JavaScript to create the pie chart -->
+                <script>
+                    const probabilitiesData = JSON.parse('{{ probabilities | tojson | safe }}');
+                    const filteredEntries = Object.entries(probabilitiesData).filter(([key, value]) => value >= 0); //Don't use newly created classes!
+                    const labels = filteredEntries.map(entry => entry[0]); // Labels
+                    const dataValues = filteredEntries.map(entry => entry[1]); // Values
+
+                    const ctx = document.getElementById('probabilities-chart');
+                    const chart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Probability Distribution',
+                                data: dataValues,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.2)',
+                                    'rgba(54, 162, 235, 0.2)',
+                                    'rgba(255, 206, 86, 0.2)',
+                                    'rgba(75, 192, 192, 0.2)',
+                                    'rgba(153, 102, 255, 0.2)',
+                                    'rgba(255, 159, 64, 0.2)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(153, 102, 255, 1)',
+                                    'rgba(255, 159, 64, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Probability Distribution'
+                                }
+                            }
+                        }
+                    });
+                </script>
+            </div>
+        </div>                     
+    </div>  
+</body>
