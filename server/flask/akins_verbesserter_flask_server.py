@@ -191,22 +191,25 @@ def details(df_id):
     
     # The Submit button for classification
     if request.method == 'POST':
-        selected_attack_class = request.form.get('selected_attack_class')
+        if request.form['submit_button'] == "classify":
+            selected_attack_class = request.form.get('selected_attack_class')
 
-        # If it is an newly created class
-        if selected_attack_class == "NEW_CLASS":
-            new_class_name = request.form.get('new_class_name')
-            selected_attack_class = new_class_name
-        
-        attack_classes[df_id] = selected_attack_class
-        has_been_seen[df_id] = True
-        # add new class to all unseen flows for possible prediction
-        for entry in requests_log:
-            if has_been_seen[entry['dataframe_id']] == False:
-                probabilities: dict = probabilities_store[entry['dataframe_id']]
-                probabilities[selected_attack_class] = -1
+            # If it is an newly created class
+            if selected_attack_class == "NEW_CLASS":
+                new_class_name = request.form.get('new_class_name')
+                selected_attack_class = new_class_name
+            
+            attack_classes[df_id] = selected_attack_class
+            has_been_seen[df_id] = True
+            # add new class to all unseen flows for possible prediction
+            for entry in requests_log:
+                if has_been_seen[entry['dataframe_id']] == False:
+                    probabilities: dict = probabilities_store[entry['dataframe_id']]
+                    probabilities[selected_attack_class] = -1
 
-        return redirect(url_for('index'))
+            return redirect(url_for('index'))
+        if request.form['submit_button'] == 'logout':
+            return redirect(url_for('logout'))
 
 
     probabilities = probabilities_store.get(df_id, {})

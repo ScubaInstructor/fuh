@@ -29,7 +29,12 @@
                 {% endfor %}
             </tbody>
         </table>
-        <button onclick="location.href='/'" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Start Page</button>
-        <button onclick="location.href='/retrain'" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Retrain</button>
+        <div class="mt-4 flex space-x-4">
+            <button onclick="location.href='/'" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Start Page</button>
+            <button onclick="location.href='/retrain'" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Retrain</button>
+            <form action="/logout" method="POST">
+                <button type="submit" class="mt-4 bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600">Logout</button>
+            </form>
+        </div>
     </div>
 </body>

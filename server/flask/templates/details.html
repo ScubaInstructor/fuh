@@ -42,32 +42,37 @@
                     <p>No probabilities available.</p>
                 {% endif %}
 
-                <h3 class="mt-6">Download PCAP File</h3>
-                <a href="{{ file_download_link }}" class="inline-block bg-blue-500 text-white 
-                        font-bold py-2 px-4 rounded hover:bg-blue-600">Download flow.pcap</a>
                 
-                <!-- Dropdown menu for selecting attack class -->
-                <form method="POST" class="mt-4">
-                    <label for="selected_attack_class" class="block text-sm font-medium text-gray-700">Select Attack Class:</label>
-                    <select name="selected_attack_class" id="selected_attack_class" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-                        <option value="" disabled selected>Select...</option>
-                        {% for key, value in probabilities.items() %}
-                            <option value="{{ key }}">{{ key }}</option>
-                        {% endfor %}
-                        <option value="NEW_CLASS">Create New Class</option>
-                    </select><br />
+                
+                <div class="mt-4 flex space-x-4  items-end">
+                    <a href="{{ file_download_link }}" class=" bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Download flow.pcap</a>
+                    
+                        <!-- Dropdown menu for selecting attack class -->
+                    <form method="POST" class="flex-1">
+                        <label for="selected_attack_class" class="block text-sm font-medium text-gray-700">Select Attack Class:</label>
+                        <select name="selected_attack_class" id="selected_attack_class" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                            <option value="" disabled selected>Select...</option>
+                            {% for key, value in probabilities.items() %}
+                                <option value="{{ key }}">{{ key }}</option>
+                            {% endfor %}
+                            <option value="NEW_CLASS">Create New Class</option>
+                        </select><br />
 
-                    <!-- Input field for new class if selected -->
-                    <div id="new-class-input" style="display:none;">
-                        <label for="new_class_name" class="block text-sm font-medium text-gray-700 mt-2">New Class Name:</label><br />
-                        <input type="text" name="new_class_name" id="new_class_name" placeholder="Enter new class name" 
-                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                            pattern="^[A-Za-z0-9_]+$" required title="Only letters, numbers and underscore are allowed"/>
-                    </div>
+                        <!-- Input field for new class if selected -->
+                        <div id="new-class-input" style="display:none;">
+                            <label for="new_class_name" class="block text-sm font-medium text-gray-700 mt-2">New Class Name:</label><br />
+                            <input type="text" name="new_class_name" id="new_class_name" placeholder="Enter new class name" 
+                                class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                                pattern="^[A-Za-z0-9_]+$" required title="Only letters, numbers and underscore are allowed"/>
+                        </div>
 
-                    <!-- Submit button -->
-                    <button type="submit" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Submit</button>
-                </form>
+                        <!-- Submit button -->
+                        <button  name="submit_button" type="submit" value="classify" class=" bg-blue-500 w-full text-white py-2 px-4 rounded hover:bg-blue-600">Submit</button>                 
+                    </form>
+                    <form method="POST" class="flex-1">
+                        <button  name="submit_button" type="submit" value="logout" class="  bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600">Logout</button>
+                    </form>   
+                </div>
                 <!-- JavaScript to show/hide new class input based on dropdown selection -->
                 <script type="text/javascript">
                     const selectElement = document.getElementById('selected_attack_class');
