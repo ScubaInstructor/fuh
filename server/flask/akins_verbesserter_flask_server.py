@@ -10,6 +10,8 @@ from os import getcwd, getenv
 from geoip2fast import GeoIP2Fast
 from flagpy import get_flag_img
 import matplotlib
+from time import sleep
+from threading import Thread
 from dotenv import load_dotenv
 matplotlib.use('Agg') 
 load_dotenv()
@@ -50,8 +52,22 @@ partner_ports = {}
 attack_classes = {} # Store selected attack classes
 has_been_seen = {}  # Store if entries have been seen
 requests_log = []   # Log for storing request information
+
+
 G = GeoIP2Fast(verbose=False)
-#G.update_all()
+def update_geoip_database():
+    while True:
+        err = G.update_all()
+        errors = [e['error'] == None for e in err]
+        if all(errors):
+            print("Geo IP database update complete.")
+        else: 
+            print("Geo IP database update failed.")
+        sleep(4 * 60 * 60)  # Sleep for 4 hours
+
+# Start the GeoIP database update in a separate thread
+Thread(target=update_geoip_database, daemon=True).start()
+
 static_path = abspath(join(getcwd(), 'static/'))
 
 
