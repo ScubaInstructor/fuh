@@ -20,3 +20,10 @@ flask
 pytest
 pyshark
 elasticsearch
+geoip2fast
+flagpy
+Flask-Login 
+Flask-SQLAlchemy
+Werkzeug
+Flask-WTF
+elasticsearch-dsl[async]

@@ -1,4 +1,5 @@
 # post_request_simulator.py
+from datetime import datetime
 from scapy.utils import PcapWriter
 from io import BytesIO
 import requests
@@ -26,16 +27,27 @@ class HttpWriter():
       
     def write(self, data: list) -> None:
         """
-        Sendet einen einzigen POST-Request mit Datei- und JSON-Daten.
+        Sends a single POST-Request With file, Json, time and String Data.
 
         Args:
-            data (list): Eine Liste mit zwei Elementen:
+            data (list): A List of Elements to be transferred
                 - data[0]: Datei-Daten (pcap-Datei als Json)
                 - data[1]: JSON-Daten (Metadaten)
+                - data[2]: dict (Probabilities)
+                - data[3]: str () Prediction
+                - data[4]: str () Sensor Name
+
         """
         files = {
-            'file_json': ('flow.pcap', data[0], 'application/vnd.tcpdump.pcap'),
-            'metadata_json': ('data.json', json.dumps(data[1]), 'application/json')
+            'file': ('flow.pcap', data[0], 'application/vnd.tcpdump.pcap'),
+            'json': ('data.json', json.dumps(data[1]), 'application/json'),
+            'probabilities': ('probabilities.json', json.dumps(data[2]), 'application/json'), 
+            'timestamp' : ('timestamp.json', json.dumps(data[3]), 'application/json'),
+            'prediction': ('prediction.txt', data[4], 'text/plain'),  
+            'sensor_name': ('sensor_name.txt', data[5], 'text/plain'),
+            'sensor_port': ('sensor_port.txt', data[6], 'text/plain'),
+            'partner_ip': ('partner_ip.txt', data[7], 'text/plain'),
+            'partner_port': ('partner_port.txt', data[8], 'text/plain')
         }
         self.session.post(self.url, files=files)
 
@@ -58,7 +70,14 @@ def erstelle_post_request(flow, output_url: str):
     # - Eine Liste der packets ohne die Richtung als Datei-Daten
     metadata = flow.get_data()
     pcap_json = pcap_to_json(erstelle_datei(flow=flow))
-    httpwriter.write([pcap_json, metadata])
+    probabilities = {"BENIGN":0.8, "DOS":0.1, "Web Attack":0, "Bot":0.1}
+    timestamp =  {'timestamp': datetime.now().isoformat()}
+    prediction = "BENIGN"
+    sensor_name = "Sensor"
+    sensor_port = '5335'
+    partner_ip = '165.12.22.13'
+    partner_port = '6124'
+    httpwriter.write([erstelle_datei(flow=flow), metadata, probabilities, timestamp, prediction, sensor_name, sensor_port, partner_ip, partner_port])
 
 def erstelle_datei(flow) -> BytesIO:
     """
@@ -99,7 +118,7 @@ def pcap_to_json(pcap_file):
     return json_data
 
 def test_erstelle_post_request():
-        flow = joblib.load("post_request_simulator/flow1.pkl")
+        flow = joblib.load("post_request_simulator/flow2.pkl")
         erstelle_post_request(flow=flow, output_url=REMOTE_URL)
 
 
