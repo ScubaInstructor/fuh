@@ -27,3 +27,4 @@ Flask-SQLAlchemy
 Werkzeug
 Flask-WTF
 elasticsearch-dsl[async]
+pycountry

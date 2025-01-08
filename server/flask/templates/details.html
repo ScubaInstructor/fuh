@@ -128,7 +128,7 @@
                                 </th>
                             {% else %}
                                 <th class="py-2 px-4 border-b items-center relative">
-                                    {{partner_ip}} <img src="/static/{{ flag_country_code }}.png" alt="Flag for {{partner_ip}}" class="w-16 h-9 inline-block ml-2 flag-image"/>
+                                    {{partner_ip}} <img src="https://flagcdn.com/120x90/{{ flag_country_code }}.png" alt="Flag for {{partner_ip}}" class="w-16 h-9 inline-block ml-2 flag-image"/>
                                     <span class="tooltip-text hidden absolute bg-gray-200 text-gray-600 text-sm p-2 rounded mt-2"> {{ flag_country_name }} </span>
                                 </th>
                             {% endif %} 
@@ -152,7 +152,7 @@
                 <!-- JavaScript to create the pie chart -->
                 <script>
                     const probabilitiesData = JSON.parse('{{ probabilities | tojson | safe }}');
-                    const filteredEntries = Object.entries(probabilitiesData).filter(([key, value]) => value >= 0); //Don't use newly created classes!
+                    const filteredEntries = Object.entries(probabilitiesData).filter(([key, value]) => value >= 0); //Don't use newly created classes! New classes get initialized with a value of -1 for unseen Flows!
                     const labels = filteredEntries.map(entry => entry[0]); // Labels
                     const dataValues = filteredEntries.map(entry => entry[1]); // Values
 
