@@ -3,7 +3,7 @@
     "dynamic": "false",
     "properties": {
       
-      "id": {
+      "flow_id": {
         "type": "keyword"
       },
       "sensor_name": {

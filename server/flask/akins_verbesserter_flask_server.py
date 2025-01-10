@@ -1,3 +1,4 @@
+import asyncio
 from base64 import b64decode
 from datetime import datetime, timedelta
 import glob
@@ -13,7 +14,7 @@ from flagpy import get_flag_img
 import matplotlib
 from time import sleep
 from threading import Thread
-from elastic_connector import get_all_unseen_flows, set_flow_as_seen
+from elastic_connector import CustomElasticsearchConnector
 from dotenv import load_dotenv
 matplotlib.use('Agg') 
 load_dotenv()
@@ -70,11 +71,14 @@ def update_geoip_database():
 # Start the GeoIP database update in a separate thread
 Thread(target=update_geoip_database, daemon=True).start()
 
+CEC = CustomElasticsearchConnector() # run with standard ports and host
+
+
 static_path = abspath(join(getcwd(), 'static/'))
 
 def update_the_flowstore():
     global flow_ids, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
-    flow_ids, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen = get_all_unseen_flows()
+    flow_ids, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen = asyncio.run(CEC.get_all_flows(onlyunseen=False))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -221,9 +225,10 @@ def details(id):
             if selected_attack_class == "NEW_CLASS":
                 new_class_name = request.form.get('new_class_name')
                 selected_attack_class = new_class_name
-            attack_classes[id] = selected_attack_class
-            has_been_seen[id] = True
-            set_flow_as_seen(id)
+            # attack_classes[id] = selected_attack_class
+            # has_been_seen[id] = True
+            asyncio.run(CEC.set_attack_class(flow_id=id, attack_class=selected_attack_class))
+            asyncio.run(CEC.set_flow_as_seen(flow_id=id))
             # add new class to all unseen flows for possible prediction
             for entry in flow_ids:
                 if has_been_seen[entry] == False:

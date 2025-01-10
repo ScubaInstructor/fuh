@@ -130,7 +130,7 @@ class My_Sniffer():
                 if DEBUGGING:
                     print("Flow will be sent")
                 # getting the attack data to the server 
-                id = str(uuid4())
+                flow_id = str(uuid4())
                 # Create a PCAP file
                 flow_bytesIO = create_BytesIO_pcap_file(item)  # the pcap file as BytesIO object  DEPRECATED
 
@@ -159,7 +159,7 @@ class My_Sniffer():
                 try:
                 # Prepare document for Elasticsearch
                     doc = {
-                        'id': id,
+                        'flow_id': flow_id,
                         'sensor_name': SENSOR_NAME, # unique Sensorname
                         'sensor_port': sensor_port,
                         'partner_ip': partner_ip, # Ip of the other endpoint of the flow
@@ -183,7 +183,7 @@ class My_Sniffer():
                     print(f"Error sending data to Elasticsearch: {e}")
 
                 if DEBUGGING:
-                    print(f'Finished {item} mit UUID:{id}')  
+                    print(f'Finished {item} mit UUID:{flow_id}')  
             else:
                 if DEBUGGING:
                     print(f'Finished {item}')  
