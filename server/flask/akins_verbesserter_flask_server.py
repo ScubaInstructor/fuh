@@ -212,7 +212,7 @@ def index():
 @app.route('/details/<id>', methods=['GET', 'POST'])
 @login_required
 def details(id):
-
+    update_the_flowstore()
     if id not in flow_ids:
         return "DataFrame not found", 404
     
