@@ -133,7 +133,8 @@ if __name__ == '__main__':
     asyncio.run(cec.set_flow_as_seen(flow_id=FLOWID))
     asyncio.run(cec.set_attack_class(flow_id=FLOWID, attack_class="BOT"))
     flows1 = asyncio.run(cec.get_all_flows(onlyunseen=False))
-    print(flows1[-2][FLOWID])
+    assert flows1[-2][FLOWID] == "BOT"
+    assert flows1[-1][FLOWID] == "true"
 
     
 
