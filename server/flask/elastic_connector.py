@@ -1,7 +1,7 @@
-from elasticsearch import AsyncElasticsearch
+from elasticsearch import AsyncElasticsearch, AuthenticationException
 from elasticsearch_dsl import AsyncSearch, connections
 import asyncio
-
+from elasticsearch.exceptions import AuthenticationException
 INDEX_NAME = "network_flows"
 
 class CustomElasticsearchConnector:
@@ -28,12 +28,13 @@ class CustomElasticsearchConnector:
         self.verify_certs = verify_certs
         connections.create_connection(hosts=hosts, api_key=api_key, verify_certs=verify_certs, ssl_show_warn=False)
     
-    async def get_all_flows(self, onlyunseen=False):
+    async def get_all_flows(self, onlyunseen:bool=False, size:int=20):
         """
         Retrieves all flow documents from Elasticsearch. Optionally, only retrieves flows that have not been seen. Run with asyncio.run(get_all_flows())
 
         Args:
             onlyunseen (bool): If True, only retrieves flows that have not been seen.
+            size (int): The number of flows to retrieve.
 
         Returns:
             Tuple containing various dictionaries with flow data:
@@ -50,7 +51,7 @@ class CustomElasticsearchConnector:
                 - attack_classes: Mapping of flow IDs to attack classes.
                 - has_been_seen: Mapping of flow IDs to seen status.
         """
-        async def _get_all_flows(self, onlyunseen=False):
+        async def _get_all_flows(self, onlyunseen, size):
             dataframes = {}
             filestore = {}
             probabilities_store = {}
@@ -66,9 +67,9 @@ class CustomElasticsearchConnector:
 
             async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
                 if onlyunseen:
-                    s = AsyncSearch(using=client, index=INDEX_NAME).query("match", has_been_seen="false").extra(size=100)
+                    s = AsyncSearch(using=client, index=INDEX_NAME).query("match", has_been_seen="false").extra(size=size)
                 else:
-                    s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all").extra(size=100)
+                    s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all").extra(size=size)
 
                 async for hit in s:
                     id = hit.flow_id
@@ -86,7 +87,7 @@ class CustomElasticsearchConnector:
                     filestore[id] = hit.pcap_data
 
             return id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
-        return await _get_all_flows(self, onlyunseen=onlyunseen)
+        return await _get_all_flows(self, onlyunseen=onlyunseen, size=size)
     
     async def set_flow_as_seen(self, flow_id: str):
         """
@@ -120,13 +121,10 @@ class CustomElasticsearchConnector:
             async for hit in s:
                 return await client.update(index=INDEX_NAME, refresh="wait_for", id=hit.meta.id, body={"doc": {"attack_class": attack_class}})
 
-
-
-
 if __name__ == '__main__':
     # TODO remove as this for testing only
     FLOWID = "56e58dfb-e260-44f5-9603-d7c22ed4f364"
-
+    API_KEY = "amh4clRaUUJ5Z2JBOEJ2bkk5Rko6U1BFdFcxd3ZSUEdndFlTRjBrelljUQ=="
     cec = CustomElasticsearchConnector()
     flows = asyncio.run(cec.get_all_flows(onlyunseen=True))
     #print(flows[0])
@@ -136,5 +134,6 @@ if __name__ == '__main__':
     assert flows1[-2][FLOWID] == "BOT"
     assert flows1[-1][FLOWID] == "true"
 
-    
+    print(len(flows1[0]))
+    print(len(flows[0]))
 

@@ -5,19 +5,20 @@ import re
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from akins_verbesserter_flask_server import User, SQLITE_PATH
 
 # Flask application and database configuration
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = SQLITE_PATH
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# User model
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(150), nullable=False)
-    salt = db.Column(db.String(150), nullable=False)  # Salt for the password
+# # User model
+# class User(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     username = db.Column(db.String(150), unique=True, nullable=False)
+#     password = db.Column(db.String(150), nullable=False)
+#     salt = db.Column(db.String(150), nullable=False)  # Salt for the password
 
 # Function to validate user input
 def validate_input(username, password):

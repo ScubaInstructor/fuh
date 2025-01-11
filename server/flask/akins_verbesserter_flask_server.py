@@ -1,20 +1,18 @@
 import asyncio
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from datetime import datetime, timedelta
-import glob
-from flask import Flask, request, render_template_string, jsonify, send_file, redirect, url_for, send_from_directory, flash,render_template
-import uuid
+from flask import Flask, request, jsonify, send_file, redirect, url_for, send_from_directory, flash,render_template
 from io import BytesIO
-import json
+import jwt
 import matplotlib.pyplot as plt
 from os.path import abspath, join
-from os import getcwd, getenv
+from os import getcwd, getenv, urandom
 from geoip2fast import GeoIP2Fast
-from flagpy import get_flag_img
 import matplotlib
 from time import sleep
 from threading import Thread
 from elastic_connector import CustomElasticsearchConnector
+from discord_bot import DiscordClient
 from dotenv import load_dotenv
 matplotlib.use('Agg') 
 load_dotenv()
@@ -26,7 +24,8 @@ from werkzeug.security import check_password_hash
 from forms import LoginForm
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db' 
+SQLITE_PATH = 'sqlite:///users.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = SQLITE_PATH 
 app.config['SECRET_KEY'] = getenv('your_secret_key')
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -41,6 +40,38 @@ class User(db.Model, UserMixin):
 # CReate the user database
 with app.app_context():
     db.create_all()
+
+def generate_token(user_id):
+    '''
+    Generate a token and write it to file
+    '''
+    payload = {
+        'user_id': user_id,
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=1)
+    }
+    token = jwt.encode(payload, app.secret_key, algorithm='HS256')
+    with open("sensor_token.txt", "w") as f:
+        f.write(token)
+        f.write("\n")
+    print(f"Token generated and written to file.\n Token is {token}")
+
+@app.route('/notify', methods=['GET'])
+def notify():
+    token = request.headers.get('Authorization').split()[1]
+    try:
+        payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
+        notify_users()
+        return jsonify({'message': 'Access granted', 'user_id': payload['user_id']})
+    except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
+        return jsonify({'message': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'message': 'Invalid token'}), 401
+
+def notify_users():
+    TOKEN = getenv('DISCORD_TOKEN')
+    CHANNEL_ID = int(getenv('DISCORD_CHANNEL_ID'))
+    client = DiscordClient(channel_id=CHANNEL_ID)
+    client.run(token=TOKEN)
 
 # Dictionaries to store dataframes, files, probabilities, predictions and timestamps with unique IDs
 dataframes = {}
@@ -107,6 +138,9 @@ def load_user(user_id):
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+
+
 
 
 # @app.route('/upload', methods=['POST'])
@@ -319,4 +353,5 @@ def classified_requests():
 
 
 if __name__ == '__main__':
+
     app.run(debug=True, port=8888)
