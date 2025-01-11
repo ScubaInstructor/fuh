@@ -138,7 +138,7 @@ def generate_token(user_id):
         'user_id': user_id,
         'exp': datetime.now(UTC) + timedelta(seconds=1)
     }
-    token = jwt.encode(payload, "6lcmBkVXQ3ePAvsjM9EkcJHZpraifpSHhb23CEL9Gc", algorithm='HS256')
+    token = jwt.encode(payload, "VERYLONGRANDOMSTRINGFORSERVERSECURITY", algorithm='HS256')
     #with open("sensor_token.txt", "w") as f:
     #    f.write(token)
     #    f.write("\n")
