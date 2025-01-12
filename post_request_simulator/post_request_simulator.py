@@ -1,4 +1,5 @@
 # post_request_simulator.py
+import asyncio
 from datetime import UTC, datetime, timedelta
 import jwt
 from scapy.utils import PcapWriter
@@ -52,12 +53,14 @@ class HttpWriter():
         }
         self.session.post(self.url, files=files)
 
-    def __del__(self):
-        self.session.close()
+    # def __del__(self):
+    #     self.session.close()
 
-    def notify(self, token):
+    async def notify(self, token):
         headers = {'Authorization': f'Bearer {token}'}
-        return self.session.get(self.url, headers=headers)
+        resp = self.session.post(self.url, headers=headers)
+        return resp
+        
 
 def erstelle_post_request(flow, output_url: str):
     """
@@ -126,9 +129,9 @@ def test_erstelle_post_request():
         flow = joblib.load("post_request_simulator/flow2.pkl")
         erstelle_post_request(flow=flow, output_url=REMOTE_URL)
 
-def test_erstelle_notify_request(token:str):
+async def test_erstelle_notify_request(token:str):
     httpwriter = HttpWriter(output_url="http://localhost:8888/notify")
-    return httpwriter.notify(token)
+    await httpwriter.notify(token)
 
 def generate_token(user_id):
     '''
@@ -138,7 +141,7 @@ def generate_token(user_id):
         'user_id': user_id,
         'exp': datetime.now(UTC) + timedelta(seconds=1)
     }
-    token = jwt.encode(payload, "6lcmBkVXQ3ePAvsjM9EkcJHZpraifpSHhb23CEL9Gc", algorithm='HS256')
+    token = jwt.encode(payload, "VERYLONGRANDOMSTRINGFORSERVERSECURITY", algorithm='HS256')
     #with open("sensor_token.txt", "w") as f:
     #    f.write(token)
     #    f.write("\n")
@@ -150,4 +153,12 @@ if __name__ == "__main__":
     #test_erstelle_post_request()
 
     token = generate_token("sensor")
-    print(test_erstelle_notify_request(token))
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError as e:
+        if str(e).startswith('There is no current event loop in thread'):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        else:
+            raise
+    loop.run_until_complete(test_erstelle_notify_request(token))

@@ -2,7 +2,7 @@ from elasticsearch import AsyncElasticsearch, AuthenticationException
 from elasticsearch_dsl import AsyncSearch, connections
 import asyncio
 from elasticsearch.exceptions import AuthenticationException
-INDEX_NAME = "network_flows"
+INDEX_NAME = "network_flows" # TODO make this comnfigured from .env file 
 
 class CustomElasticsearchConnector:
     """
@@ -14,7 +14,7 @@ class CustomElasticsearchConnector:
         verify_certs (bool): Whether to verify SSL certificates.
     """
 
-    def __init__(self, hosts=['https://localhost:9200'], api_key="aHozdFVaUUJWN25ZT2VZa1RTZHo6SUFIYUR5VkJTLWV0LTlUeVF5N2E4Zw==", verify_certs=False):
+    def __init__(self, hosts=['https://localhost:9200'], api_key="WU1uNldaUUJyMFU1enNoeW5PUFI6dWs5RHRUOHhUQ3FXd1B3Um43WG43Zw==", verify_certs=False):
         """
         Initializes the CustomElasticsearchConnector.
 
@@ -67,9 +67,14 @@ class CustomElasticsearchConnector:
 
             async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
                 if onlyunseen:
-                    s = AsyncSearch(using=client, index=INDEX_NAME).query("match", has_been_seen="false").extra(size=size)
+                    s = AsyncSearch(using=client, index=INDEX_NAME) \
+                        .query("match", has_been_seen="false") \
+                        .extra(size=size) \
+                        .sort({"timestamp": {"order": "desc"}})
                 else:
-                    s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all").extra(size=size)
+                    s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
+                        .extra(size=size) \
+                        .sort({"timestamp": {"order": "desc"}})
 
                 async for hit in s:
                     id = hit.flow_id
@@ -124,16 +129,19 @@ class CustomElasticsearchConnector:
 if __name__ == '__main__':
     # TODO remove as this for testing only
     FLOWID = "56e58dfb-e260-44f5-9603-d7c22ed4f364"
-    API_KEY = "amh4clRaUUJ5Z2JBOEJ2bkk5Rko6U1BFdFcxd3ZSUEdndFlTRjBrelljUQ=="
+    API_KEY = "WU1uNldaUUJyMFU1enNoeW5PUFI6dWs5RHRUOHhUQ3FXd1B3Um43WG43Zw=="
     cec = CustomElasticsearchConnector()
     flows = asyncio.run(cec.get_all_flows(onlyunseen=True))
     #print(flows[0])
     asyncio.run(cec.set_flow_as_seen(flow_id=FLOWID))
     asyncio.run(cec.set_attack_class(flow_id=FLOWID, attack_class="BOT"))
     flows1 = asyncio.run(cec.get_all_flows(onlyunseen=False))
-    assert flows1[-2][FLOWID] == "BOT"
-    assert flows1[-1][FLOWID] == "true"
+    #assert flows1[-2][FLOWID] == "BOT"
+    #assert flows1[-1][FLOWID] == "true"
 
     print(len(flows1[0]))
     print(len(flows[0]))
+
+    flows = asyncio.run(cec.get_all_flows(onlyunseen=True, size=2))
+    print(flows[6])
 

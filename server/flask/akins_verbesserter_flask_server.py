@@ -1,12 +1,12 @@
 import asyncio
 from base64 import b64decode, b64encode
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import Flask, request, jsonify, send_file, redirect, url_for, send_from_directory, flash,render_template
 from io import BytesIO
 import jwt
 import matplotlib.pyplot as plt
 from os.path import abspath, join
-from os import getcwd, getenv, urandom
+from os import getcwd, getenv, path
 from geoip2fast import GeoIP2Fast
 import matplotlib
 from time import sleep
@@ -47,27 +47,31 @@ def generate_token(user_id):
     '''
     payload = {
         'user_id': user_id,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=1)
+        'exp': datetime.now(timezone.utc) + timedelta(seconds=1)
     }
     token = jwt.encode(payload, app.secret_key, algorithm='HS256')
-    with open("sensor_token.txt", "w") as f:
-        f.write(token)
-        f.write("\n")
-    print(f"Token generated and written to file.\n Token is {token}")
+    filename = "sensor_token.txt"
+    if path.isfile(filename):
+        print(f"Token is already stored in file {filename}")
+    else:
+        with open(filename, "w") as f:
+            f.write(token)
+            f.write("\n")
+        print(f"Token generated and written to file.\n Token is {token}")
 
-@app.route('/notify', methods=['GET'])
+@app.route('/notify', methods=['POST'])
 def notify():
     token = request.headers.get('Authorization').split()[1]
     try:
         payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
-        notify_users()
+        # notify_users() # TODO uncomment for real Notification
         return jsonify({'message': 'Access granted', 'user_id': payload['user_id']})
     except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
         return jsonify({'message': 'Token expired'}), 401
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Invalid token'}), 401
 
-def notify_users():
+def notify_users(): # TODO make threaded and add timedelay for multiple requests
     TOKEN = getenv('DISCORD_TOKEN')
     CHANNEL_ID = int(getenv('DISCORD_CHANNEL_ID'))
     client = DiscordClient(channel_id=CHANNEL_ID)
@@ -353,5 +357,5 @@ def classified_requests():
 
 
 if __name__ == '__main__':
-
+    generate_token("sensors")
     app.run(debug=True, port=8888)
