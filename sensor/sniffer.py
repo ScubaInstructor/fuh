@@ -130,15 +130,15 @@ class My_Sniffer():
                 if DEBUGGING:
                     print("Flow will be sent")
                 # getting the attack data to the server 
-                id = str(uuid4())
+                flow_id = str(uuid4())
                 # Create a PCAP file
                 flow_bytesIO = create_BytesIO_pcap_file(item)  # the pcap file as BytesIO object  DEPRECATED
 
                 # Encode PCAP file to base64 since elasticsearch does not support binary data DEPRECATED
-                # pcap_base64 = base64.b64encode(flow_bytesIO.getvalue()).decode('utf-8')
+                pcap_base64 = base64.b64encode(flow_bytesIO.getvalue()).decode('utf-8')
 
                 # Encode Flow item  to Json for transfer to kibana
-                pcap_json = flow_to_json(item)
+                # pcap_json = flow_to_json(item)
                 
                 # prepare the dict with the probabilities
                 probabilities = {}
@@ -159,19 +159,20 @@ class My_Sniffer():
                 try:
                 # Prepare document for Elasticsearch
                     doc = {
-                        'id': id,
+                        'flow_id': flow_id,
                         'sensor_name': SENSOR_NAME, # unique Sensorname
+                        'sensor_port': sensor_port,
+                        'partner_ip': partner_ip, # Ip of the other endpoint of the flow
+                        'partner_port': partner_port,
+
                         'timestamp': datetime.now().isoformat(),
-                        'flow_data': item.get_data(),
                         'prediction': prediction.tolist()[0],
                         'probabilities': probabilities,
-                        'has_been_seen':False,
-                        'source_ip': partner_ip, # Ip of the other endpoint of the flow
+                        'attack_class': "not yet classified",
 
-                        'pcap_data': pcap_json,  # Add the PCAP data as Json
-                        'pcap_metadata': {
-                            'packet_count': len(item.packets)
-                        }                        
+                        'has_been_seen': False, # TODO Is this redundant, if we have the attack_class field?
+                        'flow_data': item.get_data(),
+                        'pcap_data': pcap_base64  # Add the PCAP data as Base 64 encoded String
                     }   
                     if DEBUGGING:
                         print(f"Document to be sent: {doc}")                 
@@ -182,7 +183,7 @@ class My_Sniffer():
                     print(f"Error sending data to Elasticsearch: {e}")
 
                 if DEBUGGING:
-                    print(f'Finished {item} mit UUID:{id}')  
+                    print(f'Finished {item} mit UUID:{flow_id}')  
             else:
                 if DEBUGGING:
                     print(f'Finished {item}')  

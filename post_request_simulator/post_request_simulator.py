@@ -1,5 +1,6 @@
 # post_request_simulator.py
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
+import jwt
 from scapy.utils import PcapWriter
 from io import BytesIO
 import requests
@@ -53,6 +54,10 @@ class HttpWriter():
 
     def __del__(self):
         self.session.close()
+
+    def notify(self, token):
+        headers = {'Authorization': f'Bearer {token}'}
+        return self.session.get(self.url, headers=headers)
 
 def erstelle_post_request(flow, output_url: str):
     """
@@ -121,8 +126,28 @@ def test_erstelle_post_request():
         flow = joblib.load("post_request_simulator/flow2.pkl")
         erstelle_post_request(flow=flow, output_url=REMOTE_URL)
 
+def test_erstelle_notify_request(token:str):
+    httpwriter = HttpWriter(output_url="http://localhost:8888/notify")
+    return httpwriter.notify(token)
 
+def generate_token(user_id):
+    '''
+    Generate a token and write it to file
+    '''
+    payload = {
+        'user_id': user_id,
+        'exp': datetime.now(UTC) + timedelta(seconds=1)
+    }
+    token = jwt.encode(payload, "6lcmBkVXQ3ePAvsjM9EkcJHZpraifpSHhb23CEL9Gc", algorithm='HS256')
+    #with open("sensor_token.txt", "w") as f:
+    #    f.write(token)
+    #    f.write("\n")
+    #print(f"Token generated and written to file.\n Token is {token}")
+    return token
 
 if __name__ == "__main__":
-     REMOTE_URL = "http://localhost:8888/upload"
-     test_erstelle_post_request()
+    REMOTE_URL = "http://localhost:8888/upload"
+    #test_erstelle_post_request()
+
+    token = generate_token("sensor")
+    print(test_erstelle_notify_request(token))
