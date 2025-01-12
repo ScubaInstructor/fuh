@@ -5,13 +5,13 @@ import re
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from akins_verbesserter_flask_server import User, SQLITE_PATH
+from akins_verbesserter_flask_server import User, SQLITE_PATH, db, app
 
 # Flask application and database configuration
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = SQLITE_PATH
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+#app = Flask(__name__)
+#app.config['SQLALCHEMY_DATABASE_URI'] = SQLITE_PATH
+#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+#db = SQLAlchemy(app)
 
 # # User model
 # class User(db.Model):

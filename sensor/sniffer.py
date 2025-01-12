@@ -1,6 +1,8 @@
+import asyncio
 import threading
 import base64
 from cicflowmeter import sniffer  
+from httpWriter import HttpWriter
 from cicflowmeter.flow import Flow
 from queue import Queue  
 from scapy.sendrecv import AsyncSniffer  
@@ -15,7 +17,7 @@ from sklearn.ensemble import RandomForestClassifier
 from pipelining_utilities import adapt_for_prediction
 from pandas import DataFrame
 from time import sleep
-from elasticsearch import Elasticsearch
+from elasticsearch import AuthenticationException, Elasticsearch
 import json
 from datetime import datetime
 
@@ -31,6 +33,9 @@ SNIFFING_INTERFACE = os.getenv('SNIFFING_INTERFACE')
 ES_HOST = os.getenv('ES_HOST')  # Change this to your Elasticsearch host
 ES_PORT = int(os.getenv('ES_PORT'))        # Change this to your Elasticsearch port
 ES_INDEX = os.getenv('ES_INDEX')  # Index name for storing flow data
+#Flask Server
+SERVER_NOTIFY_URL = os.getenv('SERVER_NOTIFY_URL')
+SERVER_TOKEN = os.getenv('SERVER_TOKEN')
 # Get these values from your Elasticsearch installation
 ES_API_KEY = os.getenv('ES_API_KEY')  # API key for access to elastic 
 SENSOR_NAME = os.getenv('SENSOR_NAME')  # Unique name to identify this sensor
@@ -114,6 +119,7 @@ class My_Sniffer():
         while True:
             if DEBUGGING:
                 print("hello from worker!")
+                self.notify_flask_server()
             item: Flow = self.queue.get()  # Get a Flow item from the queue
             # item from type Flow. It contains all the packages it comprises.
             if DEBUGGING:
@@ -179,9 +185,13 @@ class My_Sniffer():
                     # Send to Elasticsearch
                     es.index(index=ES_INDEX, body=doc)
                     print(f"Data sent to Elasticsearch successfully")
+                except AuthenticationException as ae:
+                    print(f"Authentication error: {ae}")
                 except Exception as e:
                     print(f"Error sending data to Elasticsearch: {e}")
-
+                self.notify_flask_server()
+                if DEBUGGING:
+                    print("sent notification to flask server")
                 if DEBUGGING:
                     print(f'Finished {item} mit UUID:{flow_id}')  
             else:
@@ -189,6 +199,24 @@ class My_Sniffer():
                     print(f'Finished {item}')  
             self.queue.task_done()  # to mark the item done 
 
+
+    def notify_flask_server(self):
+        
+        async def _notify_flask_server(self):
+            hw = HttpWriter(SERVER_NOTIFY_URL)
+            hw.notify(token=SERVER_TOKEN)
+        
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError as e:
+            if str(e).startswith('There is no current event loop in thread'):
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            else:
+                raise
+        
+        loop.run_until_complete(_notify_flask_server(self))
+        
 
 if __name__ == "__main__":
     s = My_Sniffer() 
