@@ -6,12 +6,12 @@ from io import BytesIO
 import jwt
 import matplotlib.pyplot as plt
 from os.path import abspath, join
-from os import getcwd, getenv, path
+from os import getcwd, getenv, path, chmod
 from geoip2fast import GeoIP2Fast
 import matplotlib
 from time import sleep
 from threading import Thread
-from elastic_connector import CustomElasticsearchConnector
+from elastic_connector import CustomElasticsearchConnector, API_KEY, INDEX_NAME
 from discord_bot import DiscordClient
 from dotenv import load_dotenv
 matplotlib.use('Agg') 
@@ -41,23 +41,45 @@ class User(db.Model, UserMixin):
 with app.app_context():
     db.create_all()
 
-def generate_token(user_id):
+def generate_env_file_for_sensors(user_id):
     '''
-    Generate a token and write it to file
+    Create an .env File for useage in the sensors, containing the JWT tzoken and the elastic api key
     '''
     payload = {
         'user_id': user_id,
         'exp': datetime.now(timezone.utc) + timedelta(seconds=1)
     }
     token = jwt.encode(payload, app.secret_key, algorithm='HS256')
-    filename = "/keys/flask-sensor-token.txt"
-    if path.isfile(filename):
-        print(f"Token is already stored in file {filename}")
-    else:
-        with open(filename, "w+") as f:
-            f.write(token)
-            f.write("\n")
-        print(f"Token generated and written to file.\n Token is {token}")
+    ES_PORT = getenv('ES_PORT')
+    FLASK_PORT_NUMBER = getenv('FLASK_PORT_NUMBER')
+    elastik_key = ""
+    with open ("/shared_secrets/elastic-sensor-token.txt", "r") as f:
+        elastik_key = f.readlines()[0].split(":")[1]
+    header_text="""# LOCAL CONFIGURATION 
+SNIFFING_INTERFACE="" # This can be set to a specific network interface to listen to, else all interfaces are listened to 
+DEBUGGING="1"   # Sends all Flows to server and be more noisy
+SENSOR_NAME="Sensor"  # choose a meaningful name to identify this sensor
+
+# ELASTICSEARCH CONFIGURATION
+ES_HOST = "https://localhost"  # Change this to your Elasticsearch host
+"""
+    port_line = f"ES_PORT = {ES_PORT}        # Change this to your Elasticsearch port\n"
+    index_line = f"ES_INDEX = \"{INDEX_NAME}\"  # Index name for storing flow data\n"
+    es_api_line = f"ES_API_KEY = {elastik_key} \n" # Quotes are already included
+    after_es_line = f"""
+# FLASK SERVER CONFIGURATION
+SERVER_NOTIFY_URL = \"http://localhost:{FLASK_PORT_NUMBER}/notify\"\n"""
+    token_line = f"SERVER_TOKEN = \"{token}\""
+    filename = "/keys/.env"
+    with open(filename, "w+") as f:
+        f.write(header_text)    
+        f.write(port_line)
+        f.write(index_line)
+        f.write(es_api_line)
+        f.write(after_es_line)
+        f.write(token_line)
+    chmod(filename, 0o776)
+    print(f"{filename} file generated and written.\n")
 
 @app.route('/notify', methods=['POST'])
 def notify():
@@ -90,6 +112,7 @@ partner_ports = {}
 attack_classes = {} # Store selected attack classes
 has_been_seen = {}  # Store if entries have been seen
 flow_ids = []   # Log for storing request information
+
 
 
 G = GeoIP2Fast(verbose=False)
@@ -357,5 +380,5 @@ def classified_requests():
 
 
 if __name__ == '__main__':
-    generate_token("sensors")
+    generate_env_file_for_sensors("sensors")
     app.run(debug=True, host="0.0.0.0", port=8888)

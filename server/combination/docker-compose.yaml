@@ -54,13 +54,13 @@ services:
         find . -type f -exec chmod 640 \{\} \;;
         echo "Waiting for Elasticsearch availability";
         until curl -s --cacert config/certs/ca/ca.crt https://es01:${ES_PORT} | grep -q "missing authentication credentials"; do sleep 15; done;
-        if [ ! -e /not_first_start ]; then
-            touch /not_first_start
+        if [ ! -e /usr/share/elasticsearch/shared_secrets/not_first_start ]; then
+            touch /usr/share/elasticsearch/shared_secrets/not_first_start
           echo "-- First container startup --"
           # YOUR_JUST_ONCE_LOGIC_HERE
           echo "Importing network_flow mapping";
           until curl -u elastic:${ELASTIC_PASSWORD} -X PUT "https://es01:${ES_PORT}/${NETWORK_FLOW_INDEX_NAME}" -H "Content-Type: application/json" -d @/usr/share/elasticsearch/mapping.json --insecure; do sleep 10; done;
-          echo "Writing api-token for ${NETWORK_FLOW_INDEX_NAME}" into file keys/elastic-sensor-token.txt;
+          echo "Writing api-token for ${NETWORK_FLOW_INDEX_NAME}" into file shared_secrets/elastic-sensor-token.txt;
           until curl -X POST "https://es01:${ES_PORT}/_security/api_key" -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" --insecure -d "{
             \"name\": \"sensor_key_generated_from_setup\",  
             \"role_descriptors\": {
@@ -73,7 +73,7 @@ services:
                 ]
               }
             }
-          }" | sed -e "s/.*encoded\":/KEY:/" | sed -e "s/}//" > /usr/share/elasticsearch/keys/elastic-sensor-token.txt; do sleep 10; done;
+          }" | sed -e "s/.*encoded\":/KEY:/" | sed -e "s/}//" > /usr/share/elasticsearch/shared_secrets/elastic-sensor-token.txt; do sleep 10; done;
           echo "Writing api-token for ${NETWORK_FLOW_INDEX_NAME}" into file server-api-key.txt;
           until curl -X POST "https://es01:${ES_PORT}/_security/api_key" -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" --insecure -d "{
             \"name\": \"server_key_generated_from_setup\",  
@@ -89,9 +89,8 @@ services:
             }
           }" | sed -e "s/.*encoded\":/ELASTIC_SERVER_KEY=/" | sed -e "s/}//" > /usr/share/elasticsearch/shared_secrets/server-api-key.env; do sleep 10; done;
           echo "All done!";
-          chmod 666 /usr/share/elasticsearch/keys/elastic-sensor-token.txt;
-
-          echo "Use this api-key: $(cat /usr/share/elasticsearch/keys/elastic-sensor-token.txt) for your sensors! ";
+          # chmod 666 /usr/share/elasticsearch/keys/elastic-sensor-token.txt;
+          # echo "Use this api-key: $(cat /usr/share/elasticsearch/keys/elastic-sensor-token.txt) for your sensors! ";
         else
           echo "-- Not the first container startup, so other initialisation is skipped  --"
         fi
@@ -242,6 +241,9 @@ services:
       - ./keys:/keys
     ports:
       - ${FLASK_PORT}:8888
+    environment:
+      - ES_PORT=${ES_PORT}
+      - FLASK_PORT_NUMBER=${FLASK_PORT}
 
 
 volumes:
