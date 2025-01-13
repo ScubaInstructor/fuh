@@ -1,11 +1,13 @@
-from elasticsearch import AsyncElasticsearch, AuthenticationException
+from elasticsearch import AsyncElasticsearch
 from elasticsearch_dsl import AsyncSearch, connections
-import asyncio
-from elasticsearch.exceptions import AuthenticationException
 import dotenv
 from os import getenv
+
+# Load from .env File
 dotenv.load_dotenv()
 INDEX_NAME = getenv("NETWORK_FLOW_INDEX_NAME") 
+
+# Load from "shared_secrets" docker volume
 dotenv.load_dotenv(dotenv_path="/shared_secrets/server-api-key.env")
 API_KEY = getenv("ELASTIC_SERVER_KEY")
 

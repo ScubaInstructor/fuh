@@ -87,7 +87,7 @@ services:
                 ]
               }
             }
-          }" | sed -e "s/.*encoded\":/ELASTIC_SERVER_KEY:/" | sed -e "s/}//" > /usr/share/elasticsearch/shared_secrets/server-api-key.env; do sleep 10; done;
+          }" | sed -e "s/.*encoded\":/ELASTIC_SERVER_KEY=/" | sed -e "s/}//" > /usr/share/elasticsearch/shared_secrets/server-api-key.env; do sleep 10; done;
           echo "All done!";
           chmod 666 /usr/share/elasticsearch/keys/elastic-sensor-token.txt;
 
@@ -234,8 +234,8 @@ services:
       context: .
       dockerfile: DOCKERFILE
     depends_on:
-      es01:
-        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
     volumes:
       - certs:/usr/share/elasticsearch/config/certs # TODO import these certs!
       - shared_secrets:/shared_secrets
