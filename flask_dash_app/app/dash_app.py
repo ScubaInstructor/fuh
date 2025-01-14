@@ -10,57 +10,35 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 import plotly.express as px
+from .elastic_connector import CustomElasticsearchConnector
+import asyncio
 
-# Loading of the .env file
-load_dotenv()
-# Elastic
-ES_HOST = os.getenv('ES_HOST')  # Change this to your Elasticsearch host
-ES_PORT = int(os.getenv('ES_PORT'))        # Change this to your Elasticsearch port
-ES_INDEX = os.getenv('ES_INDEX')  # Index name for storing flow data
-# Get these values from your Elasticsearch installation
-ES_API_KEY = os.getenv('ES_API_KEY')  # API key for access to elastic 
-SENSOR_NAME = os.getenv('SENSOR_NAME')  # Unique name to identify this sensor
+# # Loading of the .env file
+# load_dotenv()
+# # Elastic
+# ES_HOST = os.getenv('ES_HOST')  # Change this to your Elasticsearch host
+# ES_PORT = int(os.getenv('ES_PORT'))        # Change this to your Elasticsearch port
+# ES_INDEX = os.getenv('ES_INDEX')  # Index name for storing flow data
+# # Get these values from your Elasticsearch installation
+# ES_API_KEY = os.getenv('ES_API_KEY')  # API key for access to elastic 
+# SENSOR_NAME = os.getenv('SENSOR_NAME')  # Unique name to identify this sensor
 
 
 def init_dash_app(flask_app):
+    # Initialize  Dash App
     dash_app = Dash(__name__, server=flask_app, url_base_pathname='/dashboard/', external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-    # Initialize Elasticsearch client
-    es = Elasticsearch(
-            f"{ES_HOST}:{ES_PORT}",
-            api_key=ES_API_KEY,  # Authentication via API-key
-            verify_certs=False,
-            ssl_show_warn=False,
-            request_timeout=30,
-            retry_on_timeout=True
-        )
+    # Initialize Elasticsearch connector and get data
+    cec = CustomElasticsearchConnector()
+    df = asyncio.run(cec.get_all_flows(view="all", size=20))
+
     
-    # Modify search to match your document structure
-    s = Search(using=es, index=ES_INDEX) \
-        .extra(size=10) \
-        .source(['flow_id', 'flow_data', 'timestamp', "prediction", "attack_class", "has_been_seen" ])  # Specify fields to return
-
-    # Debug: Print total documents in index
-    response = s.execute()
-
-    # Print results with more detail
-    df_list = []
-    for hit in response:
-        df_list.append(pd.DataFrame([hit.to_dict()]))
-    
-
-    df = pd.concat(df_list)
-    # DataTable columns
-    cols = [
-    {'name': 'flow_id', 'id': 'flow_id'},
-    {'name': 'prediction', 'id': 'prediction'},
-    {'name': 'attack_class', 'id': 'attack_class'},
-    {'name': 'has_been_seen', 'id': 'has_been_seen'}]
-
-    def make_grid():
+    # Component Builders
+    # Grid
+    def make_grid(seen="*", grid_id="grid"):
         grid = dag.AgGrid(
-            id="grid",
-            rowData=df.to_dict("records"),
+            id=grid_id,
+            rowData=df[df["has_been_seen"] == seen].to_dict("records"),
             columnDefs=[
             {"field": "timestamp", "checkboxSelection": True },
             {"field": "flow_id", "floatingFilter": False},
@@ -75,21 +53,9 @@ def init_dash_app(flask_app):
             #selectedRows=df.head(1).to_dict("records")
         )
         return grid
-    
-    @dash_app.callback(
-    Output('detail_grid', 'rowData'),
-    Input('grid', 'selectedRows')
-    )
-    def update_detailed_grid(selected_rows):
-        if not selected_rows:
-            return []
-    
-        # Convert selected rows to dict format
-        return pd.DataFrame(selected_rows).to_dict("records")
-    
-    def make_detailed_grid():
+    def make_detailed_grid(grid_id):
         detail_grid = dag.AgGrid(
-        id="detail_grid",
+        id=grid_id,
         rowData=[],  # Empty initially
         columnDefs=[
             {"field": "timestamp"},
@@ -120,28 +86,42 @@ def init_dash_app(flask_app):
             style={'height': '700px', 'width': '100%'}  # Adjust height to accommodate the legend
         )
 
-    dash_app.layout = html.Div([
-        html.H1("Welcome to the Dashboard"),
-        # Main content row
-        dbc.Row([
-            # Left side - Grid
-            dbc.Col([
-                make_grid()
-            ], width=8, style={"border": "1px solid #ddd", "padding": "10px"}),  # Add border and padding for debugging
-            
-            # Right side - Pie Chart
-            dbc.Col([
-                make_pie_chart()
-            ], width=4, style={"border": "1px solid #ddd", "padding": "10px"})  # Add border and padding for debugging
-        ], style={'margin': '20px 0', 'display': 'flex', 'flex-direction': 'row'}),
-        # Bottom row - Detailed Grid
-        dbc.Row([
-            dbc.Col([
-                make_detailed_grid()
-            ], width=12)
-        ])
-    ], style={'padding': '20px'})
 
+    # Navigation Bar
+    def make_navbar():
+        return dbc.NavbarSimple(
+            children=[
+                dbc.NavItem(dbc.NavLink("Page 1", href="#")),
+                dbc.DropdownMenu(
+                    children=[
+                        dbc.DropdownMenuItem("More pages", header=True),
+                        dbc.DropdownMenuItem("Page 2", href="#"),
+                        dbc.DropdownMenuItem("Page 3", href="#"),
+                    ],
+                    nav=True,
+                    in_navbar=True,
+                    label="More",
+                ),
+            ],
+            brand="NavbarSimple",
+            brand_href="#",
+            color="primary",
+            dark=True,
+        )
+    
+    # Callbacks
+    # Detailed Grid Callback
+    def create_grid_callback(grid_id, detail_grid_id):
+        @dash_app.callback(
+            Output(detail_grid_id, 'rowData'),
+            Input(grid_id, 'selectedRows')
+        )
+        def update_grid(selected_rows):
+            if not selected_rows:
+                return []
+            
+            return pd.DataFrame(selected_rows).to_dict("records")
+    # Pie Chart Callback
     @dash_app.callback(
     Output('prediction-pie', 'figure'),
     Input('grid', 'selectedRows')
@@ -180,6 +160,54 @@ def init_dash_app(flask_app):
                     x=0.5             # Center the legend
                 )
             )
+
+    # Callback initialization
+    create_grid_callback("unseen_grid", "detailed_grid_unseen")
+    create_grid_callback("seen_grid", "detailed_grid_seen")
+    
+     
+    # Layout Components
+    dash_app.layout = html.Div([
+        make_navbar(),
+        # Main content row
+        dbc.Accordion(
+        [
+            dbc.AccordionItem(
+                [
+                    dbc.Row([
+                        # Left side - Grid
+                        dbc.Col([
+                            make_grid(seen=False, grid_id="unseen_grid")
+                        ], width=8, style={"border": "1px solid #ddd", "padding": "10px"}),  # Add border and padding for debugging
+                        
+                        # Right side - Pie Chart
+                        dbc.Col([
+                            make_pie_chart()
+                        ], width=4, style={"border": "1px solid #ddd", "padding": "10px"})  # Add border and padding for debugging
+                    ], style={'margin': '20px 0', 'display': 'flex', 'flex-direction': 'row'}),
+                    # Bottom row - Detailed Grid
+                    dbc.Row([
+                        dbc.Col([
+                            make_detailed_grid("detailed_grid_unseen")
+                        ], width=12)
+                    ])
+                ],
+                title="Unclassified Flows",
+            ),
+            dbc.AccordionItem(
+                [
+                    make_grid(seen=True, grid_id="seen_grid"),
+                    make_detailed_grid("detailed_grid_seen"),
+                ],
+                title="Classified Flows",
+            ),
+        ],
+        ),
+    ], style={'padding': '20px'})
+
+    
+    
+
 
     # Enforce authentication for the Dash app
     @flask_app.before_request
