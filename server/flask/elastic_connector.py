@@ -126,6 +126,20 @@ class CustomElasticsearchConnector:
             async for hit in s:
                 return await client.update(index=INDEX_NAME, refresh="wait_for", id=hit.meta.id, body={"doc": {"attack_class": attack_class}})
 
+    async def store_flow_data(self, data:dict):
+        # Initialize Elasticsearch client
+        with AsyncElasticsearch(
+            f"{self.hosts}",
+            api_key=self.api_key,  # Authentication via API-key
+            verify_certs=False,
+            ssl_show_warn=False,
+            request_timeout=30,
+            retry_on_timeout=True
+        ) as es:
+            # Send to Elasticsearch
+            return await es.index(index=INDEX_NAME, body=data)
+            
+
 if __name__ == '__main__':
     # TODO remove as this for testing only
     FLOWID = "56e58dfb-e260-44f5-9603-d7c22ed4f364"

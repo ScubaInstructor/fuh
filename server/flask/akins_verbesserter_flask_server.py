@@ -1,6 +1,7 @@
 import asyncio
-from base64 import b64decode, b64encode
+from base64 import b64decode
 from datetime import datetime, timedelta, timezone
+import hashlib
 from flask import Flask, request, jsonify, send_file, redirect, url_for, send_from_directory, flash,render_template
 from io import BytesIO
 import jwt
@@ -30,6 +31,8 @@ app.config['SECRET_KEY'] = getenv('your_secret_key')
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+modelhash = "" # the hash of the current model
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -115,6 +118,33 @@ def update_the_flowstore():
     global flow_ids, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
     flow_ids, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen = asyncio.run(CEC.get_all_flows(onlyunseen=False))
 
+def compute_file_hash(file_path: str) -> str:
+        """Compute the hash of a file using the sha265 algorithm.
+        
+        Args:
+            - file_path (str) = the path to the file
+        
+        Returns:
+            str: The hash value
+        """
+        hash_func = hashlib.sha256
+        with open(file_path, 'rb') as file:
+            # Read the file in chunks of 8192 bytes
+            while chunk := file.read(8192):
+                hash_func.update(chunk)
+        
+        return hash_func.hexdigest()
+
+def set_the_server_hash(filename:str):
+    """
+    set the current value of the hash of the model in global variable modelhash
+
+    Args:
+        filename (str): the filename of the model
+    """
+    global modelhash
+    modelhash = compute_file_hash(filename)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()  # Create an instance of the form
@@ -146,56 +176,47 @@ def favicon():
 
 
 
+@app.route('/upload', methods=['POST'])
+def upload():
+    # check auth
+    token = request.headers.get('Authorization').split()[1]
+    try:
+        payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
 
-# @app.route('/upload', methods=['POST'])
-# def upload():
-#     if ('file' in request.files and 
-#             'json' in request.files and 
-#             'probabilities' in request.files  and 
-#             'timestamp' in request.files and 
-#             'prediction' in request.files and 
-#             'sensor_name' in request.files and
-#             'sensor_port' in request.files and
-#             'partner_ip' in request.files and
-#             'partner_port' in request.files):
-#         # Process both file and JSON data
-#         file = request.files['file']
-#         json_data = json.loads(request.files['json'].read().decode('utf-8'))
-#         probabilities_data = json.loads(request.files['probabilities'].read().decode('utf-8'))
-#         timestamp_data = json.loads(request.files['timestamp'].read().decode('utf-8'))
-#         prediction = request.files['prediction'].read().decode('utf-8')
-#         sensor_name = request.files['sensor_name'].read().decode('utf-8')
-#         sensor_port = request.files['sensor_port'].read().decode('utf-8')
-#         partner_ip = request.files['partner_ip'].read().decode('utf-8')
-#         partner_port = request.files['partner_port'].read().decode('utf-8')
-#         # Generate unique IDs
-#         file_id = str(uuid.uuid4())
-#         df_id = str(uuid.uuid4())
+        # check if request is well formed
+        if ('flow_data' in request.data and 
+                'pcap_data' in request.data and 
+                'probabilities' in request.data  and 
+                'timestamp' in request.data and 
+                'prediction' in request.data and 
+                'sensor_name' in request.data and
+                'sensor_port' in request.data and
+                'partner_ip' in request.data and
+                'partner_port' in request.data and
+                'has_been_seen'in request.data and
+                'attack_class'in request.data and
+                'flow_id' in request.data and
+                'model_hash'in request.data):
+            
+            # check if hash is valid 
+            # TODO where is the servers hash located?          
+            sensor_hash = request.data[12]
+            if modelhash != sensor_hash:
+                return jsonify({"update_error": "Model is out of date!"}), 400
 
-#         # Store file content
-#         filestore[file_id] = file.read()
+            # receive data and store it in elastic
+            doc = request.data
+            asyncio.run(CEC.store_flow_data(data=doc))
 
-#         # Store JSON data 
-#         dataframes[df_id] = json_data
+            # notify_users() # TODO uncomment for real Notification
+        else:
+            return jsonify({"error": "Malformed data"}), 400
 
-#         # Store probabilities, predictions, sensor names, timestamp and has_been_seen
-#         probabilities_store[df_id] = probabilities_data
-#         predictions_store[df_id] = prediction
-#         sensor_names[df_id] = sensor_name
-#         timestamps[df_id] = timestamp_data['timestamp']  # Store the timestamp
-#         sensor_ports[df_id] = sensor_port
-#         partner_ips[df_id] = partner_ip
-#         partner_ports[df_id] = partner_port
-
-#         # Initialize has_been_seen for this ID to False
-#         has_been_seen[df_id] = False
-
-#         # Log the request
-#         requests_log.append({'file_id': file_id, 'dataframe_id': df_id})
-
-#         return jsonify({"file_id": file_id, "dataframe_id": df_id})
-#     else:
-#         return jsonify({"error": "Missing file or JSON data"}), 400
+    except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
+        return jsonify({'message': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'message': 'Invalid token'}), 401
+    return jsonify({'message': 'Access granted', 'user_id': payload['user_id']})
 
 
 @app.route('/')
@@ -359,3 +380,4 @@ def classified_requests():
 if __name__ == '__main__':
     generate_token("sensors")
     app.run(debug=True, port=8888)
+    set_the_server_hash("model.pkl")

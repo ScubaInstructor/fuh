@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import threading
 import base64
 from cicflowmeter import sniffer  
@@ -59,6 +60,7 @@ class My_Sniffer():
         self.snif: AsyncSniffer = self.get_intern_sniffer()  # create an Instance of the sniffer 
         self.queue = Queue() 
         self.model: RandomForestClassifier = load(MODELPATH)
+        self.model_hash = self.compute_file_hash(MODELPATH)
         self.ipca = load(IPCAPATH) if IPCAPATH else IPCAPATH
         self.scaler = load(SCALERPATH)
     
@@ -100,26 +102,10 @@ class My_Sniffer():
     
     def worker(self):
         '''the function which will be called to do the work on the flow'''
-        # Initialize Elasticsearch client
-        es = Elasticsearch(
-            f"{ES_HOST}:{ES_PORT}",
-            api_key=ES_API_KEY,  # Authentication via API-key
-            verify_certs=False,
-            ssl_show_warn=False,
-            request_timeout=30,
-            retry_on_timeout=True
-        )
-        
-        # Create index if it doesn't exist
-        # this must be removed, as we need special mappings and pipelines...
-        # if not es.indices.exists(index=ES_INDEX):
-        #     es.indices.create(index=ES_INDEX, ignore=400)
-        #     print(f"Created new index: {ES_INDEX}")
             
         while True:
             if DEBUGGING:
                 print("hello from worker!")
-                self.notify_flask_server()
             item: Flow = self.queue.get()  # Get a Flow item from the queue
             # item from type Flow. It contains all the packages it comprises.
             if DEBUGGING:
@@ -165,6 +151,7 @@ class My_Sniffer():
                 try:
                 # Prepare document for Elasticsearch
                     doc = {
+                        
                         'flow_id': flow_id,
                         'sensor_name': SENSOR_NAME, # unique Sensorname
                         'sensor_port': sensor_port,
@@ -178,18 +165,20 @@ class My_Sniffer():
 
                         'has_been_seen': False, # TODO Is this redundant, if we have the attack_class field?
                         'flow_data': item.get_data(),
-                        'pcap_data': pcap_base64  # Add the PCAP data as Base 64 encoded String
+                        'pcap_data': pcap_base64,  # Add the PCAP data as Base 64 encoded String
+
+                        'model_hash' : self.model_hash
+
                     }   
                     if DEBUGGING:
                         print(f"Document to be sent: {doc}")                 
-                    # Send to Elasticsearch
-                    es.index(index=ES_INDEX, body=doc)
-                    print(f"Data sent to Elasticsearch successfully")
+                    # send to flask
+                    self.upload_to_flask_server()
                 except AuthenticationException as ae:
                     print(f"Authentication error: {ae}")
                 except Exception as e:
                     print(f"Error sending data to Elasticsearch: {e}")
-                self.notify_flask_server()
+                
                 if DEBUGGING:
                     print("sent notification to flask server")
                 if DEBUGGING:
@@ -199,12 +188,32 @@ class My_Sniffer():
                     print(f'Finished {item}')  
             self.queue.task_done()  # to mark the item done 
 
-
-    def notify_flask_server(self):
+    def compute_file_hash(file_path: str) -> str:
+        """Compute the hash of a file using the sha265 algorithm.
         
-        async def _notify_flask_server(self):
-            hw = HttpWriter(SERVER_NOTIFY_URL)
-            hw.notify(token=SERVER_TOKEN)
+        Args:
+            - file_path (str) = the path to the file
+        
+        Returns:
+            str: The hash value
+        """
+        hash_func = hashlib.sha256
+        with open(file_path, 'rb') as file:
+            # Read the file in chunks of 8192 bytes
+            while chunk := file.read(8192):
+                hash_func.update(chunk)
+        
+        return hash_func.hexdigest()
+
+    def upload_to_flask_server(self, data: dict):
+        """
+        Upload the dict to the Flask server
+        Args:    data (dict): this contains all the data to be sent to Flask
+        Returns: 
+        """
+        async def _upload_to_flask_server(self, data:dict):
+            hw = HttpWriter("http://localhost:8888/upload") # TODO move to .env, maybe without "/upload"
+            return hw.write(token=SERVER_TOKEN, data=data)
         
         try:
             loop = asyncio.get_event_loop()
@@ -215,7 +224,7 @@ class My_Sniffer():
             else:
                 raise
         
-        loop.run_until_complete(_notify_flask_server(self))
+        return loop.run_until_complete(_upload_to_flask_server(self, data=data))
         
 
 if __name__ == "__main__":

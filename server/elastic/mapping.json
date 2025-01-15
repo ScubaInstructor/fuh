@@ -3,6 +3,10 @@
     "dynamic": "false",
     "properties": {
       
+      "model_hash": {
+        "type": "keyword"
+      },
+
       "flow_id": {
         "type": "keyword"
       },
