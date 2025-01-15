@@ -2,6 +2,7 @@ from elasticsearch import AsyncElasticsearch, AuthenticationException
 from elasticsearch_dsl import AsyncSearch, connections
 import asyncio
 import pandas as pd
+from datetime import datetime
 from elasticsearch.exceptions import AuthenticationException
 INDEX_NAME = "network_flows" # TODO make this comnfigured from .env file 
 
@@ -100,6 +101,8 @@ class CustomElasticsearchConnector:
                     df_list.append(pd.DataFrame([hit.to_dict()]))
                 
                 df = pd.concat(df_list)
+                # Convert timestamp to datetime
+                df['timestamp'] = pd.to_datetime(df['timestamp'])
 
             return df #id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
         return await _get_all_flows(self, view=view, size=size)

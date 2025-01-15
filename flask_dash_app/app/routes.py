@@ -9,9 +9,9 @@ main_routes = Blueprint('main', __name__)
 def home():
     return render_template('home.html')
 
-@main_routes.route('/dashboard')
+@main_routes.route('/inbox')
 @login_required
 def dashboard():
     print(f"User authenticated: {current_user.is_authenticated}")  # Debugging
     #return render_template('dashboard.html', username=current_user.username)
-    return redirect('/dashboard/')
+    return redirect('/inbox/')

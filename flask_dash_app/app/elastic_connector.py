@@ -84,22 +84,24 @@ class CustomElasticsearchConnector:
 
                 df_list = []
                 async for hit in s:
-                    id = hit.flow_id
-                    id_store[id] = hit.meta.id
-                    dataframes[id] = hit.flow_data
-                    partner_ips[id] = hit.partner_ip
-                    sensor_names[id] = hit.sensor_name
-                    predictions_store[id] = hit.prediction
-                    probabilities_store[id] = dict(hit.probabilities)
-                    partner_ports[id] = hit.partner_port
-                    sensor_ports[id] = hit.sensor_port
-                    timestamps[id] = hit.timestamp
-                    has_been_seen[id] = hit.has_been_seen
-                    attack_classes[id] = hit.attack_class
-                    filestore[id] = hit.pcap_data
+                    # id = hit.flow_id
+                    # id_store[id] = hit.meta.id
+                    # dataframes[id] = hit.flow_data
+                    # partner_ips[id] = hit.partner_ip
+                    # sensor_names[id] = hit.sensor_name
+                    # predictions_store[id] = hit.prediction
+                    # probabilities_store[id] = dict(hit.probabilities)
+                    # partner_ports[id] = hit.partner_port
+                    # sensor_ports[id] = hit.sensor_port
+                    # timestamps[id] = hit.timestamp
+                    # has_been_seen[id] = hit.has_been_seen
+                    # attack_classes[id] = hit.attack_class
+                    # filestore[id] = hit.pcap_data
                     df_list.append(pd.DataFrame([hit.to_dict()]))
                 
                 df = pd.concat(df_list)
+                # Convert timestamp to datetime
+                df['timestamp'] = pd.to_datetime(df['timestamp'])
 
             return df #id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
         return await _get_all_flows(self, view=view, size=size)
