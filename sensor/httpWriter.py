@@ -1,4 +1,4 @@
-from  requests import Session
+from  requests import Response, Session
 
 
 class HttpWriter():
@@ -31,7 +31,7 @@ class HttpWriter():
         headers = {'Authorization': f'Bearer {token}'}
         return self.session.post(self.url, headers=headers)
     
-    def write(self, data: dict, token:str) -> None:
+    def write(self, data: dict, token:str) -> Response:
         """
         Sends a single POST-Request with all the Data to the Server.
 
@@ -51,5 +51,7 @@ class HttpWriter():
                 - pcap_data = the PCAP data as Base 64 encoded String
                 - model_hash = The hash of the model in use
             token (str): the authentication token
+        Returns: Response: The response from the post request
         """
-        return self.session.post(self.url, data=data, token=token)
+        headers = {'Authorization': f'Bearer {token}'}
+        return self.session.post(self.url, json=data, headers=headers)

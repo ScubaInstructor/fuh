@@ -32,7 +32,8 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-modelhash = "" # the hash of the current model
+global modelhash
+modelhash: str = "" # the hash of the current model
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -127,7 +128,7 @@ def compute_file_hash(file_path: str) -> str:
         Returns:
             str: The hash value
         """
-        hash_func = hashlib.sha256
+        hash_func = hashlib.sha256()
         with open(file_path, 'rb') as file:
             # Read the file in chunks of 8192 bytes
             while chunk := file.read(8192):
@@ -184,28 +185,30 @@ def upload():
         payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
 
         # check if request is well formed
-        if ('flow_data' in request.data and 
-                'pcap_data' in request.data and 
-                'probabilities' in request.data  and 
-                'timestamp' in request.data and 
-                'prediction' in request.data and 
-                'sensor_name' in request.data and
-                'sensor_port' in request.data and
-                'partner_ip' in request.data and
-                'partner_port' in request.data and
-                'has_been_seen'in request.data and
-                'attack_class'in request.data and
-                'flow_id' in request.data and
-                'model_hash'in request.data):
+        if ('flow_data' in request.json and 
+                'pcap_data' in request.json and 
+                'probabilities' in request.json  and 
+                'timestamp' in request.json and 
+                'prediction' in request.json and 
+                'sensor_name' in request.json and
+                'sensor_port' in request.json and
+                'partner_ip' in request.json and
+                'partner_port' in request.json and
+                'has_been_seen'in request.json and
+                'attack_class'in request.json and
+                'flow_id' in request.json and
+                'model_hash'in request.json):
             
-            # check if hash is valid 
-            # TODO where is the servers hash located?          
-            sensor_hash = request.data[12]
+            # check if hash is valid     
+            sensor_hash = request.json["model_hash"]
+            print("Sensorhash: " + sensor_hash)
+            global modelhash 
+            print("Serverhash: " + modelhash)
             if modelhash != sensor_hash:
                 return jsonify({"update_error": "Model is out of date!"}), 400
 
             # receive data and store it in elastic
-            doc = request.data
+            doc = request.json
             asyncio.run(CEC.store_flow_data(data=doc))
 
             # notify_users() # TODO uncomment for real Notification
@@ -379,5 +382,6 @@ def classified_requests():
 
 if __name__ == '__main__':
     generate_token("sensors")
-    app.run(debug=True, port=8888)
     set_the_server_hash("model.pkl")
+    print(f"modelhash is now {modelhash}")
+    app.run(debug=True, port=8888)

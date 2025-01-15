@@ -14,7 +14,7 @@ class CustomElasticsearchConnector:
         verify_certs (bool): Whether to verify SSL certificates.
     """
 
-    def __init__(self, hosts=['https://localhost:9200'], api_key="WU1uNldaUUJyMFU1enNoeW5PUFI6dWs5RHRUOHhUQ3FXd1B3Um43WG43Zw==", verify_certs=False):
+    def __init__(self, hosts=['https://localhost:9200'], api_key="MzUxVmE1UUJMRFQzM0dVMEQ4blE6VDFtbUhyRG5RRmFqS05mMHJUeVlQZw==", verify_certs=False):
         """
         Initializes the CustomElasticsearchConnector.
 
@@ -128,16 +128,16 @@ class CustomElasticsearchConnector:
 
     async def store_flow_data(self, data:dict):
         # Initialize Elasticsearch client
-        with AsyncElasticsearch(
-            f"{self.hosts}",
+        async with AsyncElasticsearch(
+            self.hosts,
             api_key=self.api_key,  # Authentication via API-key
             verify_certs=False,
             ssl_show_warn=False,
             request_timeout=30,
             retry_on_timeout=True
-        ) as es:
+        ) as client:
             # Send to Elasticsearch
-            return await es.index(index=INDEX_NAME, body=data)
+            return await client.index(index=INDEX_NAME, body=data)
             
 
 if __name__ == '__main__':

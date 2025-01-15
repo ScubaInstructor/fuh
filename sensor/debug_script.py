@@ -196,20 +196,67 @@
 # sniffer.stop()
 
 
-import joblib
-import pandas as pd
-from pipelining_utilities import adapt_for_prediction
-from sklearn.ensemble import RandomForestClassifier
+# import joblib
+# import pandas as pd
+# from pipelining_utilities import adapt_for_prediction
+# from sklearn.ensemble import RandomForestClassifier
+# flow = joblib.load("/home/georg/Desktop/FaPra/python/fuh/live_flow_from_cicflowmeter/flow2.pkl")
+# flow_data: dict = pd.DataFrame([flow.get_data()])
+# model: RandomForestClassifier = joblib.load("/home/georg/Desktop/FaPra/python/fuh/sensor/model.pkl")
+# scaler = joblib.load("/home/georg/Desktop/FaPra/python/fuh/sensor/scaler.pkl")
+# ipca = joblib.load("/home/georg/Desktop/FaPra/python/fuh/sensor/ipca_mit_size_34.pkl")
+# flow_data: pd.DataFrame = adapt_for_prediction(data=flow_data,scaler=scaler,ipca=ipca,ipca_size=34)
+# pred = model.predict(flow_data)
+# prob = model.predict_proba(flow_data)
+# d = {}
+# for i in range(len(prob[0])):
+#     d[model.classes_[i]] = prob[0][i]
+# print(d)
 
-flow = joblib.load("/home/georg/Desktop/FaPra/python/fuh/live_flow_from_cicflowmeter/flow2.pkl")
-flow_data: dict = pd.DataFrame([flow.get_data()])
-model: RandomForestClassifier = joblib.load("/home/georg/Desktop/FaPra/python/fuh/sensor/model.pkl")
-scaler = joblib.load("/home/georg/Desktop/FaPra/python/fuh/sensor/scaler.pkl")
-ipca = joblib.load("/home/georg/Desktop/FaPra/python/fuh/sensor/ipca_mit_size_34.pkl")
-flow_data: pd.DataFrame = adapt_for_prediction(data=flow_data,scaler=scaler,ipca=ipca,ipca_size=34)
-pred = model.predict(flow_data)
-prob = model.predict_proba(flow_data)
-d = {}
-for i in range(len(prob[0])):
-    d[model.classes_[i]] = prob[0][i]
-print(d)
+import asyncio
+from datetime import datetime
+from httpWriter import HttpWriter
+
+doc = {             
+                        'flow_id': "1234",
+                        'sensor_name': "debug script", # unique Sensorname
+                        'sensor_port': 96,
+                        'partner_ip': "127.131.189.123", # Ip of the other endpoint of the flow
+                        'partner_port': 1848,
+
+                        'timestamp': datetime.now().isoformat(),
+                        'prediction': "BENIGN",
+                        'probabilities': {"BENIGN":0.8,"BOT":0.2},
+                        'attack_class': "not yet classified",
+
+                        'has_been_seen': False, # TODO Is this redundant, if we have the attack_class field?
+                        'flow_data': {"empty":True},
+                        'pcap_data': "pcap_base64",  # Add the PCAP data as Base 64 encoded String
+
+                        'model_hash' : "b0e8823cfe218394846dbb8d8180248b433615cdb8b357bfd2dbc136cb082663"
+                    }   
+
+SERVER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoic2Vuc29ycyIsImV4cCI6MTczNjY3NzMxN30.XZdTEsLIozjKQbFfe0Qf2gvZOLFGDK7j0sidrB7P71U"
+
+def upload_to_flask_server(data: dict):
+    """
+    Upload the dict to the Flask server
+    Args:    data (dict): this contains all the data to be sent to Flask
+    Returns: 
+    """
+    async def _upload_to_flask_server( data:dict):
+        hw = HttpWriter("http://localhost:8888/upload")
+        return hw.write(data=data, token=SERVER_TOKEN)
+    
+    # try:
+    #     loop = asyncio.get_event_loop()
+    # except RuntimeError as e:
+    #     if str(e).startswith('There is no current event loop in thread'):
+    #         loop = asyncio.new_event_loop()
+    #         asyncio.set_event_loop(loop)
+    #     else:
+    #         raise
+    
+    return asyncio.run(_upload_to_flask_server(data=data))
+
+print(upload_to_flask_server(data=doc).text)

@@ -2,6 +2,8 @@ import asyncio
 import hashlib
 import threading
 import base64
+
+from requests import Response
 from cicflowmeter import sniffer  
 from httpWriter import HttpWriter
 from cicflowmeter.flow import Flow
@@ -31,9 +33,9 @@ DEBUGGING = os.environ.get('DEBUGGING') == '1'
 # Reading of the environmentvariables
 SNIFFING_INTERFACE = os.getenv('SNIFFING_INTERFACE')
 # Elastic
-ES_HOST = os.getenv('ES_HOST')  # Change this to your Elasticsearch host
-ES_PORT = int(os.getenv('ES_PORT'))        # Change this to your Elasticsearch port
-ES_INDEX = os.getenv('ES_INDEX')  # Index name for storing flow data
+# ES_HOST = os.getenv('ES_HOST')  # Change this to your Elasticsearch host
+# ES_PORT = int(os.getenv('ES_PORT'))        # Change this to your Elasticsearch port
+# ES_INDEX = os.getenv('ES_INDEX')  # Index name for storing flow data
 #Flask Server
 SERVER_NOTIFY_URL = os.getenv('SERVER_NOTIFY_URL')
 SERVER_TOKEN = os.getenv('SERVER_TOKEN')
@@ -173,14 +175,15 @@ class My_Sniffer():
                     if DEBUGGING:
                         print(f"Document to be sent: {doc}")                 
                     # send to flask
-                    self.upload_to_flask_server()
+                    resp = self.upload_to_flask_server(data=doc)
+                    print(resp.text)
                 except AuthenticationException as ae:
                     print(f"Authentication error: {ae}")
                 except Exception as e:
-                    print(f"Error sending data to Elasticsearch: {e}")
+                    print(f"Error sending data to Server: {e}")
                 
                 if DEBUGGING:
-                    print("sent notification to flask server")
+                    print("sent data to flask server")
                 if DEBUGGING:
                     print(f'Finished {item} mit UUID:{flow_id}')  
             else:
@@ -188,7 +191,7 @@ class My_Sniffer():
                     print(f'Finished {item}')  
             self.queue.task_done()  # to mark the item done 
 
-    def compute_file_hash(file_path: str) -> str:
+    def compute_file_hash(self, file_path: str) -> str:
         """Compute the hash of a file using the sha265 algorithm.
         
         Args:
@@ -197,7 +200,7 @@ class My_Sniffer():
         Returns:
             str: The hash value
         """
-        hash_func = hashlib.sha256
+        hash_func = hashlib.sha256()
         with open(file_path, 'rb') as file:
             # Read the file in chunks of 8192 bytes
             while chunk := file.read(8192):
@@ -205,15 +208,15 @@ class My_Sniffer():
         
         return hash_func.hexdigest()
 
-    def upload_to_flask_server(self, data: dict):
+    def upload_to_flask_server(self, data: dict) -> Response:
         """
         Upload the dict to the Flask server
         Args:    data (dict): this contains all the data to be sent to Flask
         Returns: 
         """
-        async def _upload_to_flask_server(self, data:dict):
+        async def _upload_to_flask_server(self, data:dict) -> Response:
             hw = HttpWriter("http://localhost:8888/upload") # TODO move to .env, maybe without "/upload"
-            return hw.write(token=SERVER_TOKEN, data=data)
+            return hw.write(data=data, token=SERVER_TOKEN)
         
         try:
             loop = asyncio.get_event_loop()
