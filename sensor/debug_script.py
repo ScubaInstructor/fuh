@@ -215,6 +215,8 @@
 
 import asyncio
 from datetime import datetime
+
+from flask import json
 from httpWriter import HttpWriter
 
 doc = {             
@@ -259,4 +261,29 @@ def upload_to_flask_server(data: dict):
     
     return asyncio.run(_upload_to_flask_server(data=data))
 
-print(upload_to_flask_server(data=doc).text)
+def download_new_model(token:str):
+    async def _download_new_model(token:str):
+        hw = HttpWriter("http://localhost:8888/get_latest_model")
+        return hw.download_file(token=token)
+    return asyncio.run(_download_new_model(token=token))
+
+def test_token_and_hash_on_flask_server():
+    resp = json.loads(upload_to_flask_server(data=doc).text)
+    if "error" in resp:
+        if resp["error"] == "Invalid token":
+            print("Token is not valid")
+        elif resp["error"] == "Malformed data":
+            print("Data is not formed corretly!")
+    elif "update_error" in resp:
+        print("Update of model is needed")
+    else:
+        print("Everything cool!")
+
+def test_download_file():
+    resp = download_new_model(token=SERVER_TOKEN)
+    print(resp)
+    with open("/test_model.pkl", "wb") as f:
+        f.write(resp.content)
+    
+
+test_download_file()

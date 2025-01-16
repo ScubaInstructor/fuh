@@ -175,15 +175,25 @@ class My_Sniffer():
                     if DEBUGGING:
                         print(f"Document to be sent: {doc}")                 
                     # send to flask
-                    resp = self.upload_to_flask_server(data=doc)
-                    print(resp.text)
+                    resp = json.loads(self.upload_to_flask_server(data=doc).text)
+                    if "error" in resp:
+                        if resp["error"] == "Invalid token":
+                            if DEBUGGING:
+                                print("Token is not valid")
+                        elif resp["error"] == "Malformed data":
+                            if DEBUGGING:
+                                print("Data is not formed corretly!")
+                    elif "update_error" in resp:
+                        if DEBUGGING:
+                            print("Update of model is needed")
+                        
+                    else:
+                        if DEBUGGING:
+                            print("sent data to flask server")
                 except AuthenticationException as ae:
                     print(f"Authentication error: {ae}")
                 except Exception as e:
                     print(f"Error sending data to Server: {e}")
-                
-                if DEBUGGING:
-                    print("sent data to flask server")
                 if DEBUGGING:
                     print(f'Finished {item} mit UUID:{flow_id}')  
             else:

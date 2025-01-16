@@ -55,3 +55,7 @@ class HttpWriter():
         """
         headers = {'Authorization': f'Bearer {token}'}
         return self.session.post(self.url, json=data, headers=headers)
+    
+    def download_file(self, token:str):
+        headers = {'Authorization': f'Bearer {token}'}
+        return self.session.get(self.url, headers=headers)

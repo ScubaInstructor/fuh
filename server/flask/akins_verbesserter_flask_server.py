@@ -2,6 +2,7 @@ import asyncio
 from base64 import b64decode
 from datetime import datetime, timedelta, timezone
 import hashlib
+from pathlib import Path
 from flask import Flask, request, jsonify, send_file, redirect, url_for, send_from_directory, flash,render_template
 from io import BytesIO
 import jwt
@@ -221,9 +222,9 @@ def upload():
             return jsonify({"error": "Malformed data"}), 400
 
     except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
-        return jsonify({'message': 'Token expired'}), 401
+        return jsonify({'error': 'Token expired'}), 401
     except jwt.InvalidTokenError:
-        return jsonify({'message': 'Invalid token'}), 401
+        return jsonify({'error': 'Invalid token'}), 401
     return jsonify({'message': 'Access granted', 'user_id': payload['user_id']})
 
 
@@ -371,6 +372,24 @@ def download_file(file_id):
         )
     return "File not found", 404
 
+@app.route('/get_latest_model')
+def get_latest_model():
+    # check auth
+    token = request.headers.get('Authorization').split()[1]
+    try:
+        payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
+        filename = "model.pkl"
+        if Path(filename).is_file():
+            return send_file(
+                filename,
+                as_attachment=True,
+                download_name=f"test_model.pkl"  # TODO change this!
+            )
+        return "File not found", 404
+    except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
 
 @app.route('/classified_requests')
 @login_required
