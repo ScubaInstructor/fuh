@@ -1,11 +1,10 @@
 # This example requires the 'members' privileged intents
 # Set Channel ID accordingly
 # Set token
-# Remove DEBUG
 
 import discord
 
-DEBUG = 1
+DEBUG = 1 # TODO remove debug
 
 
 
@@ -24,7 +23,7 @@ class DiscordClient(discord.Client):
     
     async def on_ready(self):
         self.channel = self.get_channel(self.channel_id)
-        m  = await self.channel.send('Zum Annehmen des Tickets bitte mit 👍 reagieren!')
+        m  = await self.channel.send('To take responsibility for the ticket. please respond with a 👍!')
         self.message_id = m.id
 
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):

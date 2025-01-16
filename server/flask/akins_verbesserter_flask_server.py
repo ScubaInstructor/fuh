@@ -35,6 +35,12 @@ login_manager.login_view = 'login'
 global modelhash
 modelhash: str = "" # the hash of the current model
 
+# Discord stuff
+DISCORD_NOTIFICATION_DELAY = 1 # number of hours for timedelay between notifications
+TOKEN = getenv('DISCORD_TOKEN')
+CHANNEL_ID = int(getenv('DISCORD_CHANNEL_ID'))
+discord_client = DiscordClient(channel_id=CHANNEL_ID)
+
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
@@ -63,23 +69,22 @@ def generate_token(user_id):
             f.write("\n")
         print(f"Token generated and written to file.\n Token is {token}")
 
-@app.route('/notify', methods=['POST'])
-def notify():
-    token = request.headers.get('Authorization').split()[1]
-    try:
-        payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
-        # notify_users() # TODO uncomment for real Notification
-        return jsonify({'message': 'Access granted', 'user_id': payload['user_id']})
-    except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
-        return jsonify({'message': 'Token expired'}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({'message': 'Invalid token'}), 401
+# @app.route('/notify', methods=['POST'])
+# def notify():
+#     token = request.headers.get('Authorization').split()[1]
+#     try:
+#         payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
+#         # notify_users() # TODO uncomment for real Notification
+#         return jsonify({'message': 'Access granted', 'user_id': payload['user_id']})
+#     except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
+#         return jsonify({'message': 'Token expired'}), 401
+#     except jwt.InvalidTokenError:
+#         return jsonify({'message': 'Invalid token'}), 401
 
-def notify_users(): # TODO make threaded and add timedelay for multiple requests
-    TOKEN = getenv('DISCORD_TOKEN')
-    CHANNEL_ID = int(getenv('DISCORD_CHANNEL_ID'))
-    client = DiscordClient(channel_id=CHANNEL_ID)
-    client.run(token=TOKEN)
+def notify_users():
+    if last_notification < datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY):
+        discord_client.run(token=TOKEN)
+        last_notification = datetime.now()
 
 # Dictionaries to store dataframes, files, probabilities, predictions and timestamps with unique IDs
 dataframes = {}
@@ -384,4 +389,5 @@ if __name__ == '__main__':
     generate_token("sensors")
     set_the_server_hash("model.pkl")
     print(f"modelhash is now {modelhash}")
+    last_notification = datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY)
     app.run(debug=True, port=8888)
