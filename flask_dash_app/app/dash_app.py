@@ -25,27 +25,27 @@ def init_dash_app(flask_app):
 
     
 
-    # Navigation Bar
-    def make_navbar():
-        return dbc.NavbarSimple(
-            children=[
-                dbc.NavItem(dbc.NavLink("Page 1", href="#")),
-                dbc.DropdownMenu(
-                    children=[
-                        dbc.DropdownMenuItem("More pages", header=True),
-                        dbc.DropdownMenuItem("Page 2", href="#"),
-                        dbc.DropdownMenuItem("Page 3", href="#"),
-                    ],
-                    nav=True,
-                    in_navbar=True,
-                    label="More",
-                ),
-            ],
-            brand="NavbarSimple",
-            brand_href="#",
-            color="primary",
-            dark=True,
-        )
+    # # Navigation Bar
+    # def make_navbar():
+    #     return dbc.NavbarSimple(
+    #         children=[
+    #             dbc.NavItem(dbc.NavLink("Page 1", href="#")),
+    #             dbc.DropdownMenu(
+    #                 children=[
+    #                     dbc.DropdownMenuItem("More pages", header=True),
+    #                     dbc.DropdownMenuItem("Page 2", href="#"),
+    #                     dbc.DropdownMenuItem("Page 3", href="#"),
+    #                 ],
+    #                 nav=True,
+    #                 in_navbar=True,
+    #                 label="More",
+    #             ),
+    #         ],
+    #         brand="Network Anomaly Detection Demonstrator",
+    #         brand_href="#",
+    #         color="primary",
+    #         dark=True,
+    #     )
     
     # Get dash pages
     pages = dash.page_registry.values()
@@ -58,16 +58,16 @@ def init_dash_app(flask_app):
                 dbc.NavItem(dbc.NavLink("Training", href="/training/")),
                 dbc.DropdownMenu(
                     children=[
-                        dbc.DropdownMenuItem("More pages", header=True),
-                        dbc.DropdownMenuItem("Page 2", href="#"),
-                        dbc.DropdownMenuItem("Page 3", href="#"),
+                        #dbc.DropdownMenuItem("More pages", header=True),
+                        dbc.DropdownMenuItem("Settings", href="#"),
+                        dbc.DropdownMenuItem("Logout", href="/logout", external_link=True),
                     ],
                     nav=True,
                     in_navbar=True,
-                    label="More",
+                    label="My Account",
                 ),
             ],
-            brand="NavbarSimple",
+            brand="Network Anomaly Detection Demonstrator",
             brand_href="#",
             color="primary",
             dark=True,
