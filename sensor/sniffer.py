@@ -1,8 +1,8 @@
 import asyncio
 import hashlib
-import threading
 import base64
 
+from  threading import Thread
 from requests import Response
 from cicflowmeter import sniffer  
 from httpWriter import HttpWriter
@@ -37,7 +37,7 @@ SNIFFING_INTERFACE = os.getenv('SNIFFING_INTERFACE')
 # ES_PORT = int(os.getenv('ES_PORT'))        # Change this to your Elasticsearch port
 # ES_INDEX = os.getenv('ES_INDEX')  # Index name for storing flow data
 #Flask Server
-SERVER_NOTIFY_URL = os.getenv('SERVER_NOTIFY_URL')
+SERVER_URL = os.getenv('SERVER_URL')
 SERVER_TOKEN = os.getenv('SERVER_TOKEN')
 # Get these values from your Elasticsearch installation
 ES_API_KEY = os.getenv('ES_API_KEY')  # API key for access to elastic 
@@ -68,14 +68,20 @@ class My_Sniffer():
     
     def start(self):
         '''start sniffer and worker-thread'''
-        self.start_receiver_worker()  # Starte den Worker für den Empfang von Daten
+        worker_thread = self.start_receiver_worker()  # Start worker to deal with items in the queue
         if DEBUGGING:
             print("Starting sniffer")
-        self.snif.start()  # Starte den Sniffer
+        self.snif.start()  # Start the sniffer
         
         try:
             while True:
                 sleep(1)  # to reduce cpu load # TODO check if necessary
+                if worker_thread.is_alive():
+                    pass
+                else:   # the worker has stopped hopefully because of necessary model update
+                    self.download_new_model()
+                    sleep(5)
+                    worker_thread = self.start_receiver_worker()
         except KeyboardInterrupt:
             print("Exiting")  
         finally:
@@ -98,12 +104,18 @@ class My_Sniffer():
         # s.count = 10  # Für Testzwecke (kann verwendet werden, um die Anzahl der Pakete zu begrenzen)
         return s
 
-    def start_receiver_worker(self):
+    def start_receiver_worker(self) -> Thread:
         '''starting the worker thread'''
-        threading.Thread(target=self.worker, daemon=True).start()  # Start a new thread for worker
-    
+        threadname = "worker_thread"
+        trd = Thread(target=self.worker, daemon=True, name=threadname)
+        trd.start()  # Start a new thread for worker
+        return trd
+
     def worker(self):
-        '''the function which will be called to do the work on the flow'''
+        '''
+        the function which will be called to do the work on the flow
+        Returns 
+        '''
             
         while True:
             if DEBUGGING:
@@ -185,8 +197,9 @@ class My_Sniffer():
                                 print("Data is not formed corretly!")
                     elif "update_error" in resp:
                         if DEBUGGING:
-                            print("Update of model is needed")
-                        
+                            print("Update of model is needed \nshutting down the Worker thread!")
+                        # start the model update and write new model.pkl file in the main thread and recreate a worker thread
+                        return
                     else:
                         if DEBUGGING:
                             print("sent data to flask server")
@@ -225,7 +238,7 @@ class My_Sniffer():
         Returns: 
         """
         async def _upload_to_flask_server(self, data:dict) -> Response:
-            hw = HttpWriter("http://localhost:8888/upload") # TODO move to .env, maybe without "/upload"
+            hw = HttpWriter(f"{SERVER_URL}/upload") 
             return hw.write(data=data, token=SERVER_TOKEN)
         
         try:
@@ -239,6 +252,17 @@ class My_Sniffer():
         
         return loop.run_until_complete(_upload_to_flask_server(self, data=data))
         
+    def download_new_model(self):
+        """
+            Download the new model and save it to model.pkl, replacing the old model.
+        """
+        async def _download_new_model(self):
+            hw = HttpWriter(f"{SERVER_URL}/get_latest_model")
+            return hw.download_file(token=SERVER_TOKEN)
+        
+        response =  asyncio.run(_download_new_model(self=self))
+        with open("model.pkl", "wb") as f:
+            f.write(response.content)
 
 if __name__ == "__main__":
     s = My_Sniffer() 
