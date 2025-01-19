@@ -1,8 +1,9 @@
 import asyncio
 import hashlib
-import threading
 import base64
 
+from  threading import Thread
+from zipfile import ZipFile
 from requests import Response
 from cicflowmeter import sniffer  
 from httpWriter import HttpWriter
@@ -37,7 +38,7 @@ SNIFFING_INTERFACE = os.getenv('SNIFFING_INTERFACE')
 # ES_PORT = int(os.getenv('ES_PORT'))        # Change this to your Elasticsearch port
 # ES_INDEX = os.getenv('ES_INDEX')  # Index name for storing flow data
 #Flask Server
-SERVER_NOTIFY_URL = os.getenv('SERVER_NOTIFY_URL')
+SERVER_URL = os.getenv('SERVER_URL')
 SERVER_TOKEN = os.getenv('SERVER_TOKEN')
 # Get these values from your Elasticsearch installation
 ES_API_KEY = os.getenv('ES_API_KEY')  # API key for access to elastic 
@@ -62,20 +63,26 @@ class My_Sniffer():
         self.snif: AsyncSniffer = self.get_intern_sniffer()  # create an Instance of the sniffer 
         self.queue = Queue() 
         self.model: RandomForestClassifier = load(MODELPATH)
-        self.model_hash = self.compute_file_hash(MODELPATH)
+        self.model_hash = self.compute_model_hash()
         self.ipca = load(IPCAPATH) if IPCAPATH else IPCAPATH
         self.scaler = load(SCALERPATH)
     
     def start(self):
         '''start sniffer and worker-thread'''
-        self.start_receiver_worker()  # Starte den Worker für den Empfang von Daten
+        worker_thread = self.start_receiver_worker()  # Start worker to deal with items in the queue
         if DEBUGGING:
             print("Starting sniffer")
-        self.snif.start()  # Starte den Sniffer
+        self.snif.start()  # Start the sniffer
         
         try:
             while True:
                 sleep(1)  # to reduce cpu load # TODO check if necessary
+                if worker_thread.is_alive():
+                    pass
+                else:   # the worker has stopped hopefully because of necessary model update
+                    self.download_new_model()
+                    sleep(5)
+                    worker_thread = self.start_receiver_worker()
         except KeyboardInterrupt:
             print("Exiting")  
         finally:
@@ -85,7 +92,7 @@ class My_Sniffer():
     
     def output_function(self, data: Flow):
         if DEBUGGING:
-            print("out_func reached")
+            print("out_func reached inside Async sniffer")
         '''this function will be called when a flow is completed and ready for further use'''
         self.queue.put(data)  # Füge die empfangenen Daten zur Warteschlange hinzu
         # self.queue.join()  # Warte, bis alle Aufgaben in der Warteschlange bearbeitet sind
@@ -98,13 +105,20 @@ class My_Sniffer():
         # s.count = 10  # Für Testzwecke (kann verwendet werden, um die Anzahl der Pakete zu begrenzen)
         return s
 
-    def start_receiver_worker(self):
+    def start_receiver_worker(self) -> Thread:
         '''starting the worker thread'''
-        threading.Thread(target=self.worker, daemon=True).start()  # Start a new thread for worker
+        threadname = "worker_thread"
+        trd = Thread(target=self.worker, daemon=True, name=threadname)
+        trd.start()  # Start a new thread for worker
+        return trd
     
     def worker(self):
-        '''the function which will be called to do the work on the flow'''
-            
+        '''
+        the function which will be called to do the work on the flow
+        
+        Returns: None this means the model needs to be updated
+
+        '''            
         while True:
             if DEBUGGING:
                 print("hello from worker!")
@@ -175,15 +189,28 @@ class My_Sniffer():
                     if DEBUGGING:
                         print(f"Document to be sent: {doc}")                 
                     # send to flask
-                    resp = self.upload_to_flask_server(data=doc)
-                    print(resp.text)
+                    resp = json.loads(self.upload_to_flask_server(data=doc).text)
+                    if "error" in resp:
+                        if resp["error"] == "Invalid token":
+                            if DEBUGGING:
+                                print("Token is not valid")
+                        elif resp["error"] == "Malformed data":
+                            if DEBUGGING:
+                                print("Data is not formed corretly!")
+                    elif "update_error" in resp:
+                        if DEBUGGING:
+                            print("Update of model is needed \nshutting down the Worker thread!")
+                        # start the model update and write new model.pkl file in the main thread and recreate a worker thread
+                        self.queue.put(item) # put the item back into the queue for next worker-thread
+                        return
+                        
+                    else:
+                        if DEBUGGING:
+                            print("sent data to flask server")
                 except AuthenticationException as ae:
                     print(f"Authentication error: {ae}")
                 except Exception as e:
                     print(f"Error sending data to Server: {e}")
-                
-                if DEBUGGING:
-                    print("sent data to flask server")
                 if DEBUGGING:
                     print(f'Finished {item} mit UUID:{flow_id}')  
             else:
@@ -191,7 +218,7 @@ class My_Sniffer():
                     print(f'Finished {item}')  
             self.queue.task_done()  # to mark the item done 
 
-    def compute_file_hash(self, file_path: str) -> str:
+    def compute_model_hash(self) -> str:
         """Compute the hash of a file using the sha265 algorithm.
         
         Args:
@@ -201,7 +228,7 @@ class My_Sniffer():
             str: The hash value
         """
         hash_func = hashlib.sha256()
-        with open(file_path, 'rb') as file:
+        with open(MODELPATH, 'rb') as file:
             # Read the file in chunks of 8192 bytes
             while chunk := file.read(8192):
                 hash_func.update(chunk)
@@ -215,7 +242,7 @@ class My_Sniffer():
         Returns: 
         """
         async def _upload_to_flask_server(self, data:dict) -> Response:
-            hw = HttpWriter("http://localhost:8888/upload") # TODO move to .env, maybe without "/upload"
+            hw = HttpWriter(f"{SERVER_URL}/upload") 
             return hw.write(data=data, token=SERVER_TOKEN)
         
         try:
@@ -229,7 +256,28 @@ class My_Sniffer():
         
         return loop.run_until_complete(_upload_to_flask_server(self, data=data))
         
+    def download_new_model(self):
+        """
+            Download the new model, scaler and ipca, replacing the old files.
+        """
+        async def _download_new_model(self):
+            hw = HttpWriter(f"{SERVER_URL}/get_latest_model")
+            return hw.download_file(token=SERVER_TOKEN)
+        
+        response =  asyncio.run(_download_new_model(self=self))
+        
+        # write the file
+        zipfile_name = "model_scaler_ipca.zip"
+        with open(zipfile_name, "wb") as f:
+            f.write(response.content)
+        # unzip the zip file
+        with ZipFile(zipfile_name,"r") as z:
+            z.extractall(".")
+        
+        self.model_hash = self.compute_model_hash()
 
+        
+        
 if __name__ == "__main__":
     s = My_Sniffer() 
     s.start()  
