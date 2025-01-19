@@ -72,18 +72,6 @@ def generate_token(user_id):
             f.write("\n")
         print(f"Token generated and written to file.\n Token is {token}")
 
-# @app.route('/notify', methods=['POST'])
-# def notify():
-#     token = request.headers.get('Authorization').split()[1]
-#     try:
-#         payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
-#         # notify_users() # TODO uncomment for real Notification
-#         return jsonify({'message': 'Access granted', 'user_id': payload['user_id']})
-#     except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
-#         return jsonify({'message': 'Token expired'}), 401
-#     except jwt.InvalidTokenError:
-#         return jsonify({'message': 'Invalid token'}), 401
-
 def notify_users():
     if last_notification < datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY):
         discord_client.run(token=TOKEN)
@@ -182,7 +170,17 @@ def load_user(user_id):
 def favicon():
     return send_from_directory(join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
-
+@app.route('/get_model_hash', methods=['GET'])
+def get_model_hash():
+    # check auth
+    token = request.headers.get('Authorization').split()[1]
+    try:
+        payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
+    except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    return jsonify({'message': 'Access granted', 'model_hash': modelhash})
 
 
 @app.route('/upload', methods=['POST'])

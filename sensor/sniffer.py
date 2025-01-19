@@ -2,7 +2,7 @@ import asyncio
 import hashlib
 import base64
 
-from  threading import Thread
+from  threading import Lock, Thread
 from zipfile import ZipFile
 from requests import Response
 from cicflowmeter import sniffer  
@@ -51,11 +51,12 @@ else:
     LOCALPREFIX = os.getenv('LOCALPREFIX')
     LOCALPREFIX = "./fuh/sensor/" if LOCALPREFIX == None else LOCALPREFIX
 
-# Load the 
+# Load the model
 MODELPATH = LOCALPREFIX + "model.pkl" 
 SCALERPATH = LOCALPREFIX + "scaler.pkl"
 IPCAPATH = LOCALPREFIX + "ipca_mit_size_34.pkl"
 IPCASIZE = 34 # TODO This is a magic number!
+MODEL_UPDATE_INTERVAL = 6 # update interval in hours
 
 class My_Sniffer():
     def __init__(self) -> None:
@@ -64,16 +65,17 @@ class My_Sniffer():
         self.queue = Queue() 
         self.model: RandomForestClassifier = load(MODELPATH)
         self.model_hash = self.compute_model_hash()
+        self.model_lock = Lock()
         self.ipca = load(IPCAPATH) if IPCAPATH else IPCAPATH
         self.scaler = load(SCALERPATH)
     
     def start(self):
-        '''start sniffer and worker-thread'''
+        '''check for new model, start sniffer and worker-thread'''
+        Thread(target=self.check_for_model_update(), daemon=True, name="model_updater").start()
         worker_thread = self.start_receiver_worker()  # Start worker to deal with items in the queue
         if DEBUGGING:
             print("Starting sniffer")
-        self.snif.start()  # Start the sniffer
-        
+        self.snif.start()  # Start the sniffer        
         try:
             while True:
                 sleep(1)  # to reduce cpu load # TODO check if necessary
@@ -88,8 +90,19 @@ class My_Sniffer():
         finally:
             print("Stopping sniffer")
             self.snif.stop()  
-            self.snif.join()  # wait to fully finish the sniffer
+            self.snif.join() 
+
+    def check_for_model_update(self):
+        server_hash = self.get_model_hash() # get the latest hash
+        if server_hash != self.model_hash:
+            self.model_lock.acquire()
+            self.download_new_model()
+            self.model_lock.release() # wait to fully finish the update
     
+    def keep_model_updated(self):
+        self.check_for_model_update()
+        sleep(60*60*MODEL_UPDATE_INTERVAL) # sleep for set hours
+
     def output_function(self, data: Flow):
         if DEBUGGING:
             print("out_func reached inside Async sniffer")
@@ -129,7 +142,9 @@ class My_Sniffer():
             # creating a prognosis on the Metadata
             flow_data: dict = DataFrame([item.get_data()])
             flow_data: DataFrame = adapt_for_prediction(data=flow_data,scaler=self.scaler,ipca=self.ipca,ipca_size=IPCASIZE)
+            self.model_lock.acquire()
             prediction = self.model.predict(flow_data) # returns a numpy ndarray
+            self.model_lock.release()
             proba = self.model.predict_proba(flow_data)
 
             if DEBUGGING:
@@ -276,6 +291,9 @@ class My_Sniffer():
         
         self.model_hash = self.compute_model_hash()
 
+    def get_model_hash(self):
+        hw = HttpWriter(f"{SERVER_URL}/get_model_hash")
+        return hw.get_model_hash(token=SERVER_TOKEN)
         
         
 if __name__ == "__main__":

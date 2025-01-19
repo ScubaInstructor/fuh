@@ -1,3 +1,4 @@
+import json
 from  requests import Response, Session
 
 
@@ -59,3 +60,9 @@ class HttpWriter():
     def download_file(self, token:str):
         headers = {'Authorization': f'Bearer {token}'}
         return self.session.get(self.url, headers=headers)
+    
+    def get_model_hash(self, token):
+        headers = {'Authorization': f'Bearer {token}'}
+        resp = json.loads(self.session.get(self.url, headers=headers).text)
+        return resp['model_hash']
+        
