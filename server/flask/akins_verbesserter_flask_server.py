@@ -54,7 +54,7 @@ class User(db.Model, UserMixin):
 with app.app_context():
     db.create_all()
 
-def generate_token(user_id):
+def generate_token(user_id):    # TODO this must be used through the webinterface and with diefferent usernames...
     '''
     Generate a token and write it to file
     '''
@@ -405,7 +405,7 @@ def classified_requests():
 
 
 if __name__ == '__main__':
-    generate_token("sensors")
+    generate_token("sensors")   # this could be done in the webinterface
     set_the_server_hash("model.pkl")
     print(f"modelhash is now {modelhash}")
     last_notification = datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY)
