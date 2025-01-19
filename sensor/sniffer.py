@@ -289,6 +289,10 @@ class My_Sniffer():
         with ZipFile(zipfile_name,"r") as z:
             z.extractall(".")
         
+        self.model = load(MODELPATH)
+        self.scaler = load(SCALERPATH)
+        self.ipca = load(IPCAPATH)
+        
         self.model_hash = self.compute_model_hash()
 
     def get_model_hash(self):
