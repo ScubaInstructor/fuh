@@ -54,7 +54,7 @@ else:
 MODELPATH = LOCALPREFIX + "model.pkl" 
 SCALERPATH = LOCALPREFIX + "scaler.pkl"
 IPCAPATH = LOCALPREFIX + "ipca_mit_size_34.pkl"
-IPCASIZE = 34
+IPCASIZE = 34 # TODO This is a magic number!
 
 class My_Sniffer():
     def __init__(self) -> None:

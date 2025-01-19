@@ -16,6 +16,8 @@ from threading import Thread
 from elastic_connector import CustomElasticsearchConnector
 from discord_bot import DiscordClient
 from dotenv import load_dotenv
+from retrainer import retrain
+
 matplotlib.use('Agg') 
 load_dotenv()
 
@@ -102,7 +104,7 @@ has_been_seen = {}  # Store if entries have been seen
 flow_ids = []   # Log for storing request information
 
 
-G = GeoIP2Fast(verbose=False)
+G = GeoIP2Fast(verbose=False, geoip2fast_data_file='geoip2fast.dat.gz')
 def update_geoip_database():
     while True:
         err = G.update_all()
@@ -353,10 +355,10 @@ def details(id):
 
 @app.route('/retrain')
 @login_required
-def some_function():
-    classified_ids = [i for i in has_been_seen if has_been_seen[i]]
-    trainingdata = [(dataframes[i] , attack_classes[i] ) for i in classified_ids]
-    print(trainingdata)
+def retrain_button_pushed():
+    stats = retrain()
+    set_the_server_hash("model.pkl")
+    print(stats)
     print("DEBUG: Button pushed")
     return redirect(url_for('index'))  # Back to index
 
@@ -377,13 +379,13 @@ def get_latest_model():
     # check auth
     token = request.headers.get('Authorization').split()[1]
     try:
-        payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
-        filename = "model.pkl"
+        jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
+        filename = "model_scaler_ipca.zip"
         if Path(filename).is_file():
             return send_file(
                 filename,
                 as_attachment=True,
-                download_name=f"test_model.pkl"  # TODO change this!
+                download_name=f"model_scaler_ipca.zip"  
             )
         return "File not found", 404
     except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
