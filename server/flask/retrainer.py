@@ -1,26 +1,26 @@
-from elastic_connector import get_all_flows, get_training_dataset
-from pandas import DataFrame, concat
+import asyncio
+from elastic_connector import CustomElasticsearchConnector
+from pandas import DataFrame, concat, read_csv
 from sklearn.model_selection import cross_val_score, train_test_split
-from joblib import dump
+from joblib import dump, load
+from pipelining_utilities import adapt_for_retraining, adapt_cicids2017_for_training
 
 def get_self_created_flow_data() -> DataFrame:
-    data = get_all_flows(onlyunseen= False, size=None) # TODO size=None has not been tested by me yet, but looks okay in the sourcecode
-    for_retraining = DataFrame()
-    for df in data:
-        if df["has_been_seen"]: # maybe this is redundant if we use the not classified text in attack_class
-            for_retraining.add(df[['flow_data','attack_class']])
-    return for_retraining
+    CEC = CustomElasticsearchConnector() # TODO API KEy must be loaded here
+    data = asyncio.run(CEC.get_all_flows(onlyunseen= False, size=None)) # TODO THIS WILL BE DIFFERENT IN FUTURE CEC VERSIONS
+    for_retraining = data[data["has_been_seen"] == "true"][['flow_data','attack_class']]
+    return for_retraining.rename(columns={'attack_class': 'attack_type'})
 
 def merge_own_flows_into_trainigdataset(own_data:DataFrame):
-    trainingdata = get_training_dataset()
-    added_classes = own_data['attack_type'].value_counts()
-    class_names = added_classes.index
-    selected = trainingdata[trainingdata['attack_type'].isin(class_names)] # unnecessary?
+    trainingdata = load("DataFrame_with_balanced_dataset.pkl")
+    added_classes = own_data['attack_type'].str.lower().value_counts()
+    class_names = added_classes.index.str.lower()
+    selected = trainingdata[trainingdata['attack_type'].str.lower().isin(class_names.str.lower())] # unnecessary?
 
     dfs = []
     for name in class_names:
         # Extrahiere Daten für jede Klasse
-        df = selected[selected['attack_type'] == name]
+        df = selected[selected['attack_type'].str.lower() == name]
         # sample down to make space for own flow data
         n = 5000 - added_classes[name]
         df = df.sample(n=n, random_state=0)
@@ -51,11 +51,12 @@ def train_the_model(data:DataFrame):
     print(f'\nCross-validation scores:', ', '.join(map(str, cv_rf1)))
     print(f'\nMean cross-validation score: {cv_rf1.mean():.2f}')
 
-    dump(rf3,"model.pkl")
+    dump(rf3,"new_model.pkl")
 
     return cv_rf1
     
 if __name__ == '__main__':
     own_data = get_self_created_flow_data()
     trainingdata = merge_own_flows_into_trainigdataset(own_data=own_data)
-    train_the_model(trainingdata)
+    processed_data, scaler, ipca, ipca_size  = adapt_cicids2017_for_training(data=trainingdata, balance_the_data=False)
+    train_the_model(processed_data)

@@ -2,6 +2,7 @@ from elasticsearch import AsyncElasticsearch, AuthenticationException
 from elasticsearch_dsl import AsyncSearch, connections
 import asyncio
 from elasticsearch.exceptions import AuthenticationException
+from pandas import DataFrame, concat, to_datetime
 INDEX_NAME = "network_flows" # TODO make this comnfigured from .env file 
 
 class CustomElasticsearchConnector:
@@ -30,11 +31,12 @@ class CustomElasticsearchConnector:
     
     async def get_all_flows(self, onlyunseen:bool=False, size:int=20):
         """
-        Retrieves all flow documents from Elasticsearch. Optionally, only retrieves flows that have not been seen. Run with asyncio.run(get_all_flows())
+        Retrieves all flow documents from Elasticsearch. Optionally, only retrieves flows that have not been seen. 
+        Run with asyncio.run(get_all_flows()). Will get the latest flows first.
 
         Args:
             onlyunseen (bool): If True, only retrieves flows that have not been seen.
-            size (int): The number of flows to retrieve.
+            size (int): The number of flows to retrieve. If None all will be retrieved: Maximum is 10000 as this is set in elastic.
 
         Returns:
             Tuple containing various dictionaries with flow data:
@@ -66,32 +68,35 @@ class CustomElasticsearchConnector:
             id_store = {}
 
             async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
-                if onlyunseen:
-                    s = AsyncSearch(using=client, index=INDEX_NAME) \
-                        .query("match", has_been_seen="false") \
-                        .extra(size=size) \
-                        .sort({"timestamp": {"order": "desc"}})
-                else:
-                    s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
-                        .extra(size=size) \
-                        .sort({"timestamp": {"order": "desc"}})
-
+                if size:
+                    if onlyunseen:
+                        s = AsyncSearch(using=client, index=INDEX_NAME) \
+                            .query("match", has_been_seen="false") \
+                            .extra(size=size) \
+                            .sort({"timestamp": {"order": "desc"}})
+                    else:
+                        s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
+                            .extra(size=size) \
+                            .sort({"timestamp": {"order": "desc"}})
+                else: # size == None
+                    if onlyunseen:
+                        s = AsyncSearch(using=client, index=INDEX_NAME) \
+                            .query("match", has_been_seen="false") \
+                            .extra(size=10000) \
+                            .sort({"timestamp": {"order": "desc"}})
+                    else:
+                        s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
+                            .extra(size=10000) \
+                            .sort({"timestamp": {"order": "desc"}})
+                df_list = []
                 async for hit in s:
-                    id = hit.flow_id
-                    id_store[id] = hit.meta.id
-                    dataframes[id] = hit.flow_data
-                    partner_ips[id] = hit.partner_ip
-                    sensor_names[id] = hit.sensor_name
-                    predictions_store[id] = hit.prediction
-                    probabilities_store[id] = dict(hit.probabilities)
-                    partner_ports[id] = hit.partner_port
-                    sensor_ports[id] = hit.sensor_port
-                    timestamps[id] = hit.timestamp
-                    has_been_seen[id] = hit.has_been_seen
-                    attack_classes[id] = hit.attack_class
-                    filestore[id] = hit.pcap_data
+                    df_list.append(DataFrame([hit.to_dict()]))
+                
+                df = concat(df_list)
+                # Convert timestamp to datetime
+                df['timestamp'] = to_datetime(df['timestamp'])
 
-            return id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
+            return df #id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
         return await _get_all_flows(self, onlyunseen=onlyunseen, size=size)
     
     async def set_flow_as_seen(self, flow_id: str):
