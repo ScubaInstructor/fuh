@@ -2,13 +2,10 @@ import dash
 from dash import Dash, html, dcc, dash_table, Input, Output, callback, State
 import dash_bootstrap_components as dbc
 import dash_ag_grid as dag
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search
 import pandas as pd
-from dotenv import load_dotenv
 import plotly.express as px
 from datetime import datetime, timedelta
-from flask import session
+
 
 from ..elastic_connector import CustomElasticsearchConnector
 import asyncio
@@ -169,11 +166,12 @@ def update_bar_chart(filter_date):
 @callback(
     Output("modal", "is_open"),
     [Input('unseen_grid', 'selectedRows'),
-     Input("close", "n_clicks")],
+     Input("close", "n_clicks"), 
+     Input('submit-classification', 'n_clicks')],
     [State("modal", "is_open")]
 )
-def toggle_modal(selected_rows, close_clicks, is_open):
-    if close_clicks:
+def toggle_modal(selected_rows, close_clicks, submit_clicks, is_open):
+    if close_clicks or submit_clicks:
         return False
     if selected_rows:
         return True
@@ -195,6 +193,7 @@ def update_modal_content(selected_rows):
     return [
         dbc.ModalHeader(dbc.ModalTitle("Detailed Flow View")),
         dbc.ModalBody([
+            dcc.Store(id='selected-row-store', data=detail_df.to_dict("records")),
             dag.AgGrid(
                 id="detailed_modal_grid",
                 rowData= detail_df.to_dict("records"),  
@@ -230,37 +229,105 @@ def update_modal_content(selected_rows):
                 clearable=False,
                 className='mb-3'
             ),
+            
+        ]),
+        dbc.ModalFooter([
             dbc.Button(
                 "Submit Classification", 
                 id="submit-classification", 
                 color="primary",
                 className="mt-2"
             ),
-        ]),
-        dbc.ModalFooter(
+            dbc.Button(
+                "Download PCAP", 
+                id="download-pcap", 
+                color="primary",
+                className="mt-2"
+            ),
+            dcc.Download(id="download-pcap-content"),
             dbc.Button("Close", id="close", className="ms-auto", n_clicks=0)
-        )
+        ])
     ]
 
 @callback(
-    Output('classification-output', 'children'),
-    [Input('submit-classification', 'n_clicks')],
-    [State('attack-type-dropdown', 'value')]
-)
-def handle_classification(n_clicks, selected_type):
-    if n_clicks is None:
-        return ""
-    # Call your generic function here with selected_type
-    print(f"Classified as: {selected_type}")
-    return f"Classified as: {selected_type}"
+        Output("unseen_grid", 'rowData'),
+        Input('submit-classification', 'n_clicks')
+    )
+def update_main_grid(selected_rows):
+    df_update = asyncio.run(cec.get_all_flows(view="all", size=20))
+    return df_update[df_update["has_been_seen"] == False].to_dict("records")
 
-# # Add callback to update welcome message
-# @callback(
-#     Output("welcome-alert", "children"),
-#     Input("welcome-alert", "id")  # Dummy input to trigger callback
-# )
-# def update_welcome_message(_):
-#     return f"Welcome {session.get('username', 'Guest')}!"
+@callback(
+    [Output('alert-store', 'data'),
+     Output('alert-container', 'children')],
+    [Input('submit-classification', 'n_clicks')],
+    [State('attack-type-dropdown', 'value'),
+     State('selected-row-store', 'data'),
+     State('alert-store', 'data')]
+)
+def handle_classification(n_clicks, selected_type, selected_row_data, current_alerts):
+    if n_clicks is None:
+        return current_alerts, []
+    
+    # Change flow classification in elastic
+    detail_df = pd.DataFrame(selected_row_data)
+    flow_id = detail_df["flow_id"].values[0]
+    status = "success"
+
+    try:
+        asyncio.run(cec.set_attack_class(flow_id=flow_id, attack_class=selected_type))
+        asyncio.run(cec.set_flow_as_seen(flow_id=flow_id))
+        # Create new alert
+        new_alert = {
+            'id': f'alert-{len(current_alerts)}',
+            'message': f'Flow {flow_id} classified as {selected_type}'
+        }
+        status = "success"
+    except:
+        new_alert = {
+        'id': f'alert-{len(current_alerts)}',
+        'message': f'Flow {flow_id} could not be classified. Elastic Database Error.',
+        }
+        status = "danger"
+        
+
+    
+    # Add new alert to list
+    updated_alerts = current_alerts + [new_alert]
+    
+    # Create alert components
+    alert_components = [
+        dbc.Alert(
+            f"{alert['message']}", 
+            id=alert['id'],
+            dismissable=True,
+            is_open=True,
+            color=status,
+            className="mt-2"
+        ) for alert in updated_alerts
+    ]
+    
+    return updated_alerts, alert_components
+
+@callback(
+    Output("download-pcap-content", "data"),
+    Input("download-pcap", "n_clicks"),
+    State('selected-row-store', 'data'),
+    prevent_initial_call=True
+)
+def download_pcap(n_clicks, selected_row_data):
+    if n_clicks is None:
+        return None
+        
+    detail_df = pd.DataFrame(selected_row_data)
+    pcap_data = detail_df["pcap_data"].values[0]
+    flow_id = detail_df["flow_id"].values[0]
+
+    return dict(
+        content=pcap_data,
+        filename=f"flow_{flow_id}.pcap",
+        type="application/vnd.tcpdump.pcap"
+    )
 
 # Callback initialization
 create_grid_callback("unseen_grid", "detailed_grid_unseen")
@@ -272,12 +339,14 @@ create_grid_callback("seen_grid", "detailed_grid_seen")
 layout = html.Div([
     make_modal(),
     dbc.Row([
-        dbc.Alert(
+        html.Div(dbc.Alert(
                 "Welcome! You have " + str(len(df[df["has_been_seen"] == False])) + " new flows.",
                 id="welcome-alert",
                 dismissable=True,
                 is_open=True,
-            ),
+                )),
+        dcc.Store(id='alert-store', data=[]),
+        html.Div(id='alert-container'),
         html.Hr(),
     ], className="mt-3 mb-3"),
     dbc.Row([

@@ -140,12 +140,12 @@ class CustomElasticsearchConnector:
 
 if __name__ == '__main__':
     # TODO remove as this for testing only
-    FLOWID = "56e58dfb-e260-44f5-9603-d7c22ed4f364"
+    FLOWID = "2d980e5c-c998-4707-8b94-86eeb4a1ac81"
     API_KEY = "WU1uNldaUUJyMFU1enNoeW5PUFI6dWs5RHRUOHhUQ3FXd1B3Um43WG43Zw=="
     cec = CustomElasticsearchConnector()
     flows = asyncio.run(cec.get_all_flows())
     print(flows)
-    asyncio.run(cec.set_flow_as_seen(flow_id=FLOWID))
+    #asyncio.run(cec.set_flow_as_seen(flow_id=FLOWID))
     asyncio.run(cec.set_attack_class(flow_id=FLOWID, attack_class="BOT"))
     flows1 = asyncio.run(cec.get_all_flows(view="seen"))
     flows2 = asyncio.run(cec.get_all_flows(view="unseen"))
