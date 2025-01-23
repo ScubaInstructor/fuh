@@ -110,7 +110,7 @@ def evaluate_model(model, X_train, y_train):
         print(f'\nMean cross-validation score: {cv_model.mean():.2f}')
         print(f'\nF1 scores:', ', '.join(map(str, cv_model_f1)))
         print(f"\nF1 score mean: {cv_model_f1.mean():.2f}")
-    return cv_model
+    return cv_model.mean()
 
 def get_f1_score(model, X_test, y_test):
     predicted = model.predict(X_test)

@@ -276,6 +276,6 @@ if __name__ == '__main__':
     from datetime import datetime
     import asyncio
     cec = CustomElasticsearchConnector()
-    uuid = asyncio.run(cec.save_model_properties(hash_value="123456890", timestamp=datetime.now(), own_flow_count=10, score=0.99))
-    asyncio.run(cec.get_model_properties(uuid))
+    #uuid = asyncio.run(cec.save_model_properties(hash_value="123456890", timestamp=datetime.now(), own_flow_count=10, score=0.99))
+    print(asyncio.run(cec.get_model_properties("fhgAlZQBhvrZbR-x4Qp6")))
 
