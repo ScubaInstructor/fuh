@@ -1,6 +1,8 @@
 import asyncio
 from datetime import datetime
+import hashlib
 from os import makedirs, rename
+from shutil import copyfile
 from elastic_connector import CustomElasticsearchConnector
 from pandas import DataFrame, concat, read_csv
 from sklearn.model_selection import cross_val_score, train_test_split
@@ -8,6 +10,7 @@ from joblib import dump, load
 from numpy import ndarray
 from pipelining_utilities import adapt_for_retraining, adapt_cicids2017_for_training
 import zipfile
+from sklearn.metrics import precision_recall_fscore_support as f_score
 
 
 DEBUGGING = True
@@ -36,12 +39,15 @@ def merge_own_flows_into_trainigdataset(own_data:DataFrame):
     Returns:
         DataFrame: A DataFrame containing the merged training dataset. Class size is 5000.
     """
-    trainingdata = load("DataFrame_with_balanced_dataset.pkl")
+    trainingdata = load("server/flask/DataFrame_with_balanced_dataset.pkl") # load("DataFrame_with_balanced_dataset.pkl")
     added_classes = own_data['attack_type'].str.lower().value_counts()
     class_names = added_classes.index.str.lower()
     selected = trainingdata[trainingdata['attack_type'].str.lower().isin(class_names.str.lower())] # unnecessary?
 
     dfs = []
+
+    # TODO check for namedifferences in newly classified flows
+
     for name in class_names:
         # Extrahiere Daten für jede Klasse
         df = selected[selected['attack_type'].str.lower() == name]
@@ -53,7 +59,9 @@ def merge_own_flows_into_trainigdataset(own_data:DataFrame):
         df.add(own_flows_of_same_class)
         dfs.append(df)
     
-    # Kombiniere alle bearbeiteten Klassen
+    # TODO assert all classes are 5000 entries strong
+
+    # Combine all classes
     df = concat(dfs, ignore_index = True)
     df.sample(frac=1)
     return df
@@ -66,7 +74,7 @@ def train_random_forest(data:DataFrame) -> tuple:
         data (DataFrame): The training data.
 
     Returns:
-        tuple: A tuple containing the trained model, training features, and training labels.
+        tuple: A tuple containing the trained model, training features, training labels test features (X_test) and test labels (y_test).
 
     """
     # split data without type of attack
@@ -79,7 +87,7 @@ def train_random_forest(data:DataFrame) -> tuple:
     rf = RandomForestClassifier(n_estimators = 15, max_depth = 8, max_features = 20, random_state = 0)
     rf.fit(X_train, y_train)
 
-    return rf, X_train, y_train
+    return rf, X_train, y_train, X_test, y_test
 
 def evaluate_model(model, X_train, y_train):
     """
@@ -95,18 +103,27 @@ def evaluate_model(model, X_train, y_train):
     """    
     
     cv_model = cross_val_score(model, X_train, y_train, cv = 5)
+    cv_model_f1 = cross_val_score(model, X_train, y_train, cv = 5,  scoring='f1_macro')
     if DEBUGGING:
         print('Random Forest Model mit eigenen Daten')
         print(f'\nCross-validation scores:', ', '.join(map(str, cv_model)))
         print(f'\nMean cross-validation score: {cv_model.mean():.2f}')
+        print(f'\nF1 scores:', ', '.join(map(str, cv_model_f1)))
+        print(f"\nF1 score mean: {cv_model_f1.mean():.2f}")
     return cv_model
 
+def get_f1_score(model, X_test, y_test):
+    predicted = model.predict(X_test)
+    precision, recall, fscore, support = f_score(y_test, predicted)
+    return fscore
 
-def create_transferrable_zipfile(model, scaler, ipca):
+
+def create_transferrable_zipfile(elastic_id, model, scaler, ipca):
     """
     Creates a zip file containing the model, scaler, and IPCA.
 
     Args:
+        elastic_id: the id with wich this model is stored.
         model: The trained model.
         scaler: The scaler used for preprocessing.
         ipca: The IPCA used for dimensionality reduction.
@@ -122,18 +139,32 @@ def create_transferrable_zipfile(model, scaler, ipca):
     zf = zipfile.ZipFile("model_scaler_ipca.zip", "w")
 
     for f in files:
-        # move old file
-        try:
-            rename(f"{f}.pkl", f"{archive_dir}/{f}_{datetime.now().strftime("%Y_%m_%d")}.pkl")
-        except FileNotFoundError as e:
-            pass
         # dump new file
         dump(files[f],f"{f}.pkl")
         # write file to zip
         zf.write(f"{f}.pkl")
-    
     zf.close()
-    
+    # Copy the model to archive with the name of the ip of the elastic document
+    copyfile(zf.filename, f"{archive_dir}/{elastic_id}.zip")
+
+def compute_model_hash(model) -> str:
+        """Compute the hash of a file using the sha265 algorithm.
+        
+        Args:
+            - file_path (str) = the path to the file
+        
+        Returns:
+            str: The hash value
+        """
+        import hashlib
+        import io
+
+        m = hashlib.sha256()
+        with io.BytesIO() as memf:
+            dump(model, memf)
+            m.update(memf.getvalue())
+        return m.hexdigest()
+
    
 def retrain() -> ndarray:
     """
@@ -145,8 +176,14 @@ def retrain() -> ndarray:
     own_data = get_self_created_flow_data()
     mergeddata = merge_own_flows_into_trainigdataset(own_data=own_data)
     processed_data, scaler, ipca, ipca_size  = adapt_cicids2017_for_training(data=mergeddata, balance_the_data=False)
-    model, X_train, y_train  = train_random_forest(processed_data)
-    create_transferrable_zipfile(model, scaler, ipca)
+    model, X_train, y_train, X_test, y_test = train_random_forest(processed_data)
+    score = get_f1_score(model, X_test, y_test)
+    own_flow_count = own_data.shape[0]
+    model_hash = compute_model_hash(model)
+    from elastic_connector import CustomElasticsearchConnector
+    cec = CustomElasticsearchConnector()
+    elastic_id = asyncio.run(cec.save_model_properties(hash_value=model_hash, timestamp=datetime.now(), own_flow_count=own_flow_count, score=score))
+    create_transferrable_zipfile(elastic_id, model, scaler, ipca)
     return evaluate_model(model, X_train, y_train)
 
 
