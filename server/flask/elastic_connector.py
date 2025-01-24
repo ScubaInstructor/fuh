@@ -254,12 +254,46 @@ class CustomElasticsearchConnector:
             # get from Elasticsearch
             resp =  await client.get(index=MODEL_INDEX_NAME, id=id)
             return resp.body
+        
+    async def get_all_model_properties(self, size:int=20):
+        """
+        Retrieves all model properties from Elasticsearch. 
+
+        Args:
+            size (int): The number of models to retrieve data from. If None all will be retrieved: Maximum is 10000 as this is set in elastic.
+
+        Returns:
+            list of dicts containing id, modelhash, score, own flow count and timestamp 
+        """
+        async def _get_all_model_properties(self, size):
+            properties_list = []
+            async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
+                if size:
+                    s = AsyncSearch(using=client, index=MODEL_INDEX_NAME) \
+                        .query("match_all") \
+                        .extra(size=size) \
+                        .sort({"timestamp": {"order": "desc"}})
+                else: # size == None
+                    s = AsyncSearch(using=client, index=MODEL_INDEX_NAME) \
+                        .query("match_all") \
+                        .extra(size=10000) \
+                        .sort({"timestamp": {"order": "desc"}})
+                async for hit in s:
+                    properties = {}
+                    properties["id"] = hit.meta.id
+                    properties["model_hash"] = hit.model_hash
+                    properties["score"] = hit.score
+                    properties["own_flow_count"] = hit.own_flow_count
+                    properties["timestamp"] = hit.timestamp       
+                    properties_list.append(properties)             
+            return properties_list
+        return await _get_all_model_properties(self, size=size)
 
 if __name__ == '__main__':
     # TODO remove as this for testing only
-    FLOWID = "56e58dfb-e260-44f5-9603-d7c22ed4f364"
-    API_KEY = "WU1uNldaUUJyMFU1enNoeW5PUFI6dWs5RHRUOHhUQ3FXd1B3Um43WG43Zw=="
-    cec = CustomElasticsearchConnector()
+    # FLOWID = "56e58dfb-e260-44f5-9603-d7c22ed4f364"
+    # API_KEY = "WU1uNldaUUJyMFU1enNoeW5PUFI6dWs5RHRUOHhUQ3FXd1B3Um43WG43Zw=="
+    # cec = CustomElasticsearchConnector()
     # flows = asyncio.run(cec.get_all_flows(onlyunseen=True))
     # #print(flows[0])
     # asyncio.run(cec.set_flow_as_seen(flow_id=FLOWID))
@@ -275,7 +309,7 @@ if __name__ == '__main__':
     # print(flows[6])
     from datetime import datetime
     import asyncio
-    cec = CustomElasticsearchConnector()
-    #uuid = asyncio.run(cec.save_model_properties(hash_value="123456890", timestamp=datetime.now(), own_flow_count=10, score=0.99))
-    print(asyncio.run(cec.get_model_properties("fhgAlZQBhvrZbR-x4Qp6")))
-
+    cec = CustomElasticsearchConnector(api_key="bXVfdGw1UUJkM3NrMzB1R2VCNzg6UFIzZGpNNFhTTFNnQkg3dllWWmh1UQ==")
+    # uuid = asyncio.run(cec.save_model_properties(hash_value="123456890", timestamp=datetime.now(), own_flow_count=10, score=0.99))
+    # print(asyncio.run(cec.get_model_properties(uuid)))
+    print(asyncio.run(cec.get_all_model_properties()))

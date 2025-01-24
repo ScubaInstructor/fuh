@@ -1,14 +1,13 @@
 import asyncio
 from datetime import datetime
-import hashlib
-from os import makedirs, rename
+from os import makedirs
 from shutil import copyfile
 from elastic_connector import CustomElasticsearchConnector
-from pandas import DataFrame, concat, read_csv
+from pandas import DataFrame, concat
 from sklearn.model_selection import cross_val_score, train_test_split
 from joblib import dump, load
 from numpy import ndarray
-from pipelining_utilities import adapt_for_retraining, adapt_cicids2017_for_training
+from pipelining_utilities import adapt_cicids2017_for_training
 import zipfile
 from sklearn.metrics import precision_recall_fscore_support as f_score
 
@@ -148,10 +147,10 @@ def create_transferrable_zipfile(elastic_id, model, scaler, ipca):
     copyfile(zf.filename, f"{archive_dir}/{elastic_id}.zip")
 
 def compute_model_hash(model) -> str:
-        """Compute the hash of a file using the sha265 algorithm.
+        """Compute the hash of the model without writing it to disk using the sha265 algorithm.
         
         Args:
-            - file_path (str) = the path to the file
+            - model = the trained model
         
         Returns:
             str: The hash value

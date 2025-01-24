@@ -107,7 +107,7 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
     return adapted_data
 
 def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True, 
-                       balance_the_data: bool = True) -> tuple[
+                       balance_the_data: bool = True, binary_switch=False) -> tuple[
                            pd.DataFrame, StandardScaler, IncrementalPCA, int]:
     """
     Bereitet CICIDS2017-Daten für das Training vor, einschließlich Skalierung, 
@@ -151,13 +151,13 @@ def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True,
 
     # Create balanced dataset
     if balance_the_data:
-        adapted_data = balance_the_dataset(new_data)
+        adapted_data = balance_the_dataset(new_data, binary_switch=binary_switch)
     else: # dont balance
         adapted_data = new_data
 
     return adapted_data, scaler, ipca, ipca_size
 
-def balance_the_dataset(new_data):
+def balance_the_dataset(new_data,binary_switch=False):
     """
     Balanciert den Datensatz durch Unterabtastung großer Angriffsklassen und Überabtastung kleiner Angriffsklassen.
 
@@ -187,7 +187,10 @@ def balance_the_dataset(new_data):
         df = selected[selected['attack_type'] == name]
         # Begrenze große Klassen auf 5000 Samples
         if len(df) > 2500:
-            df = df.sample(n = 5000, random_state = 0)
+            if binary_switch and name == "BENIGN":
+                df = df.sample(n = 30000, random_state = 0)
+            else:
+                df = df.sample(n = 5000, random_state = 0)
         dfs.append(df)
     
     # Kombiniere alle bearbeiteten Klassen

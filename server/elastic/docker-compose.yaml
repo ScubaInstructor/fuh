@@ -87,7 +87,7 @@ services:
                 \"index\": [
                   {
                     \"names\": [\"${NETWORK_FLOW_INDEX_NAME}\", \"${MODEL_DATA_INDEX_NAME}\"], 
-                    \"privileges\": [ \"read\", \"write\"]  
+                    \"privileges\": [ \"all\"]  
                   }
                 ]
               }

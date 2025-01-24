@@ -21,9 +21,10 @@ le.fit(labels)
 transformed_labels = le.transform(labels)
 X_train, X_test, y_train, y_test = train_test_split(features, transformed_labels, test_size = 0.25, random_state = 0)
 
-
+bdata, bscaler, bipca, bipca_size =  adapt_cicids2017_for_training(data=cicids2017_data, use_ipca=True, balance_the_data=False, binary_switch=True)
+bfeatures =
 mapping = {'DDoS': 'attack', 'DoS': 'attack', 'Port Scan': 'attack', 'Bot': 'attack', 'BENIGN': 'benign', 'Brute Force': 'attack', 'Web Attack': 'attack'}
-binary_labels = data['attack_type'].replace(mapping)
+binary_labels = bdata['attack_type'].replace(mapping)
 le.fit(binary_labels)
 transformed_binary_labels = le.transform(binary_labels)
 b_X_train, b_X_test, b_y_train, b_y_test = train_test_split(features, transformed_binary_labels, test_size = 0.25, random_state = 0)
@@ -158,10 +159,20 @@ def train_twostage_classifier():
     print(f"Mean of recall of benign and accuracy of all: {append(accuracy, recall[0]).mean()}")
     return b_rf, a_rf
 
-    
+def create_benign_dataset_for_binary_training():
+    """ create a bigger dataset with 30000 flows of benign
+        Returns 30000 benign flows
+    """
+    cicids2017_data = pd.read_csv("data_sources/data_renamed.csv")
+    benign_data = cicids2017_data[cicids2017_data["attack_type"]=="BENIGN"]
+    data = benign_data.sample(n = 30000, random_state = 0)
+    return data
+
+ 
     
 # test_with_recall_and_accuracy(train_RandomForestClassifier_as_in_use_now(), X_test, y_test)   # 0.9733943946442756
 # test_with_recall_and_accuracy(train_RandomForestClassifier(), X_test, y_test)   # Mean of recall of benign and accuracy of all: 0.9918086009304437
 # Best Parameters for binary classifier for best recall are {'n_estimators': 750, 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt', 'max_depth': 75, 'bootstrap': False}
 # Best parameters for Multi RandomForestClassifier are :{'n_estimators': 1400, 'min_samples_split': 5, 'min_samples_leaf': 1, 'max_features': 'sqrt', 'max_depth': 75, 'bootstrap': True}
 #train_twostage_classifier()
+print(create_benign_dataset_for_binary_training())
