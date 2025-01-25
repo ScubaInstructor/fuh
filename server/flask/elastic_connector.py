@@ -100,7 +100,7 @@ class CustomElasticsearchConnector:
             return df #id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
         return await _get_all_flows(self, onlyunseen=onlyunseen, size=size)
     
-    async def get_all_flows(self, onlyunseen:bool=False, size:int=20):
+    async def get_all_flows(self, onlyunseen:bool=False, exclude_pcap_data=True, size:int=20):
         """
         Retrieves all flow documents from Elasticsearch. Optionally, only retrieves flows that have not been seen. 
         Run with asyncio.run(get_all_flows()). Will get the latest flows first.
@@ -124,7 +124,7 @@ class CustomElasticsearchConnector:
                 - attack_classes: Mapping of flow IDs to attack classes.
                 - has_been_seen: Mapping of flow IDs to seen status.
         """
-        async def _get_all_flows(self, onlyunseen, size):
+        async def _get_all_flows(self, onlyunseen, exclude_pcap_data, size):
             dataframes = {}
             filestore = {}
             probabilities_store = {}
@@ -172,10 +172,11 @@ class CustomElasticsearchConnector:
                     timestamps[id] = hit.timestamp
                     has_been_seen[id] = hit.has_been_seen
                     attack_classes[id] = hit.attack_class
-                    filestore[id] = hit.pcap_data
+                    if not exclude_pcap_data:
+                        filestore[id] = hit.pcap_data
 
             return id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
-        return await _get_all_flows(self, onlyunseen=onlyunseen, size=size)
+        return await _get_all_flows(self, onlyunseen=onlyunseen, exclude_pcap_data=exclude_pcap_data, size=size)
     
     async def set_flow_as_seen(self, flow_id: str):
         """
@@ -222,6 +223,22 @@ class CustomElasticsearchConnector:
             # Send to Elasticsearch
             return await client.index(index=INDEX_NAME, body=data)
     
+    async def get_pcap_data(self, flow_id: str):
+        """
+        Gets the PCAP Data for a specific flow in the Elasticsearch index.
+
+        Args:
+            flow_id (str): The ID of the flow to get the pcap data from.
+
+        Returns:
+            The PCAP Data in Base 64 
+        """
+        async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
+            s = AsyncSearch(using=client, index=INDEX_NAME).query("match", flow_id=flow_id)
+            async for hit in s:
+                resp =  await client.get(index=INDEX_NAME,id=hit.meta.id)
+                return resp.body['_source']['pcap_data']
+
     async def save_model_properties(self, hash_value: str, timestamp, own_flow_count:int, score:float) -> str:
         # Initialize Elasticsearch client
         async with AsyncElasticsearch(
@@ -279,21 +296,17 @@ class CustomElasticsearchConnector:
                         .extra(size=10000) \
                         .sort({"timestamp": {"order": "desc"}})
                 async for hit in s:
-                    properties = {}
-                    properties["id"] = hit.meta.id
-                    properties["model_hash"] = hit.model_hash
-                    properties["score"] = hit.score
-                    properties["own_flow_count"] = hit.own_flow_count
-                    properties["timestamp"] = hit.timestamp       
-                    properties_list.append(properties)             
-            return properties_list
+                    properties_list.append(DataFrame([hit.to_dict()]))
+                resulting_df = concat(properties_list)
+                resulting_df['timestamp'] = to_datetime(resulting_df['timestamp'])
+            return resulting_df
         return await _get_all_model_properties(self, size=size)
 
 if __name__ == '__main__':
     # TODO remove as this for testing only
     # FLOWID = "56e58dfb-e260-44f5-9603-d7c22ed4f364"
     # API_KEY = "WU1uNldaUUJyMFU1enNoeW5PUFI6dWs5RHRUOHhUQ3FXd1B3Um43WG43Zw=="
-    # cec = CustomElasticsearchConnector()
+    cec = CustomElasticsearchConnector()
     # flows = asyncio.run(cec.get_all_flows(onlyunseen=True))
     # #print(flows[0])
     # asyncio.run(cec.set_flow_as_seen(flow_id=FLOWID))
@@ -305,11 +318,13 @@ if __name__ == '__main__':
     # print(len(flows1[0]))
     # print(len(flows[0]))
 
-    # flows = asyncio.run(cec.get_all_flows(onlyunseen=True, size=2))
-    # print(flows[6])
+    flows = asyncio.run(cec.get_all_flows(onlyunseen=True, size=2))
+    print(flows)
+    pcap = asyncio.run(cec.get_pcap_data("2bb98524-e362-42bd-bcd4-b095423b7e14"))
+    print(pcap)
     from datetime import datetime
     import asyncio
-    cec = CustomElasticsearchConnector(api_key="bXVfdGw1UUJkM3NrMzB1R2VCNzg6UFIzZGpNNFhTTFNnQkg3dllWWmh1UQ==")
+    cec = CustomElasticsearchConnector()
     # uuid = asyncio.run(cec.save_model_properties(hash_value="123456890", timestamp=datetime.now(), own_flow_count=10, score=0.99))
     # print(asyncio.run(cec.get_model_properties(uuid)))
-    print(asyncio.run(cec.get_all_model_properties()))
+    # print(asyncio.run(cec.get_all_model_properties()))
