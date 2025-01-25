@@ -20,14 +20,16 @@ le = LabelEncoder()
 le.fit(labels)
 transformed_labels = le.transform(labels)
 X_train, X_test, y_train, y_test = train_test_split(features, transformed_labels, test_size = 0.25, random_state = 0)
-
-bdata, bscaler, bipca, bipca_size =  adapt_cicids2017_for_training(data=cicids2017_data, use_ipca=True, balance_the_data=False, binary_switch=True)
-bfeatures =
+full_cicids2017_data = pd.read_csv("scripts/data_sources/data_renamed.csv")
+#bdata, bscaler, bipca, bipca_size =  adapt_cicids2017_for_training(data=full_cicids2017_data, use_ipca=True, balance_the_data=True, binary_switch=True)
+#joblib.dump(bdata, "scripts/data_sources/bdata.pkl")
+bdata = joblib.load("scripts/data_sources/bdata.pkl")
+bfeatures = bdata.drop('attack_type', axis = 1)
 mapping = {'DDoS': 'attack', 'DoS': 'attack', 'Port Scan': 'attack', 'Bot': 'attack', 'BENIGN': 'benign', 'Brute Force': 'attack', 'Web Attack': 'attack'}
 binary_labels = bdata['attack_type'].replace(mapping)
 le.fit(binary_labels)
 transformed_binary_labels = le.transform(binary_labels)
-b_X_train, b_X_test, b_y_train, b_y_test = train_test_split(features, transformed_binary_labels, test_size = 0.25, random_state = 0)
+b_X_train, b_X_test, b_y_train, b_y_test = train_test_split(bfeatures, transformed_binary_labels, test_size = 0.25, random_state = 0)
 
 
 attack_data = data[data["attack_type"]!="BENIGN"]
@@ -91,7 +93,7 @@ def train_RandomForestClassifier_as_in_use_now():
     print(f'\nMean cross-validation score: {cv_rf1.mean():.2f}') # Cross-validation scores: 0.9813333333333333, 0.9828571428571429, 0.9843809523809524, 0.9874285714285714, 0.9860952380952381
     return rf
 
-def train_RandomForestClassifier():
+def train_optimal_RandomForestClassifier():
     rf = RandomForestClassifier(n_estimators = 800, max_depth = 70, max_features = 'sqrt', bootstrap=False, random_state = 0)
     rf.fit(X_train, y_train)
     cv_rf1 = cross_val_score(rf, X_train, y_train, cv = 5)
@@ -135,44 +137,43 @@ def test_with_recall_and_accuracy(model, X_test, y_test):
     predicted = model.predict(X_test)
     precision, recall, fscore, support = f_score(y_test, predicted)
     accuracy = ascore(y_test,predicted)
-    print(f"Mean of recall of benign and accuracy of all: {append(accuracy, recall[0]).mean()}")
+    print(f"Mean of recall of benign and accuracy of all in one model: {append(accuracy, recall[0]).mean()}")
 
-def train_twostage_classifier():
+def twostage_classifier():
     b_rf = RandomForestClassifier(n_estimators = 750, min_samples_split= 2, min_samples_leaf = 1, max_features= 'sqrt', max_depth= 75, bootstrap= False)
     # b_rf_random = RandomizedSearchCV(scoring = "recall", estimator = b_rf, param_distributions = start_parameters, n_iter = 100, cv = 3, verbose=2, random_state=42, n_jobs = -1)
     # b_rf_random.fit(b_X_train, b_y_train)
     # print(f"Best parameters for Binary RandomForestClassifier are :{b_rf_random.best_params_}")
     # b_rf = b_rf_random.best_estimator_
-    b_rf.fit(b_X_train, b_y_train)
+    #print("starting fit b_rf")
+    #b_rf.fit(b_X_train, b_y_train)
+    #joblib.dump(b_rf, "scripts/data_sources/binary_rf.pkl")
     #cv_rf1 = cross_val_score(scoring= "recall", estimator=b_rf, X=X_train, y=y_train, cv = 5)
     #print(cv_rf1)
+    b_rf = joblib.load("scripts/data_sources/binary_rf.pkl")
     b_predicted = b_rf.predict(b_X_test)
     precision, recall, fscore, support = f_score(b_y_test, b_predicted)
     print(f"Recall of binary classifier is {recall}")
-    a_rf = RandomForestClassifier(n_estimators = 750, min_samples_split= 2, min_samples_leaf = 1, max_features= 'sqrt', max_depth= 75, bootstrap= False)
-    a_rf_random = RandomizedSearchCV(scoring = "accuracy", estimator = a_rf, param_distributions = start_parameters, n_iter = 100, cv = 3, verbose=2, random_state=42, n_jobs = -1)
-    a_rf_random.fit(a_X_train, a_y_train)
-    print(f"Best parameters for Multi RandomForestClassifier are :{a_rf_random.best_params_}")
-    a_rf = a_rf_random.best_estimator_
+    # a_rf = RandomForestClassifier(n_estimators = 1400, min_samples_split= 5, min_samples_leaf = 1, max_features= 'sqrt', max_depth= 75, bootstrap= True)
+    # a_rf_random = RandomizedSearchCV(scoring = "accuracy", estimator = a_rf, param_distributions = start_parameters, n_iter = 100, cv = 3, verbose=2, random_state=42, n_jobs = -1)
+    # a_rf_random.fit(a_X_train, a_y_train)
+    # print(f"Best parameters for Multi RandomForestClassifier are :{a_rf_random.best_params_}")
+    # a_rf = a_rf_random.best_estimator_
+    # print("starting fit a_rf")
+    # a_rf.fit(a_X_train, a_y_train)    
+    # joblib.dump(a_rf, "scripts/data_sources/attack_rf.pkl")
+    a_rf = joblib.load("scripts/data_sources/attack_rf.pkl")
     a_predicted = a_rf.predict(a_X_test)
     accuracy = ascore(a_y_test, a_predicted)
+    print(f"Accuracy of multi classifier is {accuracy}")
+
     print(f"Mean of recall of benign and accuracy of all: {append(accuracy, recall[0]).mean()}")
     return b_rf, a_rf
-
-def create_benign_dataset_for_binary_training():
-    """ create a bigger dataset with 30000 flows of benign
-        Returns 30000 benign flows
-    """
-    cicids2017_data = pd.read_csv("data_sources/data_renamed.csv")
-    benign_data = cicids2017_data[cicids2017_data["attack_type"]=="BENIGN"]
-    data = benign_data.sample(n = 30000, random_state = 0)
-    return data
-
  
     
 # test_with_recall_and_accuracy(train_RandomForestClassifier_as_in_use_now(), X_test, y_test)   # 0.9733943946442756
 # test_with_recall_and_accuracy(train_RandomForestClassifier(), X_test, y_test)   # Mean of recall of benign and accuracy of all: 0.9918086009304437
 # Best Parameters for binary classifier for best recall are {'n_estimators': 750, 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt', 'max_depth': 75, 'bootstrap': False}
 # Best parameters for Multi RandomForestClassifier are :{'n_estimators': 1400, 'min_samples_split': 5, 'min_samples_leaf': 1, 'max_features': 'sqrt', 'max_depth': 75, 'bootstrap': True}
-#train_twostage_classifier()
-print(create_benign_dataset_for_binary_training())
+# twostage_classifier()   #Mean of recall of benign and accuracy of all: 0.9988890231084662
+
