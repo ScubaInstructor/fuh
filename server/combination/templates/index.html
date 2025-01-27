@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Abnormal Flows</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold mb-4">Abnormal Flows <img src="/static/group2_icon.png" alt="Icon of Group 2" class="w-36 h-36 inline-block mr-2"/></h1>
+        <h2 class="text-xl mb-4">Timeline of the last 60 minutes</h2>
+        <div class="max-w-4xl ">
+            <div class="overflow-x-auto mb-4">   
+                <img src="/static/timeline_chart.png" alt="Timeline" class="min-w-full mb-4 rounded shadow-lg" />            
+                <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
+                    <thead>
+                        <tr class="bg-gray-200 text-gray-600">
+                            <th class="py-2 px-4 border-b">Date</th>
+                            <th class="py-2 px-4 border-b">Sensor</th>
+                            <th class="py-2 px-4 border-b">Predicted class</th>
+                            <th class="py-2 px-4 border-b">Class</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in requests %}
+                            {% if not has_been_seen[entry.dataframe_id] %}
+                                <tr class="hover:bg-gray-100">
+                                    <td class="py-2 px-4 border-b"><a href="/details/{{ entry.dataframe_id }}" class="text-blue-500 hover:underline">{{ entry.timestamp }}</a></td>
+                                    <td class="py-2 px-4 border-b">{{ entry.sensor_name }}</td>
+                                    <td class="py-2 px-4 border-b">{{ entry.prediction }}</td>
+                                    <td class="py-2 px-4 border-b">{{ entry.attack_class | e if entry.attack_class else "unclassified" }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="mt-4 flex space-x-4">
+            <button onclick="location.href='/classified_requests'" class=" bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Show classified Flows</button>
+            <form action="/logout" method="POST">
+                <button type="submit" class=" bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600">Logout</button>
+            </form>
+        </div>
+    </div>
+</body>

@@ -1,0 +1,31 @@
+FROM python:3.11-alpine
+
+# # Install necessary dependencies 
+RUN apk --no-cache add procps
+
+# Create /app folder
+RUN mkdir /app
+
+# Copy requirements.txt
+COPY requirements.txt /app
+
+# Install Python packages from requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# # Symlink python3 to python
+# RUN ln -sf /usr/local/bin/python3 /usr/bin/python
+
+# Copying the necessary files to working folder
+COPY .env /app/.env
+COPY akins_verbesserter_flask_server.py /app/server.py
+COPY discord_bot.py /app/discord_bot.py
+COPY elastic_connector.py /app/elastic_connector.py
+COPY forms.py /app/forms.py
+COPY templates /app/templates
+COPY static /app/static
+COPY instance /app/instance
+
+
+WORKDIR /app
+
+CMD ["/usr/local/bin/python3", "-u", "server.py", "--host=0.0.0.0"]
