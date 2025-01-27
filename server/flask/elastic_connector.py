@@ -1,6 +1,8 @@
 from elasticsearch import AsyncElasticsearch, AuthenticationException
 from elasticsearch_dsl import AsyncSearch, connections
 import asyncio
+import pandas as pd
+from datetime import datetime
 from elasticsearch.exceptions import AuthenticationException
 from pandas import DataFrame, concat, to_datetime
 INDEX_NAME = "network_flows" # TODO make this comnfigured from .env file 
@@ -30,153 +32,50 @@ class CustomElasticsearchConnector:
         self.verify_certs = verify_certs
         connections.create_connection(hosts=hosts, api_key=api_key, verify_certs=verify_certs, ssl_show_warn=False)
     
-    async def new_get_all_flows(self, onlyunseen:bool=False, size:int=20):
+    async def get_all_flows(self, view:str="all", size:int=20, exclude_pcap_data:bool= False):
         """
         Retrieves all flow documents from Elasticsearch. Optionally, only retrieves flows that have not been seen. 
         Run with asyncio.run(get_all_flows()). Will get the latest flows first.
 
         Args:
-            onlyunseen (bool): If True, only retrieves flows that have not been seen.
-            size (int): The number of flows to retrieve. If None all will be retrieved: Maximum is 10000 as this is set in elastic.
+            view (str): all = all flows with a limt of 10000, seen = only seen flows, unseen = only unseen flows.
+            size (int): The number of flows to retrieve. 10000 is the maximum of elastic search.
+            exclude_pcap_data(bool) Exlude the Pcap Data containing the iindividual Packets of the flows
 
         Returns:
-            Tuple containing various dictionaries with flow data:
-                - id_store: Mapping of flow IDs to document IDs in Elasticsearch.
-                - dataframes: Mapping of flow IDs to flow data.
-                - filestore: Mapping of flow IDs to PCAP data.
-                - probabilities_store: Mapping of flow IDs to probabilities.
-                - predictions_store: Mapping of flow IDs to predictions.
-                - sensor_names: Mapping of flow IDs to sensor names.
-                - timestamps: Mapping of flow IDs to timestamps.
-                - sensor_ports: Mapping of flow IDs to sensor ports.
-                - partner_ips: Mapping of flow IDs to partner IPs.
-                - partner_ports: Mapping of flow IDs to partner ports.
-                - attack_classes: Mapping of flow IDs to attack classes.
-                - has_been_seen: Mapping of flow IDs to seen status.
+            DataFrame containing the flow data
         """
-        async def _get_all_flows(self, onlyunseen, size):
-            dataframes = {}
-            filestore = {}
-            probabilities_store = {}
-            predictions_store = {}
-            sensor_names = {}
-            timestamps = {}
-            sensor_ports = {}
-            partner_ips = {}
-            partner_ports = {}
-            attack_classes = {}
-            has_been_seen = {}
-            id_store = {}
-
+        async def _get_all_flows(self, view, size, exclude_pcap_data):
+           
             async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
-                if size:
-                    if onlyunseen:
-                        s = AsyncSearch(using=client, index=INDEX_NAME) \
-                            .query("match", has_been_seen="false") \
-                            .extra(size=size) \
-                            .sort({"timestamp": {"order": "desc"}})
-                    else:
-                        s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
-                            .extra(size=size) \
-                            .sort({"timestamp": {"order": "desc"}})
-                else: # size == None
-                    if onlyunseen:
-                        s = AsyncSearch(using=client, index=INDEX_NAME) \
-                            .query("match", has_been_seen="false") \
-                            .extra(size=10000) \
-                            .sort({"timestamp": {"order": "desc"}})
-                    else:
-                        s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
-                            .extra(size=10000) \
-                            .sort({"timestamp": {"order": "desc"}})
+                if view == "seen":
+                    s = AsyncSearch(using=client, index=INDEX_NAME) \
+                        .query("match", has_been_seen="true") \
+                        .extra(size=size) \
+                        .sort({"timestamp": {"order": "desc"}})
+                if view == "unseen":
+                    s = AsyncSearch(using=client, index=INDEX_NAME) \
+                        .query("match", has_been_seen="false") \
+                        .extra(size=size) \
+                        .sort({"timestamp": {"order": "desc"}})
+                else: #all
+                    s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
+                        .extra(size=10000) \
+                        .sort({"timestamp": {"order": "desc"}})
+
                 df_list = []
                 async for hit in s:
-                    df_list.append(DataFrame([hit.to_dict()]))
+                    hit_dict = hit.to_dict()
+                    if exclude_pcap_data:
+                        del hit_dict['pcap_data']
+                    df_list.append(pd.DataFrame([hit_dict]))
                 
-                df = concat(df_list)
+                df = pd.concat(df_list)
                 # Convert timestamp to datetime
-                df['timestamp'] = to_datetime(df['timestamp'])
+                df['timestamp'] = pd.to_datetime(df['timestamp'])
 
             return df #id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
-        return await _get_all_flows(self, onlyunseen=onlyunseen, size=size)
-    
-    async def get_all_flows(self, onlyunseen:bool=False, exclude_pcap_data=True, size:int=20):
-        """
-        Retrieves all flow documents from Elasticsearch. Optionally, only retrieves flows that have not been seen. 
-        Run with asyncio.run(get_all_flows()). Will get the latest flows first.
-
-        Args:
-            onlyunseen (bool): If True, only retrieves flows that have not been seen.
-            size (int): The number of flows to retrieve. If None all will be retrieved: Maximum is 10000 as this is set in elastic.
-
-        Returns:
-            Tuple containing various dictionaries with flow data:
-                - id_store: Mapping of flow IDs to document IDs in Elasticsearch.
-                - dataframes: Mapping of flow IDs to flow data.
-                - filestore: Mapping of flow IDs to PCAP data.
-                - probabilities_store: Mapping of flow IDs to probabilities.
-                - predictions_store: Mapping of flow IDs to predictions.
-                - sensor_names: Mapping of flow IDs to sensor names.
-                - timestamps: Mapping of flow IDs to timestamps.
-                - sensor_ports: Mapping of flow IDs to sensor ports.
-                - partner_ips: Mapping of flow IDs to partner IPs.
-                - partner_ports: Mapping of flow IDs to partner ports.
-                - attack_classes: Mapping of flow IDs to attack classes.
-                - has_been_seen: Mapping of flow IDs to seen status.
-        """
-        async def _get_all_flows(self, onlyunseen, exclude_pcap_data, size):
-            dataframes = {}
-            filestore = {}
-            probabilities_store = {}
-            predictions_store = {}
-            sensor_names = {}
-            timestamps = {}
-            sensor_ports = {}
-            partner_ips = {}
-            partner_ports = {}
-            attack_classes = {}
-            has_been_seen = {}
-            id_store = {}
-
-            async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
-                if size:
-                    if onlyunseen:
-                        s = AsyncSearch(using=client, index=INDEX_NAME) \
-                            .query("match", has_been_seen="false") \
-                            .extra(size=size) \
-                            .sort({"timestamp": {"order": "desc"}})
-                    else:
-                        s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
-                            .extra(size=size) \
-                            .sort({"timestamp": {"order": "desc"}})
-                else: # size == None
-                    if onlyunseen:
-                        s = AsyncSearch(using=client, index=INDEX_NAME) \
-                            .query("match", has_been_seen="false") \
-                            .extra(size=10000) \
-                            .sort({"timestamp": {"order": "desc"}})
-                    else:
-                        s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
-                            .extra(size=10000) \
-                            .sort({"timestamp": {"order": "desc"}})
-                async for hit in s:
-                    id = hit.flow_id
-                    id_store[id] = hit.meta.id
-                    dataframes[id] = hit.flow_data
-                    partner_ips[id] = hit.partner_ip
-                    sensor_names[id] = hit.sensor_name
-                    predictions_store[id] = hit.prediction
-                    probabilities_store[id] = dict(hit.probabilities)
-                    partner_ports[id] = hit.partner_port
-                    sensor_ports[id] = hit.sensor_port
-                    timestamps[id] = hit.timestamp
-                    has_been_seen[id] = hit.has_been_seen
-                    attack_classes[id] = hit.attack_class
-                    if not exclude_pcap_data:
-                        filestore[id] = hit.pcap_data
-
-            return id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
-        return await _get_all_flows(self, onlyunseen=onlyunseen, exclude_pcap_data=exclude_pcap_data, size=size)
+        return await _get_all_flows(self, view=view, size=size, exclude_pcap_data=exclude_pcap_data)
     
     async def set_flow_as_seen(self, flow_id: str):
         """
