@@ -1,0 +1,1 @@
+{"description":"User to view and categorize the anomalies.","metadata":{},"elasticsearch":{"cluster":[],"indices":[{"names":["network_flows"],"privileges":["read"],"allow_restricted_indices":false}],"run_as":[]},"kibana":[{"base":["read"],"feature":{},"spaces":["network-analysts-dashboard"]}]}

@@ -41,7 +41,6 @@ SNIFFING_INTERFACE = os.getenv('SNIFFING_INTERFACE')
 SERVER_URL = os.getenv('SERVER_URL')
 SERVER_TOKEN = os.getenv('SERVER_TOKEN')
 # Get these values from your Elasticsearch installation
-ES_API_KEY = os.getenv('ES_API_KEY')  # API key for access to elastic 
 SENSOR_NAME = os.getenv('SENSOR_NAME')  # Unique name to identify this sensor
 
 
@@ -150,6 +149,7 @@ class My_Sniffer():
             if DEBUGGING:
                 print(f"Prediction is: {prediction} with certainty of {proba.max()}")
             if prediction != ['BENIGN'] or proba.max() < 0.8 or proba.max() - proba.mean() < 0.6 or DEBUGGING:
+                proba = self.model.predict_proba(flow_data)
                 if DEBUGGING:
                     print("Flow will be sent")
                 # getting the attack data to the server 
@@ -254,7 +254,7 @@ class My_Sniffer():
         """
         Upload the dict to the Flask server
         Args:    data (dict): this contains all the data to be sent to Flask
-        Returns: 
+        Returns: Response
         """
         async def _upload_to_flask_server(self, data:dict) -> Response:
             hw = HttpWriter(f"{SERVER_URL}/upload") 

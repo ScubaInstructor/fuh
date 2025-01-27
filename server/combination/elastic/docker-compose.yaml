@@ -19,10 +19,10 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
-      - shared_secrets:/usr/share/elasticsearch/shared_secrets
       - ./mapping.json:/usr/share/elasticsearch/mapping.json
       - ./model_mapping.json:/usr/share/elasticsearch/model_mapping.json
-      - ./keys:/usr/share/elasticsearch/keys
+      - ./sensor-api-key.txt:/usr/share/elasticsearch/sensor-api-key.txt
+      - ./server-api-key.txt:/usr/share/elasticsearch/server-api-key.txt
     user: "0"
     command: >
       bash -c '
@@ -55,14 +55,30 @@ services:
         find . -type f -exec chmod 640 \{\} \;;
         echo "Waiting for Elasticsearch availability";
         until curl -s --cacert config/certs/ca/ca.crt https://es01:${ES_PORT} | grep -q "missing authentication credentials"; do sleep 15; done;
-        if [ ! -e /usr/share/elasticsearch/shared_secrets/not_first_start ]; then
-            touch /usr/share/elasticsearch/shared_secrets/not_first_start
+        if [ ! -e /not_first_start ]; then
+            touch /not_first_start
           echo "-- First container startup --"
-          # JUST_ONCE_LOGIC_HERE
+          # YOUR_JUST_ONCE_LOGIC_HERE
           echo "Importing network_flow mapping";
           until curl -u elastic:${ELASTIC_PASSWORD} -X PUT "https://es01:${ES_PORT}/${NETWORK_FLOW_INDEX_NAME}" -H "Content-Type: application/json" -d @/usr/share/elasticsearch/mapping.json --insecure; do sleep 10; done;
           echo "Importing model mapping";
           until curl -u elastic:${ELASTIC_PASSWORD} -X PUT "https://es01:${ES_PORT}/${MODEL_DATA_INDEX_NAME}" -H "Content-Type: application/json" -d @/usr/share/elasticsearch/model_mapping.json --insecure; do sleep 10; done;
+          echo "Importing User";
+          until curl -X PUT "https://es01:${ES_PORT}/_security/user/${NETWORK_ANALYST}" -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" -d "{ \"password\" : \"${NETWORK_ANALYST_PASSWORD}\" , \"roles\" : [\"dashboard_only\" , \"network_analyst\" ]}" --insecure; do sleep 10; done;
+          echo "Writing api-token for ${NETWORK_FLOW_INDEX_NAME}" into file sensor-api-key.txt;
+          until curl -X POST "https://es01:${ES_PORT}/_security/api_key" -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" --insecure -d "{
+            \"name\": \"sensor_key_generated_from_setup\",  
+            \"role_descriptors\": {
+              \"sensor_add_flows\": {
+                \"index\": [
+                  {
+                    \"names\": [\"${NETWORK_FLOW_INDEX_NAME}\"], 
+                    \"privileges\": [ \"write\"]  
+                  }
+                ]
+              }
+            }
+          }" | sed -e "s/.*encoded\":/KEY:/" | sed -e "s/}//" > /usr/share/elasticsearch/sensor-api-key.txt; do sleep 10; done;
           echo "Writing api-token for ${NETWORK_FLOW_INDEX_NAME}" into file server-api-key.txt;
           until curl -X POST "https://es01:${ES_PORT}/_security/api_key" -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" --insecure -d "{
             \"name\": \"server_key_generated_from_setup\",  
@@ -70,16 +86,15 @@ services:
               \"sensor_read_and_write_flows\": {
                 \"index\": [
                   {
-                    \"names\": [\"${NETWORK_FLOW_INDEX_NAME}\", \"${MODEL_DATA_INDEX_NAME}\"],
-                    \"privileges\": [ \"all\" ]  
+                    \"names\": [\"${NETWORK_FLOW_INDEX_NAME}\", \"${MODEL_DATA_INDEX_NAME}\"], 
+                    \"privileges\": [ \"all\"]  
                   }
                 ]
               }
             }
-          }" | sed -e "s/.*encoded\":/ELASTIC_SERVER_KEY=/" | sed -e "s/}//" > /usr/share/elasticsearch/shared_secrets/server-api-key.env; do sleep 10; done;
+          }" | sed -e "s/.*encoded\":/KEY:/" | sed -e "s/}//" > /usr/share/elasticsearch/server-api-key.txt; do sleep 10; done;
           echo "All done!";
-          # chmod 666 /usr/share/elasticsearch/keys/elastic-sensor-token.txt;
-          # echo "Use this api-key: $(cat /usr/share/elasticsearch/keys/elastic-sensor-token.txt) for your sensors! ";
+          echo "Use this api-key: $(cat /usr/share/elasticsearch/sensor-api-key.txt) for your sensors! ";
         else
           echo "-- Not the first container startup, so other initialisation is skipped  --"
         fi
@@ -217,29 +232,75 @@ services:
   #     interval: 10s
   #     timeout: 10s
   #     retries: 120
-  flask-server:
-    build:
-      context: .
-      dockerfile: DOCKERFILE
-    depends_on:
-      setup:
-        condition: service_completed_successfully
-    volumes:
-      - certs:/usr/share/elasticsearch/config/certs # TODO import these certs!
-      - shared_secrets:/shared_secrets
-      - ./keys:/keys
-    ports:
-      - ${FLASK_PORT}:8888
-    environment:
-      - ES_PORT=${ES_PORT}
-      - FLASK_PORT_NUMBER=${FLASK_PORT}
 
+  # kibana:
+  #   depends_on:
+  #     es01:
+  #       condition: service_healthy
+  #     # Uncomment for extra nodes
+  #     # es02:
+  #     #   condition: service_healthy
+  #     # es03:
+  #     #   condition: service_healthy
+  #   image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+  #   volumes:
+  #     - certs:/usr/share/kibana/config/certs
+  #     - ./kibana_certs:/usr/share/kibana/config/kibana_certs
+  #     - kibanadata:/usr/share/kibana/data
+  #   ports:
+  #     - ${KIBANA_PORT}:5601
+  #   environment:
+  #     - SERVERNAME=kibana
+  #     - SERVER_SSL_ENABLED=true
+  #     - SERVER_SSL_CERTIFICATE=/usr/share/kibana/config/kibana_certs/kibana.crt
+  #     - SERVER_SSL_KEY=/usr/share/kibana/config/kibana_certs/kibana.key
+  #     - ELASTICSEARCH_HOSTS=https://es01:9200
+  #     - ELASTICSEARCH_USERNAME=kibana_system
+  #     - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
+  #     - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
+  #   mem_limit: ${MEM_LIMIT}
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-k", "-f", "https://localhost:5601/api/status"]
+  #     interval: 30s
+  #     retries: 3
+  #     start_period: 10s
+  #     timeout: 10s
+
+  # packetbeat:
+  #   depends_on:
+  #     es01:
+  #       condition: service_healthy
+  #     kibana:
+  #       condition: service_healthy
+  #   image: docker.elastic.co/beats/packetbeat:${STACK_VERSION}
+  #   container_name: packetbeat
+  #   user: root
+  #   cap_add: 
+  #     - NET_ADMIN
+  #     - NET_RAW
+  #   volumes:
+  #     - certs:/usr/share/packetbeat/certs:ro
+  #     - ./packetbeat.yml:/usr/share/packetbeat/packetbeat.yml:ro
+  #     - ./pcap_folder:/usr/share/packetbeat/pcaps:ro
+  #   command: ["packetbeat", "setup", "e"]
+  #   #command: ["packetbeat", "-t", "-I", "/usr/share/packetbeat/pcaps/test.pcap", "-c", "/usr/share/packetbeat/packetbeat.yml", "-e"]
+  #   environment:
+  #     - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+  #     - ELASTICSEARCH_HOSTS=https://es01:9200
+  #     - ELASTICSEARCH_USERNAME=elastic
+  #     - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=/usr/share/packetbeat/certs/ca/ca.crt
+  #     - KIBANA_HOST=https://kibana:5601
+  #     - KIBANA_SSL_CERTIFICATEAUTHORITIES=/usr/share/packetbeat/certs/ca/ca.crt
 
 volumes:
   certs:
     driver: local
   esdata01:
     driver: local
-  shared_secrets:
-    driver: local
-  
+  # Uncomment for more nodes
+  # esdata02:
+  #   driver: local
+  # esdata03:
+  #   driver: local
+  # kibanadata:
+  #   driver: local

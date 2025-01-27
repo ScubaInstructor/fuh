@@ -21,6 +21,7 @@ COPY akins_verbesserter_flask_server.py /app/server.py
 COPY discord_bot.py /app/discord_bot.py
 COPY elastic_connector.py /app/elastic_connector.py
 COPY forms.py /app/forms.py
+COPY retrainer.py /app/retrainer.py
 COPY templates /app/templates
 COPY static /app/static
 COPY instance /app/instance

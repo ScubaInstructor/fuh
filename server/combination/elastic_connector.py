@@ -1,12 +1,17 @@
-from elasticsearch import AsyncElasticsearch
+from elasticsearch import AsyncElasticsearch, AuthenticationException
 from elasticsearch_dsl import AsyncSearch, connections
+import asyncio
+import pandas as pd #TODO not necessary
+from datetime import datetime
+from elasticsearch.exceptions import AuthenticationException
+from pandas import DataFrame, concat, to_datetime
 import dotenv
 from os import getenv
 
 # Load from .env File
 dotenv.load_dotenv()
-INDEX_NAME = getenv("NETWORK_FLOW_INDEX_NAME") 
-
+INDEX_NAME = "network_flows" # TODO extract from docker-compose
+MODEL_INDEX_NAME = "model_properties"
 # Load from "shared_secrets" docker volume
 dotenv.load_dotenv(dotenv_path="/shared_secrets/server-api-key.env")
 API_KEY = getenv("ELASTIC_SERVER_KEY")
@@ -35,13 +40,59 @@ class CustomElasticsearchConnector:
         self.verify_certs = verify_certs
         connections.create_connection(hosts=hosts, api_key=api_key, verify_certs=verify_certs, ssl_show_warn=False)
     
-    async def get_all_flows(self, onlyunseen:bool=False, size:int=20):
+    async def get_all_flows(self, view:str="all", size:int=20, exclude_pcap_data:bool= False):
         """
-        Retrieves all flow documents from Elasticsearch. Optionally, only retrieves flows that have not been seen. Run with asyncio.run(get_all_flows())
+        Retrieves all flow documents from Elasticsearch. Optionally, only retrieves flows that have not been seen. 
+        Run with asyncio.run(get_all_flows()). Will get the latest flows first.
+
+        Args:
+            view (str): all = all flows with a limt of 10000, seen = only seen flows, unseen = only unseen flows.
+            size (int): The number of flows to retrieve. 10000 is the maximum of elastic search.
+            exclude_pcap_data(bool) Exlude the Pcap Data containing the iindividual Packets of the flows
+
+        Returns:
+            DataFrame containing the flow data
+        """
+        async def _get_all_flows(self, view, size, exclude_pcap_data):
+           
+            async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
+                if view == "seen":
+                    s = AsyncSearch(using=client, index=INDEX_NAME) \
+                        .query("match", has_been_seen="true") \
+                        .extra(size=size) \
+                        .sort({"timestamp": {"order": "desc"}})
+                if view == "unseen":
+                    s = AsyncSearch(using=client, index=INDEX_NAME) \
+                        .query("match", has_been_seen="false") \
+                        .extra(size=size) \
+                        .sort({"timestamp": {"order": "desc"}})
+                else: #all
+                    s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
+                        .extra(size=10000) \
+                        .sort({"timestamp": {"order": "desc"}})
+
+                df_list = []
+                async for hit in s:
+                    hit_dict = hit.to_dict()
+                    if exclude_pcap_data:
+                        del hit_dict['pcap_data']
+                    df_list.append(pd.DataFrame([hit_dict]))
+                
+                df = pd.concat(df_list)
+                # Convert timestamp to datetime
+                df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+            return df #id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
+        return await _get_all_flows(self, view=view, size=size, exclude_pcap_data=exclude_pcap_data)
+    
+    async def legacy_get_all_flows(self, onlyunseen:bool=False, size:int=20):
+        """
+        Retrieves all flow documents from Elasticsearch. Optionally, only retrieves flows that have not been seen. 
+        Run with asyncio.run(get_all_flows()). Will get the latest flows first.
 
         Args:
             onlyunseen (bool): If True, only retrieves flows that have not been seen.
-            size (int): The number of flows to retrieve.
+            size (int): The number of flows to retrieve. If None all will be retrieved: Maximum is 10000 as this is set in elastic.
 
         Returns:
             Tuple containing various dictionaries with flow data:
@@ -58,7 +109,7 @@ class CustomElasticsearchConnector:
                 - attack_classes: Mapping of flow IDs to attack classes.
                 - has_been_seen: Mapping of flow IDs to seen status.
         """
-        async def _get_all_flows(self, onlyunseen, size):
+        async def _legacy_get_all_flows(self, onlyunseen, size):
             dataframes = {}
             filestore = {}
             probabilities_store = {}
@@ -73,16 +124,26 @@ class CustomElasticsearchConnector:
             id_store = {}
 
             async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
-                if onlyunseen:
-                    s = AsyncSearch(using=client, index=INDEX_NAME) \
-                        .query("match", has_been_seen="false") \
-                        .extra(size=size) \
-                        .sort({"timestamp": {"order": "desc"}})
-                else:
-                    s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
-                        .extra(size=size) \
-                        .sort({"timestamp": {"order": "desc"}})
-
+                if size:
+                    if onlyunseen:
+                        s = AsyncSearch(using=client, index=INDEX_NAME) \
+                            .query("match", has_been_seen="false") \
+                            .extra(size=size) \
+                            .sort({"timestamp": {"order": "desc"}})
+                    else:
+                        s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
+                            .extra(size=size) \
+                            .sort({"timestamp": {"order": "desc"}})
+                else: # size == None
+                    if onlyunseen:
+                        s = AsyncSearch(using=client, index=INDEX_NAME) \
+                            .query("match", has_been_seen="false") \
+                            .extra(size=10000) \
+                            .sort({"timestamp": {"order": "desc"}})
+                    else:
+                        s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
+                            .extra(size=10000) \
+                            .sort({"timestamp": {"order": "desc"}})
                 async for hit in s:
                     id = hit.flow_id
                     id_store[id] = hit.meta.id
@@ -99,8 +160,8 @@ class CustomElasticsearchConnector:
                     filestore[id] = hit.pcap_data
 
             return id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
-        return await _get_all_flows(self, onlyunseen=onlyunseen, size=size)
-    
+        return await _legacy_get_all_flows(self, onlyunseen=onlyunseen, size=size)
+     
     async def set_flow_as_seen(self, flow_id: str):
         """
         Marks a flow as seen in the Elasticsearch index.
@@ -132,3 +193,125 @@ class CustomElasticsearchConnector:
             s = AsyncSearch(using=client, index=INDEX_NAME).query("match", flow_id=flow_id)
             async for hit in s:
                 return await client.update(index=INDEX_NAME, refresh="wait_for", id=hit.meta.id, body={"doc": {"attack_class": attack_class}})
+
+    async def store_flow_data(self, data:dict):
+        # Initialize Elasticsearch client
+        async with AsyncElasticsearch(
+            self.hosts,
+            api_key=self.api_key,  # Authentication via API-key
+            verify_certs=False,
+            ssl_show_warn=False,
+            request_timeout=30,
+            retry_on_timeout=True
+        ) as client:
+            # Send to Elasticsearch
+            return await client.index(index=INDEX_NAME, body=data)
+    
+    async def get_pcap_data(self, flow_id: str):
+        """
+        Gets the PCAP Data for a specific flow in the Elasticsearch index.
+
+        Args:
+            flow_id (str): The ID of the flow to get the pcap data from.
+
+        Returns:
+            The PCAP Data in Base 64 
+        """
+        async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
+            s = AsyncSearch(using=client, index=INDEX_NAME).query("match", flow_id=flow_id)
+            async for hit in s:
+                resp =  await client.get(index=INDEX_NAME,id=hit.meta.id)
+                return resp.body['_source']['pcap_data']
+
+    async def save_model_properties(self, hash_value: str, timestamp, own_flow_count:int, score:float) -> str:
+        # Initialize Elasticsearch client
+        async with AsyncElasticsearch(
+            self.hosts,
+            api_key=self.api_key,  # Authentication via API-key
+            verify_certs=False,
+            ssl_show_warn=False,
+            request_timeout=30,
+            retry_on_timeout=True
+        ) as client:
+            # Send to Elasticsearch
+            data = {
+                "model_hash": hash_value,
+                "score": score,
+                "timestamp": timestamp,
+                "own_flow_count": own_flow_count
+            }
+            resp =  await client.index(index=MODEL_INDEX_NAME, body=data)
+            return resp["_id"]
+
+    async def get_model_properties(self, id:str) -> dict:
+        async with AsyncElasticsearch(
+            self.hosts,
+            api_key=self.api_key,  # Authentication via API-key
+            verify_certs=False,
+            ssl_show_warn=False,
+            request_timeout=30,
+            retry_on_timeout=True
+        ) as client:
+            # get from Elasticsearch
+            resp =  await client.get(index=MODEL_INDEX_NAME, id=id)
+            return resp.body
+        
+    async def get_all_model_properties(self, size:int=20):
+        """
+        Retrieves all model properties from Elasticsearch. 
+
+        Args:
+            size (int): The number of models to retrieve data from. If None all will be retrieved: Maximum is 10000 as this is set in elastic.
+
+        Returns:
+            list of dicts containing id, modelhash, score, own flow count and timestamp 
+        """
+        async def _get_all_model_properties(self, size):
+            properties_list = []
+            async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
+                if size:
+                    s = AsyncSearch(using=client, index=MODEL_INDEX_NAME) \
+                        .query("match_all") \
+                        .extra(size=size) \
+                        .sort({"timestamp": {"order": "desc"}})
+                else: # size == None
+                    s = AsyncSearch(using=client, index=MODEL_INDEX_NAME) \
+                        .query("match_all") \
+                        .extra(size=10000) \
+                        .sort({"timestamp": {"order": "desc"}})
+                async for hit in s:
+                    properties_list.append(DataFrame([hit.to_dict()]))
+                resulting_df = concat(properties_list)
+                resulting_df['timestamp'] = to_datetime(resulting_df['timestamp'])
+            return resulting_df
+        return await _get_all_model_properties(self, size=size)
+
+if __name__ == '__main__':
+    # TODO remove as this for testing only
+    # FLOWID = "56e58dfb-e260-44f5-9603-d7c22ed4f364"
+    # API_KEY = "WU1uNldaUUJyMFU1enNoeW5PUFI6dWs5RHRUOHhUQ3FXd1B3Um43WG43Zw=="
+    cec = CustomElasticsearchConnector()
+    # flows = asyncio.run(cec.get_all_flows(onlyunseen=True))
+    # #print(flows[0])
+    # asyncio.run(cec.set_flow_as_seen(flow_id=FLOWID))
+    # asyncio.run(cec.set_attack_class(flow_id=FLOWID, attack_class="BOT"))
+    # flows1 = asyncio.run(cec.get_all_flows(onlyunseen=False))
+    # #assert flows1[-2][FLOWID] == "BOT"
+    # #assert flows1[-1][FLOWID] == "true"
+
+    # print(len(flows1[0]))
+    # print(len(flows[0]))
+    from elastic_transport import ConnectionError as ce
+    try:
+        flows = asyncio.run(cec.get_all_flows(view="all", size=2))    
+        print(flows)
+    except ce:
+        print("Errorhandling")
+    pcap = asyncio.run(cec.get_pcap_data("2bb98524-e362-42bd-bcd4-b095423b7e14"))
+    print(pcap)
+    from datetime import datetime
+    import asyncio
+    cec = CustomElasticsearchConnector()
+    # uuid = asyncio.run(cec.save_model_properties(hash_value="123456890", timestamp=datetime.now(), own_flow_count=10, score=0.99))
+    # print(asyncio.run(cec.get_model_properties(uuid)))
+    # print(asyncio.run(cec.get_all_model_properties()))

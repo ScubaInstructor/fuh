@@ -1,6 +1,8 @@
 import asyncio
 from base64 import b64decode, b64encode
 from datetime import datetime, timedelta, timezone
+import hashlib
+from pathlib import Path
 from flask import Flask, request, jsonify, send_file, redirect, url_for, send_from_directory, flash,render_template
 from io import BytesIO
 import jwt
@@ -14,6 +16,8 @@ from threading import Thread
 from elastic_connector import CustomElasticsearchConnector, API_KEY, INDEX_NAME
 from discord_bot import DiscordClient
 from dotenv import load_dotenv
+from retrainer import retrain
+
 matplotlib.use('Agg') 
 load_dotenv()
 
@@ -30,6 +34,16 @@ app.config['SECRET_KEY'] = getenv('YOUR_SECRET_KEY')
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+global modelhash
+modelhash: str = "" # the hash of the current model
+
+# Discord stuff
+DISCORD_NOTIFICATION_DELAY = 1 # number of hours for timedelay between notifications
+TOKEN = getenv('DISCORD_TOKEN')
+CHANNEL_ID = int(getenv('DISCORD_CHANNEL_ID'))
+discord_client = DiscordClient(channel_id=CHANNEL_ID)
+NOTIFICATION_ACTIVE = bool(getenv('NOTIFICATION_ACTIVE'))
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -81,23 +95,10 @@ SERVER_NOTIFY_URL = \"http://localhost:{FLASK_PORT_NUMBER}/notify\"\n"""
     chmod(filename, 0o776)
     print(f"{filename} file generated and written.\n")
 
-@app.route('/notify', methods=['POST'])
-def notify():
-    token = request.headers.get('Authorization').split()[1]
-    try:
-        payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
-        # notify_users() # TODO uncomment for real Notification
-        return jsonify({'message': 'Access granted', 'user_id': payload['user_id']})
-    except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
-        return jsonify({'message': 'Token expired'}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({'message': 'Invalid token'}), 401
-
-def notify_users(): # TODO make threaded and add timedelay for multiple requests
-    TOKEN = getenv('DISCORD_TOKEN')
-    CHANNEL_ID = int(getenv('DISCORD_CHANNEL_ID'))
-    client = DiscordClient(channel_id=CHANNEL_ID)
-    client.run(token=TOKEN)
+def notify_users():
+    if last_notification < datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY):
+        discord_client.run(token=TOKEN)
+        last_notification = datetime.now()
 
 # Dictionaries to store dataframes, files, probabilities, predictions and timestamps with unique IDs
 dataframes = {}
@@ -136,7 +137,34 @@ static_path = abspath(join(getcwd(), 'static/'))
 
 def update_the_flowstore():
     global flow_ids, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
-    flow_ids, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen = asyncio.run(CEC.get_all_flows(onlyunseen=False))
+    flow_ids, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen = asyncio.run(CEC.legacy_get_all_flows(onlyunseen=False))
+
+def compute_file_hash(file_path: str) -> str:
+        """Compute the hash of a file using the sha265 algorithm.
+        
+        Args:
+            - file_path (str) = the path to the file
+        
+        Returns:
+            str: The hash value
+        """
+        hash_func = hashlib.sha256()
+        with open(file_path, 'rb') as file:
+            # Read the file in chunks of 8192 bytes
+            while chunk := file.read(8192):
+                hash_func.update(chunk)
+        
+        return hash_func.hexdigest()
+
+def set_the_server_hash(filename:str):
+    """
+    set the current value of the hash of the model in global variable modelhash
+
+    Args:
+        filename (str): the filename of the model
+    """
+    global modelhash
+    modelhash = compute_file_hash(filename)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -166,60 +194,64 @@ def load_user(user_id):
 def favicon():
     return send_from_directory(join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
+@app.route('/get_model_hash', methods=['GET'])
+def get_model_hash():
+    # check auth
+    token = request.headers.get('Authorization').split()[1]
+    try:
+        payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
+    except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    return jsonify({'message': 'Access granted', 'model_hash': modelhash})
 
 
+@app.route('/upload', methods=['POST'])
+def upload():
+    print(request.headers)
+    # check auth
+    token = request.headers.get('Authorization').split()[1]
+    try:
+        payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
 
+        # check if request is well formed
+        if ('flow_data' in request.json and 
+                'pcap_data' in request.json and 
+                'probabilities' in request.json  and 
+                'timestamp' in request.json and 
+                'prediction' in request.json and 
+                'sensor_name' in request.json and
+                'sensor_port' in request.json and
+                'partner_ip' in request.json and
+                'partner_port' in request.json and
+                'has_been_seen'in request.json and
+                'attack_class'in request.json and
+                'flow_id' in request.json and
+                'model_hash'in request.json):
+            
+            # check if hash is valid     
+            sensor_hash = request.json["model_hash"]
+            print("Sensorhash: " + sensor_hash)
+            global modelhash 
+            print("Serverhash: " + modelhash)
+            if modelhash != sensor_hash:
+                return jsonify({"update_error": "Model is out of date!"}), 400
 
-# @app.route('/upload', methods=['POST'])
-# def upload():
-#     if ('file' in request.files and 
-#             'json' in request.files and 
-#             'probabilities' in request.files  and 
-#             'timestamp' in request.files and 
-#             'prediction' in request.files and 
-#             'sensor_name' in request.files and
-#             'sensor_port' in request.files and
-#             'partner_ip' in request.files and
-#             'partner_port' in request.files):
-#         # Process both file and JSON data
-#         file = request.files['file']
-#         json_data = json.loads(request.files['json'].read().decode('utf-8'))
-#         probabilities_data = json.loads(request.files['probabilities'].read().decode('utf-8'))
-#         timestamp_data = json.loads(request.files['timestamp'].read().decode('utf-8'))
-#         prediction = request.files['prediction'].read().decode('utf-8')
-#         sensor_name = request.files['sensor_name'].read().decode('utf-8')
-#         sensor_port = request.files['sensor_port'].read().decode('utf-8')
-#         partner_ip = request.files['partner_ip'].read().decode('utf-8')
-#         partner_port = request.files['partner_port'].read().decode('utf-8')
-#         # Generate unique IDs
-#         file_id = str(uuid.uuid4())
-#         df_id = str(uuid.uuid4())
+            # receive data and store it in elastic
+            doc = request.json
+            asyncio.run(CEC.store_flow_data(data=doc))
 
-#         # Store file content
-#         filestore[file_id] = file.read()
+            if NOTIFICATION_ACTIVE:
+                notify_users() # TODO uncomment for real Notification
+        else:
+            return jsonify({"error": "Malformed data"}), 400
 
-#         # Store JSON data 
-#         dataframes[df_id] = json_data
-
-#         # Store probabilities, predictions, sensor names, timestamp and has_been_seen
-#         probabilities_store[df_id] = probabilities_data
-#         predictions_store[df_id] = prediction
-#         sensor_names[df_id] = sensor_name
-#         timestamps[df_id] = timestamp_data['timestamp']  # Store the timestamp
-#         sensor_ports[df_id] = sensor_port
-#         partner_ips[df_id] = partner_ip
-#         partner_ports[df_id] = partner_port
-
-#         # Initialize has_been_seen for this ID to False
-#         has_been_seen[df_id] = False
-
-#         # Log the request
-#         requests_log.append({'file_id': file_id, 'dataframe_id': df_id})
-
-#         return jsonify({"file_id": file_id, "dataframe_id": df_id})
-#     else:
-#         return jsonify({"error": "Missing file or JSON data"}), 400
-
+    except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    return jsonify({'message': 'Access granted', 'user_id': payload['user_id']})
 
 @app.route('/')
 @login_required
@@ -346,13 +378,12 @@ def details(id):
 
 @app.route('/retrain')
 @login_required
-def some_function():
-    classified_ids = [i for i in has_been_seen if has_been_seen[i]]
-    trainingdata = [(dataframes[i] , attack_classes[i] ) for i in classified_ids]
-    print(trainingdata)
+def retrain_button_pushed():
+    stats = retrain()
+    set_the_server_hash("model.pkl")
+    print(stats)
     print("DEBUG: Button pushed")
     return redirect(url_for('index'))  # Back to index
-
 
 @app.route('/download/<file_id>')
 @login_required
@@ -365,6 +396,24 @@ def download_file(file_id):
         )
     return "File not found", 404
 
+@app.route('/get_latest_model')
+def get_latest_model():
+    # check auth
+    token = request.headers.get('Authorization').split()[1]
+    try:
+        jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
+        filename = "model_scaler_ipca.zip"
+        if Path(filename).is_file():
+            return send_file(
+                filename,
+                as_attachment=True,
+                download_name=f"model_scaler_ipca.zip"  
+            )
+        return "File not found", 404
+    except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
 
 @app.route('/classified_requests')
 @login_required
@@ -381,4 +430,7 @@ def classified_requests():
 
 if __name__ == '__main__':
     generate_env_file_for_sensors("sensors")
+    set_the_server_hash("model.pkl")
+    print(f"modelhash is now {modelhash}")
+    last_notification = datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY)
     app.run(debug=True, host="0.0.0.0", port=8888)

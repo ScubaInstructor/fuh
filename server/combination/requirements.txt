@@ -10,3 +10,4 @@ python-dotenv
 Flask-Login 
 Flask-SQLAlchemy
 Flask-WTF
+pandas
