@@ -113,7 +113,7 @@ static_path = abspath(join(getcwd(), 'static/'))
 
 def update_the_flowstore():
     global flow_ids, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
-    flow_ids, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen = asyncio.run(CEC.get_all_flows(onlyunseen=False))
+    flow_ids, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen = asyncio.run(CEC.legacy_get_all_flows(onlyunseen=False))
 
 def compute_file_hash(file_path: str) -> str:
         """Compute the hash of a file using the sha265 algorithm.
