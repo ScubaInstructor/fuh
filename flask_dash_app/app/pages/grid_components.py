@@ -70,6 +70,45 @@ def make_pie_chart(fig_id, selected_rows):
             )
     )
 
+def make_prediction_pie_chart(fig_id, selected_rows):
+    """
+    Creates a pie chart showing classification probabilities for selected rows.
+    
+    Args:
+        fig_id (str): ID for the graph component
+        selected_rows (list): List of dictionaries containing selected row data
+        metric (str): The metric to display
+    
+    Returns:
+        dash.dcc.Graph: A Dash graph component containing the pie chart
+    """
+    detail_df = pd.DataFrame(selected_rows)
+    prediction_counts = detail_df['prediction'].value_counts()
+
+    return dcc.Graph(
+        id=fig_id,
+        figure=px.pie(
+                detail_df,
+                values=prediction_counts.values,
+                names=prediction_counts.index,
+                title="Prediction Probabilities"
+            ).update_layout(
+                title=dict(
+                    text="Prediction Probabilities",
+                    x=0.5,
+                    xanchor='center',
+                    yanchor='top'
+                ),
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.3,
+                    xanchor="center",
+                    x=0.5
+                )
+            )
+    )
+
 def make_detailed_grid(grid_id, selected_rows):
     """
     Creates a detailed grid view for selected rows.
@@ -103,15 +142,12 @@ def make_grid(df, seen=False, grid_id="grid", columns=[]):
     Returns:
         dash_ag_grid.AgGrid: An AG Grid component showing flow data
     """
+    print(seen)
+    print(df[df["has_been_seen"] == seen])
     return dag.AgGrid(
         id=grid_id,
         rowData=df[df["has_been_seen"] == seen].to_dict("records"),
-        columnDefs=[
-            {"field": "timestamp"},
-            {"field": "sensor_name"},
-            {"field": "partner_ip"},
-            {"field": "prediction"}
-        ],
+        columnDefs=columns,
         defaultColDef={"filter": True, "floatingFilter": True, "wrapHeaderText": True, "autoHeaderHeight": True, "resizable": True, "flex": 1},
         dashGridOptions={"pagination": True, "paginationPageSize": 10, "rowSelection": "single", "suppressRowClickfilter": False, "animateRows": False},
         rowClassRules={"bg-secondary text-dark bg-opacity-25": "params.node.rowPinned === 'top' | params.node.rowPinned === 'bottom'"},

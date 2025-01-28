@@ -13,7 +13,7 @@ from ..elastic_connector import CustomElasticsearchConnector
 import asyncio
 
 from .grid_components import (create_world_map, make_pie_chart, make_detailed_grid,
-                            make_grid, display_line, create_boxplot)
+                            make_grid, display_line, create_boxplot, make_prediction_pie_chart)
 
 
 # Initialize  Dash App
@@ -26,7 +26,7 @@ flow_nr = 5000
 cec = CustomElasticsearchConnector()
 # Load maximum possible number of flows
 try:
-    df = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
+    df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
     flow_data = df["flow_data"].apply(pd.Series)
     min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
     max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
@@ -311,13 +311,16 @@ else:
             html.Div(id='alert-container'),
             html.Hr(),
         ], className="mt-3 mb-3"),
-        dbc.Row([display_line('time-scatter', df, "0.1min")], className="mt-3 mb-3"),
+        dbc.Row([
+            dbc.Col([display_line('time-scatter', df, "0.1min"),], width=9),
+            dbc.Col([make_prediction_pie_chart("prediction_pie", df)], width=3)
+            ], className="mt-3 mb-3"),
         # Main content row
         dbc.Row([
             #make_grid(seen=False, grid_id="unseen_grid")
             # Left side - Grid
             dbc.Col([
-                make_grid(df, seen=False, grid_id="unseen_grid", columns=[{"field": "timestamp"},{"field": "sensor_name"},{"field": "partner_ip"},{"field": "prediction"}]),
+                make_grid(df, seen=False, grid_id="unseen_grid", columns=[{"field": "timestamp"},{"field": "sensor_name"},{"field": "partner_ip"},{"field": "prediction"},{"field": "flow_id"}]),
                 dbc.Button("Reset", id="reset-grid", className="ms-auto", n_clicks=None, style={"margin-top": "2px"})
             ], width=6, style={"border": "1px solid #ddd", "padding": "10px"}),  # Add border and padding for debugging
             # Right side - Pie Chart

@@ -112,6 +112,8 @@ class CustomElasticsearchConnector:
                 df = pd.concat(df_list)
                 df['timestamp'] = pd.to_datetime(df['timestamp'])
                 
+                # Convert string to boolean
+                df['has_been_seen'] = df['has_been_seen'].replace('true', True)
                 return df
             
         return await _get_all_flows(self, view=view, size=size, include_pcap=include_pcap, flow_id=flow_id)
