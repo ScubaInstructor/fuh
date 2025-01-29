@@ -1,7 +1,7 @@
 FROM python:3.11-alpine
 
 # # Install necessary dependencies 
-RUN apk --no-cache add procps
+RUN apk --no-cache add procps  gcc g++ musl-dev python3-dev py3-scikit-learn openblas-dev
 
 # Create /app folder
 RUN mkdir /app
@@ -10,6 +10,7 @@ RUN mkdir /app
 COPY requirements.txt /app
 
 # Install Python packages from requirements.txt
+RUN pip install --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # # Symlink python3 to python
@@ -22,9 +23,11 @@ COPY discord_bot.py /app/discord_bot.py
 COPY elastic_connector.py /app/elastic_connector.py
 COPY forms.py /app/forms.py
 COPY retrainer.py /app/retrainer.py
+COPY pipelining_utilities.py /app/pipelining_utilities.py
 COPY templates /app/templates
 COPY static /app/static
 COPY instance /app/instance
+COPY datasources /app/datasources
 
 
 WORKDIR /app

@@ -20,7 +20,7 @@
         },
 
         "uuid": {
-          "type": "Keyword"
+          "type": "keyword"
         }
       }
     }

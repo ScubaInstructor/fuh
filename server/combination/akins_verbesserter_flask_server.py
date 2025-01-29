@@ -9,7 +9,7 @@ import jwt
 import matplotlib.pyplot as plt
 from os.path import abspath, join
 from os import getcwd, getenv, path, chmod
-from geoip2fast import GeoIP2Fast
+from geoip2fast import GeoIP2Fast, geoip2fast
 import matplotlib
 from time import sleep
 from threading import Thread
@@ -37,13 +37,15 @@ login_manager.login_view = 'login'
 
 global modelhash
 modelhash: str = "" # the hash of the current model
+global last_notification
+last_notification = datetime.now()
 
 # Discord stuff
 DISCORD_NOTIFICATION_DELAY = 1 # number of hours for timedelay between notifications
 TOKEN = getenv('DISCORD_TOKEN')
 CHANNEL_ID = int(getenv('DISCORD_CHANNEL_ID'))
 discord_client = DiscordClient(channel_id=CHANNEL_ID)
-NOTIFICATION_ACTIVE = bool(getenv('NOTIFICATION_ACTIVE'))
+NOTIFICATION_ACTIVE = getenv('NOTIFICATION_ACTIVE') == '1'
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -57,45 +59,34 @@ with app.app_context():
 
 def generate_env_file_for_sensors(user_id):
     '''
-    Create an .env File for useage in the sensors, containing the JWT tzoken and the elastic api key
+    Create an .env File for useage in the sensors, containing the JWT token and the elastic api key
     '''
     payload = {
         'user_id': user_id,
         'exp': datetime.now(timezone.utc) + timedelta(seconds=1)
     }
     token = jwt.encode(payload, app.secret_key, algorithm='HS256')
-    ES_PORT = getenv('ES_PORT')
     FLASK_PORT_NUMBER = getenv('FLASK_PORT_NUMBER')
-    elastik_key = ""
-    with open ("/shared_secrets/elastic-sensor-token.txt", "r") as f:
-        elastik_key = f.readlines()[0].split(":")[1]
     header_text="""# LOCAL CONFIGURATION 
 SNIFFING_INTERFACE="" # This can be set to a specific network interface to listen to, else all interfaces are listened to 
 DEBUGGING="1"   # Sends all Flows to server and be more noisy
 SENSOR_NAME="Sensor"  # choose a meaningful name to identify this sensor
 
-# ELASTICSEARCH CONFIGURATION
-ES_HOST = "https://localhost"  # Change this to your Elasticsearch host
 """
-    port_line = f"ES_PORT = {ES_PORT}        # Change this to your Elasticsearch port\n"
-    index_line = f"ES_INDEX = \"{INDEX_NAME}\"  # Index name for storing flow data\n"
-    es_api_line = f"ES_API_KEY = {elastik_key} \n" # Quotes are already included
-    after_es_line = f"""
+    flask_line = f"""
 # FLASK SERVER CONFIGURATION
-SERVER_NOTIFY_URL = \"http://localhost:{FLASK_PORT_NUMBER}/notify\"\n"""
+SERVER_URL = \"http://localhost:{FLASK_PORT_NUMBER}\"\n"""
     token_line = f"SERVER_TOKEN = \"{token}\""
     filename = "/keys/.env"
     with open(filename, "w+") as f:
         f.write(header_text)    
-        f.write(port_line)
-        f.write(index_line)
-        f.write(es_api_line)
-        f.write(after_es_line)
+        f.write(flask_line)
         f.write(token_line)
     chmod(filename, 0o776)
     print(f"{filename} file generated and written.\n")
 
 def notify_users():
+    global last_notification
     if last_notification < datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY):
         discord_client.run(token=TOKEN)
         last_notification = datetime.now()
@@ -115,16 +106,28 @@ has_been_seen = {}  # Store if entries have been seen
 flow_ids = []   # Log for storing request information
 
 
-
-G = GeoIP2Fast(verbose=False)
+try: 
+    G = GeoIP2Fast(verbose=False)   
+except geoip2fast.GeoIPError as ge:
+    print(ge)
+    G = False      
 def update_geoip_database():
+    global G
     while True:
-        err = G.update_all()
-        errors = [e['error'] == None for e in err]
-        if all(errors):
-            print("Geo IP database update complete.")
-        else: 
-            print("Geo IP database update failed.")
+        if not G:
+            try: 
+                G = GeoIP2Fast(verbose=False)   
+                return
+            except geoip2fast.GeoIPError as ge:
+                print(ge)
+                G = False
+        else:     
+            err = G.update_all()
+            errors = [e['error'] == None for e in err]
+            if all(errors):
+                print("Geo IP database update complete.")
+            else: 
+                print("Geo IP database update failed.")
         sleep(4 * 60 * 60)  # Sleep for 4 hours
 
 # Start the GeoIP database update in a separate thread
@@ -209,7 +212,6 @@ def get_model_hash():
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    print(request.headers)
     # check auth
     token = request.headers.get('Authorization').split()[1]
     try:
@@ -243,7 +245,7 @@ def upload():
             asyncio.run(CEC.store_flow_data(data=doc))
 
             if NOTIFICATION_ACTIVE:
-                notify_users() # TODO uncomment for real Notification
+                notify_users() 
         else:
             return jsonify({"error": "Malformed data"}), 400
 
@@ -305,6 +307,7 @@ def index():
 @app.route('/details/<id>', methods=['GET', 'POST'])
 @login_required
 def details(id):
+    global G
     update_the_flowstore()
     if id not in flow_ids:
         return "DataFrame not found", 404
@@ -346,20 +349,20 @@ def details(id):
     file_download_link = f"/download/{id}" if file_entry else "#"
 
     # Create the flag for the ip-address
-    ip_lookup = G.lookup(partner_ip)
-    private_ip = ip_lookup.is_private
-    flag_country_code = ip_lookup.country_code
-    flag_country_name = ip_lookup.country_name
-    # found = False
-    # for file in glob.glob("*.png"):
-    #     if file.split('.')[0] == flag_country_code:
-    #         found = True
-    #         break
-    # if not found:
-    #     if not ip_lookup.is_private:
-    #         flag = get_flag_img(ip_lookup.country_name)
-    #         flag_path = f'{static_path}/{ip_lookup.country_code}.png'
-    #         flag.save(flag_path)
+    if not G:
+        try:
+            G = GeoIP2Fast(verbose=False,)
+        except geoip2fast.GeoIPError as ge:
+            print(ge)
+    if not G: 
+        private_ip = True   #maybe not correct, but we can't lookup right now
+        flag_country_code = "de" # just to set it 
+    else:        
+        ip_lookup = G.lookup(partner_ip)
+        private_ip = ip_lookup.is_private
+        flag_country_code = ip_lookup.country_code
+        flag_country_name = ip_lookup.country_name
+    
     return render_template('details.html', 
         probabilities=probabilities,
         prediction=prediction,
@@ -430,7 +433,7 @@ def classified_requests():
 
 if __name__ == '__main__':
     generate_env_file_for_sensors("sensors")
-    set_the_server_hash("model.pkl")
+    set_the_server_hash("datasources/model.pkl")
     print(f"modelhash is now {modelhash}")
     last_notification = datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY)
     app.run(debug=True, host="0.0.0.0", port=8888)

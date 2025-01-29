@@ -23,14 +23,14 @@ def get_self_created_flow_data() -> DataFrame:
                     with the 'attack_class' column renamed to 'attack_type'.
     """
     CEC = CustomElasticsearchConnector() 
-    data = asyncio.run(CEC.new_get_all_flows(onlyunseen= False, size=None)) # TODO THIS WILL BE DIFFERENT IN FUTURE CEC VERSIONS
+    data = asyncio.run(CEC.get_all_flows(view="seen" , exclude_pcap_data=True, size=None))
     for_retraining = data[data["has_been_seen"] == "true"][['flow_data','attack_class']]
     return for_retraining.rename(columns={'attack_class': 'attack_type'})
 
 def merge_own_flows_into_trainigdataset(own_data:DataFrame):
     """
     Merges self-created flow data into the training dataset. Classes are sampled to the size of 5000 but 
-    to always include the selfcreated flows.
+    do always include the selfcreated flows.
 
     Args:
         own_data (DataFrame): DataFrame containing self-created flow data.

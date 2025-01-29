@@ -149,7 +149,6 @@ class My_Sniffer():
             if DEBUGGING:
                 print(f"Prediction is: {prediction} with certainty of {proba.max()}")
             if prediction != ['BENIGN'] or proba.max() < 0.8 or proba.max() - proba.mean() < 0.6 or DEBUGGING:
-                proba = self.model.predict_proba(flow_data)
                 if DEBUGGING:
                     print("Flow will be sent")
                 # getting the attack data to the server 
@@ -202,7 +201,7 @@ class My_Sniffer():
 
                     }   
                     if DEBUGGING:
-                        print(f"Document to be sent: {doc}")                 
+                        print(f"Document to be sent: {doc}")   
                     # send to flask
                     resp = json.loads(self.upload_to_flask_server(data=doc).text)
                     if "error" in resp:
@@ -222,6 +221,8 @@ class My_Sniffer():
                     else:
                         if DEBUGGING:
                             print("sent data to flask server")
+                except ConnectionError as ce:
+                    print(f"Connection Error: {ce}")
                 except AuthenticationException as ae:
                     print(f"Authentication error: {ae}")
                 except Exception as e:

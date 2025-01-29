@@ -11,3 +11,5 @@ Flask-Login
 Flask-SQLAlchemy
 Flask-WTF
 pandas
+scikit-learn
+imblearn

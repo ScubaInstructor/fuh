@@ -23,14 +23,14 @@ def get_self_created_flow_data() -> DataFrame:
                     with the 'attack_class' column renamed to 'attack_type'.
     """
     CEC = CustomElasticsearchConnector() 
-    data = asyncio.run(CEC.new_get_all_flows(onlyunseen= False, size=None)) # TODO THIS WILL BE DIFFERENT IN FUTURE CEC VERSIONS
+    data = asyncio.run(CEC.get_all_flows(view="seen" , exclude_pcap_data=True, size=None))
     for_retraining = data[data["has_been_seen"] == "true"][['flow_data','attack_class']]
     return for_retraining.rename(columns={'attack_class': 'attack_type'})
 
-def merge_own_flows_into_trainigdataset(own_data:DataFrame):
+def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
     """
     Merges self-created flow data into the training dataset. Classes are sampled to the size of 5000 but 
-    to always include the selfcreated flows.
+    do always include the selfcreated flows.
 
     Args:
         own_data (DataFrame): DataFrame containing self-created flow data.
@@ -38,7 +38,7 @@ def merge_own_flows_into_trainigdataset(own_data:DataFrame):
     Returns:
         DataFrame: A DataFrame containing the merged training dataset. Class size is 5000.
     """
-    trainingdata = load("server/flask/DataFrame_with_balanced_dataset.pkl") # load("DataFrame_with_balanced_dataset.pkl")
+    trainingdata = load("datasources/DataFrame_with_balanced_dataset.pkl") # load("DataFrame_with_balanced_dataset.pkl")
     added_classes = own_data['attack_type'].str.lower().value_counts()
     class_names = added_classes.index.str.lower()
     selected = trainingdata[trainingdata['attack_type'].str.lower().isin(class_names.str.lower())] # unnecessary?
@@ -173,7 +173,7 @@ def retrain() -> ndarray:
         ndarray: Cross-validation scores of the retrained model.
     """
     own_data = get_self_created_flow_data()
-    mergeddata = merge_own_flows_into_trainigdataset(own_data=own_data)
+    mergeddata = merge_own_flows_into_trainigdataset_for_multiclassifier(own_data=own_data)
     processed_data, scaler, ipca, ipca_size  = adapt_cicids2017_for_training(data=mergeddata, balance_the_data=False)
     model, X_train, y_train, X_test, y_test = train_random_forest(processed_data)
     score = get_f1_score(model, X_test, y_test)
