@@ -32,3 +32,4 @@ Usage: tcpdump [-AbdDefhHIJKlLnNOpqStuUvxX#] [ -B size ] [ -c count ] [--count]
 
 ### Supported platforms
 * {Mac} OS X / macOS
+* alpine Linux
