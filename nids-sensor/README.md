@@ -29,7 +29,19 @@ Usage: tcpdump [-AbdDefhHIJKlLnNOpqStuUvxX#] [ -B size ] [ -c count ] [--count]
 		[ --ids-packet-provider <config.yml>] send dissected packets to ids tool using config
 ```
 
+### tcpdump-sensor compiles and works on at least the following platforms:
+* {Mac} OS X / macOS (13.7 Ventura)
+* alpine Linux
 
 ### Supported platforms
-* {Mac} OS X / macOS
-* alpine Linux
+* MacBookPro11,3
+* odroid H4 Ultra - N305
+
+
+### Dependency on libpcap
+tcpdump-sensor uses libpcap, a system-independent interface for user-level packet capture. If your operating system does not provide libpcap, or if it provides a libpcap that does not support the APIs from libpcap 1.0 or later, you must first retrieve and build libpcap before building tcpdump.
+
+### Other dependencies
+* libfyaml
+* liblz4
+* librdkafka
