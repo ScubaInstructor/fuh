@@ -257,10 +257,6 @@ def download_pcap(n_clicks, selected_row_data):
         type="application/vnd.tcpdump.pcap"
     )
 
-# Callback initialization
-#create_grid_callback("unseen_grid", "detailed_grid_unseen")
-#create_grid_callback("seen_grid", "detailed_grid_seen")
-
 @callback(
     Output("unseen_grid", "rowData"),
     Input("time-scatter", "clickData"),
@@ -313,7 +309,7 @@ else:
         ], className="mt-3 mb-3"),
         dbc.Row([
             dbc.Col([display_line('time-scatter', df, "0.1min"),], width=9),
-            dbc.Col([make_prediction_pie_chart("prediction_pie", df)], width=3)
+            dbc.Col([make_prediction_pie_chart("prediction_pie", df, "prediction")], width=3)
             ], className="mt-3 mb-3"),
         # Main content row
         dbc.Row([

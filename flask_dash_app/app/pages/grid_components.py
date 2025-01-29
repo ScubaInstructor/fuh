@@ -70,7 +70,7 @@ def make_pie_chart(fig_id, selected_rows):
             )
     )
 
-def make_prediction_pie_chart(fig_id, selected_rows):
+def make_prediction_pie_chart(fig_id, selected_rows, metric):
     """
     Creates a pie chart showing classification probabilities for selected rows.
     
@@ -83,18 +83,18 @@ def make_prediction_pie_chart(fig_id, selected_rows):
         dash.dcc.Graph: A Dash graph component containing the pie chart
     """
     detail_df = pd.DataFrame(selected_rows)
-    prediction_counts = detail_df['prediction'].value_counts()
-
+    prediction_counts = detail_df[metric].value_counts()
+    title = metric.capitalize() + " Probabilities"
     return dcc.Graph(
         id=fig_id,
         figure=px.pie(
                 detail_df,
                 values=prediction_counts.values,
                 names=prediction_counts.index,
-                title="Prediction Probabilities"
+                title=title
             ).update_layout(
                 title=dict(
-                    text="Prediction Probabilities",
+                    text=title,
                     x=0.5,
                     xanchor='center',
                     yanchor='top'

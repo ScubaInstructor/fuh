@@ -158,7 +158,7 @@ if __name__ == '__main__':
     cec = CustomElasticsearchConnector()
     
     try:
-        df = asyncio.run(cec.get_all_flows(size=10, include_pcap=True, flow_id="5d1fd266-43b8-433d-8dc9-8924aca48fd5"))
+        df = asyncio.run(cec.get_all_flows(size=10, include_pcap=True))
         print(df)
     except Exception as e:
         print(e)
