@@ -1,4 +1,10 @@
 
+
+echo "http://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/repositories
+apk update
+apk add lshw
+
+
 vi /etc/network/interfaces
 
 ```console
