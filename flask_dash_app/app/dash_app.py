@@ -69,6 +69,7 @@ def init_dash_app(flask_app):
             ],
             brand="Network Anomaly Detection Demonstrator",
             brand_href="#",
+            className="ms-0",
             color="primary",
             dark=True,
         ),
