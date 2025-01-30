@@ -309,7 +309,7 @@ else:
             ], width=6, style={"border": "1px solid #ddd", "padding": "10px"}),  # Add border and padding for debugging
             # Right side - Pie Chart
             dbc.Col([
-                create_world_map(df)
+                create_world_map("world-map-classified",df)
             ], width=6, style={"border": "1px solid #ddd", "padding": "10px"})  # Add border and padding for debugging
         ], style={'margin': '20px 0', 'display': 'flex', 'flex-direction': 'row'}),
         make_modal(),

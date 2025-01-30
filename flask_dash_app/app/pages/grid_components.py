@@ -7,7 +7,7 @@ import geoip2.database
 import pandas as pd
 
 # World Map
-def create_world_map(df):
+def create_world_map(fig_id, df):
     """
     Creates a geographical scatter plot of IP addresses on a world map.
     
@@ -38,7 +38,7 @@ def create_world_map(df):
         color='prediction',
         scope='world'
     )
-    return dcc.Graph(figure=fig, style={'width': '100%', 'height': '600px'})
+    return dcc.Graph(id=fig_id, figure=fig, clickData=df.to_dict() ,style={'width': '100%', 'height': '600px'})
 
 def make_pie_chart(fig_id, selected_rows):
     """
