@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, redirect
+from flask import Blueprint, jsonify, render_template, redirect, request
 from flask_login import login_required, current_user
-from . import db
+import jwt
+from . import db, app
 
 main_routes = Blueprint('main', __name__)
 
@@ -15,3 +16,18 @@ def dashboard():
     print(f"User authenticated: {current_user.is_authenticated}")  # Debugging
     #return render_template('dashboard.html', username=current_user.username)
     return redirect('/inbox/')
+
+
+@main_routes.route('/get_model_hash', methods=['GET'])
+def get_model_hash():
+    # check auth
+    token = request.headers.get('Authorization').split()[1]
+    try:
+        payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
+    except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    # Everything is well and we return the hash
+    # TODO insert hash
+    return jsonify({'message': 'Access granted', 'model_hash': "INSERT HERE THE HASH"})
