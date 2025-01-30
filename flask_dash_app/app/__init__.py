@@ -1,3 +1,5 @@
+from os import getenv
+from dotenv import load_dotenv
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -5,11 +7,12 @@ from flask_login import LoginManager
 # Initialize extensions
 db = SQLAlchemy()
 login_manager = LoginManager()
+# Create Flask app
+app = Flask(__name__)
 
 def create_app():
-    # Create Flask app
-    app = Flask(__name__)
-    app.secret_key = 'supersecretkey'
+    load_dotenv()
+    app.secret_key = getenv('your_secret_key')
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 

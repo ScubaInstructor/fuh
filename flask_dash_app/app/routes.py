@@ -29,5 +29,5 @@ def get_model_hash():
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
     # Everything is well and we return the hash
-    # TODO insert hash
+    # TODO insert hash and add the respective functions and variables
     return jsonify({'message': 'Access granted', 'model_hash': "INSERT HERE THE HASH"})
