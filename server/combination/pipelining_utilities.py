@@ -65,7 +65,7 @@ def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
         adapted_data = pd.DataFrame(scaled_features, columns=gemeinsame_columns)
     return adapted_data
 
-def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: IncrementalPCA, 
+def NEEDS_FIXING_adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: IncrementalPCA, 
           ipca_size: int= None) -> pd.DataFrame:
     """
 

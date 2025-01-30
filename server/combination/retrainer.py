@@ -6,6 +6,7 @@ from elastic_connector import CustomElasticsearchConnector
 from pandas import DataFrame, concat
 from sklearn.model_selection import cross_val_score, train_test_split
 from joblib import dump, load
+import joblib
 from numpy import ndarray
 from pipelining_utilities import adapt_cicids2017_for_training
 import zipfile
@@ -45,8 +46,6 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
 
     dfs = []
 
-    # TODO check for namedifferences in newly classified flows
-
     for name in class_names:
         # Extrahiere Daten für jede Klasse
         df = selected[selected['attack_type'].str.lower() == name]
@@ -58,12 +57,64 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
         df.add(own_flows_of_same_class)
         dfs.append(df)
     
-    # TODO assert all classes are 5000 entries strong
-
     # Combine all classes
     df = concat(dfs, ignore_index = True)
     df.sample(frac=1)
     return df
+
+def merge_own_flows_into_trainigdataset_for_binarylassifier(own_data:DataFrame):
+    """
+    Merges self-created flow data into the training dataset. Classes are sampled to the size of the bigger class but 
+    do always include the selfcreated flows. This is for a binary classifier (Attack/No Attack).
+
+    Args:
+        own_data (DataFrame): DataFrame containing self-created flow data.
+
+    Returns:
+        DataFrame: A DataFrame containing the merged training dataset. Two classes are returned labeled ATTACK and BENIGN
+    """
+    trainingdata = joblib.load("scripts/data_sources/bdata.pkl")    # This dataset is already balanced to have a many benign as attack flows
+    mapping = {'DDoS': 'ATTACK', 'DoS': 'ATTACK', 'Port Scan': 'ATTACK', 'Bot': 'ATTACK', 'BENIGN': 'benign', 'Brute Force': 'ATTACK', 'Web Attack': 'ATTACK'}
+    own_data = own_data['attack_type'].replace(mapping)
+
+    added_classes = own_data['attack_type'].value_counts()
+    # class_names = added_classes.index.str.lower()
+    # selected = trainingdata[trainingdata['attack_type'].isin(added_classes)] # unnecessary?
+
+    dfs = []
+
+    diff_benign_attack = added_classes["BENIGN"] - added_classes["ATTACK"] 
+    
+
+    if diff_benign_attack == 0:
+        df = trainingdata
+        df.add(own_data)
+        dfs.append(df)
+    elif diff_benign_attack > 0: # more benign flows than attack
+        df = trainingdata[trainingdata['attack_type'] == "BENIGN"]
+        n = len(trainingdata)/2 - diff_benign_attack # half the trainingdata is benign
+        df = df.sample(n=n, random_state=0)
+        df.add(own_data[own_data["BENIGN"]])
+        dfs.append(df)
+        df = trainingdata[trainingdata["attack_type"] == "ATTACK"]
+        df.add(own_data[own_data["ATTACK"]])
+        dfs.append(df)
+    else:   # more attack flows than benign
+        df = trainingdata[trainingdata['attack_type'] == "ATTACK"]
+        n = len(trainingdata)/2 + diff_benign_attack # half the trainingdata is benign
+        df = df.sample(n=n, random_state=0)
+        df.add(own_data[own_data["ATTACK"]])
+        dfs.append(df)
+        df = trainingdata[trainingdata["attack_type"] == "BENIGN"]
+        df.add(own_data[own_data["BENIGN"]])
+        dfs.append(df)
+
+    
+    # Combine all classes
+    df = concat(dfs, ignore_index = True)
+    df.sample(frac=1)
+    return df
+
 
 def train_random_forest(data:DataFrame) -> tuple:
     """
@@ -173,8 +224,8 @@ def retrain() -> ndarray:
         ndarray: Cross-validation scores of the retrained model.
     """
     own_data = get_self_created_flow_data()
-    mergeddata = merge_own_flows_into_trainigdataset_for_multiclassifier(own_data=own_data)
-    processed_data, scaler, ipca, ipca_size  = adapt_cicids2017_for_training(data=mergeddata, balance_the_data=False)
+    merged_and_balanced_data = merge_own_flows_into_trainigdataset_for_multiclassifier(own_data=own_data)
+    processed_data, scaler, ipca, ipca_size  = adapt_cicids2017_for_training(data=merged_and_balanced_data, balance_the_data=False)
     model, X_train, y_train, X_test, y_test = train_random_forest(processed_data)
     score = get_f1_score(model, X_test, y_test)
     own_flow_count = own_data.shape[0]
@@ -184,6 +235,10 @@ def retrain() -> ndarray:
     elastic_id = asyncio.run(cec.save_model_properties(hash_value=model_hash, timestamp=datetime.now(), own_flow_count=own_flow_count, score=score))
     create_transferrable_zipfile(elastic_id, model, scaler, ipca)
     return evaluate_model(model, X_train, y_train)
+
+def create_binary_classifier():
+    own_data = get_self_created_flow_data()
+    merged_and_balanced_data = merge_own_flows_into_trainigdataset_for_binarylassifier(own_data=own_data)
 
 
 
