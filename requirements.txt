@@ -29,3 +29,7 @@ Flask-WTF
 elasticsearch-dsl[async]
 pycountry
 PyJWT
+dash 
+dash_bootstrap_components
+dash_ag_grid
+geoip2

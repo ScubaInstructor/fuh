@@ -261,10 +261,11 @@ def download_pcap(n_clicks, selected_row_data):
     Output("unseen_grid", "rowData"),
     Input("time-scatter", "clickData"),
     Input("submit-classification", "n_clicks"),
-    Input("reset-grid", "n_clicks")
+    Input("reset-grid", "n_clicks"),
+    Input("world-map-inbox", "clickData")
 )
-def update_grid(clickData, n_clicks_submit, n_clicks_reset):
-    print(clickData, n_clicks_submit, n_clicks_reset)
+def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map):
+    print(clickData, n_clicks_submit, n_clicks_reset, clickData_map)
     trigger = dash.callback_context.triggered_id
     print(f"Triggered by: {trigger}")
     
@@ -280,6 +281,11 @@ def update_grid(clickData, n_clicks_submit, n_clicks_reset):
     if trigger == "time-scatter" and clickData:
         print("Updating grid based on time-scatter click...")
         return df[df["time_bin"]==clickData["points"][0]['x']].to_dict("records")
+    
+    if trigger == "world-map-inbox" and clickData_map:
+        print("Updating grid based on world-map-inbox click...")
+        df_lat = df[df["source_lat"]==clickData_map["points"][0]["lat"]]
+        return df_lat[df_lat["source_lon"]==clickData_map["points"][0]["lon"]].to_dict("records")
     
     # Default return for initial load
     print("Default grid load...")
@@ -321,7 +327,7 @@ else:
             ], width=6, style={"border": "1px solid #ddd", "padding": "10px"}),  # Add border and padding for debugging
             # Right side - Pie Chart
             dbc.Col([
-                create_world_map(df)
+                create_world_map("world-map-inbox", df)
             ], width=6, style={"border": "1px solid #ddd", "padding": "10px"})  # Add border and padding for debugging
         ], style={'margin': '20px 0', 'display': 'flex', 'flex-direction': 'row'}),
         make_modal(),
