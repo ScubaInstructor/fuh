@@ -73,6 +73,7 @@ def merge_own_flows_into_trainigdataset_for_binarylassifier(own_data:DataFrame):
     Returns:
         DataFrame: A DataFrame containing the merged training dataset. Two classes are returned labeled ATTACK and BENIGN
     """
+    # TODO generate an unscaled Dataset with as many benign as attack flows-
     trainingdata = joblib.load("scripts/data_sources/bdata.pkl")    # This dataset is already balanced to have a many benign as attack flows
     mapping = {'DDoS': 'ATTACK', 'DoS': 'ATTACK', 'Port Scan': 'ATTACK', 'Bot': 'ATTACK', 'BENIGN': 'benign', 'Brute Force': 'ATTACK', 'Web Attack': 'ATTACK'}
     own_data = own_data['attack_type'].replace(mapping)
@@ -236,10 +237,13 @@ def retrain() -> ndarray:
     create_transferrable_zipfile(elastic_id, model, scaler, ipca)
     return evaluate_model(model, X_train, y_train)
 
-def create_binary_classifier():
+def retrain_multimodel_classifiers():
     own_data = get_self_created_flow_data()
     merged_and_balanced_data = merge_own_flows_into_trainigdataset_for_binarylassifier(own_data=own_data)
-
+    # TODO check if binary switch is needed.
+    processed_data, scaler, ipca, ipca_size  = adapt_cicids2017_for_training(data=merged_and_balanced_data, balance_the_data=False, binary_switch=True)
+    model, X_train, y_train, X_test, y_test = train_random_forest(processed_data)
+ 
 
 
 if __name__ == '__main__':
