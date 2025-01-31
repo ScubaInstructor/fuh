@@ -4,6 +4,7 @@ import asyncio
 import pandas as pd
 from elasticsearch.exceptions import AuthenticationException
 INDEX_NAME = "network_flows" # TODO make this comnfigured from .env file 
+MODEL_INDEX_NAME = "model_properties"
 
 class CustomElasticsearchConnector:
     """
@@ -15,7 +16,7 @@ class CustomElasticsearchConnector:
         verify_certs (bool): Whether to verify SSL certificates.
     """
 
-    def __init__(self, hosts=['https://localhost:9200'], api_key="YWl5MHBKUUJKY1FONjZyeUc3Z3k6aHhHUi04TUxULWFtYW9yVzlNMkduQQ==", verify_certs=False):
+    def __init__(self, hosts=['https://localhost:9200'], api_key="VFFIcnM1UUJPWkFRTElWZUprWnA6TjJ4b1paS0RUOGlmVnhLNXQ1cUx0Zw==", verify_certs=False):
         """
         Initializes the CustomElasticsearchConnector.
 
@@ -149,6 +150,50 @@ class CustomElasticsearchConnector:
             s = AsyncSearch(using=client, index=INDEX_NAME).query("match", flow_id=flow_id)
             async for hit in s:
                 return await client.update(index=INDEX_NAME, refresh="wait_for", id=hit.meta.id, body={"doc": {"attack_class": attack_class}})
+    
+    async def get_model_properties(self, id:str) -> dict:
+        async with AsyncElasticsearch(
+            self.hosts,
+            api_key=self.api_key,  # Authentication via API-key
+            verify_certs=False,
+            ssl_show_warn=False,
+            request_timeout=30,
+            retry_on_timeout=True
+        ) as client:
+            # get from Elasticsearch
+            resp =  await client.get(index=MODEL_INDEX_NAME, id=id)
+            return resp.body
+        
+    async def get_all_model_properties(self, size:int=20):
+        """
+        Retrieves all model properties from Elasticsearch. 
+
+        Args:
+            size (int): The number of models to retrieve data from. If None all will be retrieved: Maximum is 10000 as this is set in elastic.
+
+        Returns:
+            list of dicts containing id, modelhash, score, own flow count and timestamp 
+        """
+        async def _get_all_model_properties(self, size):
+            properties_list = []
+            async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
+                if size:
+                    s = AsyncSearch(using=client, index=MODEL_INDEX_NAME) \
+                        .query("match_all") \
+                        .extra(size=size) \
+                        .sort({"timestamp": {"order": "desc"}})
+                else: # size == None
+                    s = AsyncSearch(using=client, index=MODEL_INDEX_NAME) \
+                        .query("match_all") \
+                        .extra(size=10000) \
+                        .sort({"timestamp": {"order": "desc"}})
+                async for hit in s:
+                    properties_list.append(DataFrame([hit.to_dict()]))
+                resulting_df = concat(properties_list)
+                resulting_df['timestamp'] = to_datetime(resulting_df['timestamp'])
+            return resulting_df
+        return await _get_all_model_properties(self, size=size)
+
 
 if __name__ == '__main__':
     # TODO remove as this for testing only
@@ -159,7 +204,6 @@ if __name__ == '__main__':
     
     try:
         df = asyncio.run(cec.get_all_flows(size=10, include_pcap=True))
-        print(df)
     except Exception as e:
         print(e)
     # #asyncio.run(cec.set_flow_as_seen(flow_id=FLOWID))

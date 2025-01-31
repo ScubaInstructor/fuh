@@ -142,8 +142,6 @@ def make_grid(df, seen=False, grid_id="grid", columns=[]):
     Returns:
         dash_ag_grid.AgGrid: An AG Grid component showing flow data
     """
-    print(seen)
-    print(df[df["has_been_seen"] == seen])
     return dag.AgGrid(
         id=grid_id,
         rowData=df[df["has_been_seen"] == seen].to_dict("records"),
