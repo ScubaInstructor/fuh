@@ -116,7 +116,8 @@ def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True,
         data (pd.DataFrame): The input DataFrame containing CICIDS2017 data.
         use_ipca (bool, optional): Whether IncrementalPCA should be used. Defaults to True.
         balance_the_data (bool, optional): Whether the data should be balanced. Defaults to True.
-        binary_switch (boool, optional): Wether data should be transmuted to attack or no attack.
+        binary_switch (boool, optional): Wether data should be transmuted to attack or no attack. 
+                                            Only in use when balance_the_data is set to true.
 
     Returns:
         tuple: A tuple consisting of:
@@ -167,7 +168,7 @@ def balance_the_dataset(new_data, binary_switch=False):
     3. Applies SMOTE (Synthetic Minority Over-sampling Technique) to balance smaller classes.
     4. Shuffles the resulting dataset.
 
-    If binary_switch == False the funtion will return a Dataset with as many benign flows as 
+    If binary_switch == True the funtion will return a Dataset with as many benign flows as 
     attack flows. The benign flows will be downsampled to the amount of the attack flows.
 
     Args:

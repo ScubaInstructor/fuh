@@ -169,7 +169,34 @@ def twostage_classifier():
 
     print(f"Mean of recall of benign and accuracy of all: {append(accuracy, recall[0]).mean()}")
     return b_rf, a_rf
- 
+
+def create_binary_dataset_from_cicids2017():
+    full_cicids2017_data = pd.read_csv("scripts/data_sources/data_renamed.csv")
+    from adapt import gemeinsame_columns
+    c = gemeinsame_columns + ['attack_type'] 
+    data = full_cicids2017_data[c] 
+    features = data.drop('attack_type', axis = 1)
+    attacks = data['attack_type']
+    # Count all the attacks 
+    class_counts = data['attack_type'].value_counts()
+    # Exclude classes with too little members
+    selected_classes = class_counts[class_counts > 1950]
+    class_names = selected_classes.index
+    selected_flows = data[data['attack_type'].isin(class_names)]
+
+    dfs = []
+    attack_count = len(selected_flows[selected_flows['attack_type'] != "BENIGN"]) # This will be the smaller amount, as benign is by far the largest class!
+    #print(f"Amount of attack classes {attack_count}")
+    for name in class_names:
+        df = selected_flows[selected_flows['attack_type'] == name]
+        if name == "BENIGN":
+            df = df.sample(n = attack_count, random_state = 0)
+        else:
+            df = df.replace({name:"ATTACK"})
+        #print(f"Length of class Dataframe {len(df)}")
+        dfs.append(df)
+    blnc_data = pd.concat(dfs, ignore_index = True)
+    return blnc_data
     
 # test_with_recall_and_accuracy(train_RandomForestClassifier_as_in_use_now(), X_test, y_test)   # 0.9733943946442756
 # test_with_recall_and_accuracy(train_RandomForestClassifier(), X_test, y_test)   # Mean of recall of benign and accuracy of all: 0.9918086009304437
@@ -177,3 +204,4 @@ def twostage_classifier():
 # Best parameters for Multi RandomForestClassifier are :{'n_estimators': 1400, 'min_samples_split': 5, 'min_samples_leaf': 1, 'max_features': 'sqrt', 'max_depth': 75, 'bootstrap': True}
 # twostage_classifier()   #Mean of recall of benign and accuracy of all: 0.9988890231084662
 
+joblib.dump(create_binary_dataset_from_cicids2017(), "scripts/data_sources/binary_dataset_unscaled.pkl")
