@@ -14,7 +14,7 @@ INDEX_NAME = "network_flows" # TODO extract from docker-compose
 MODEL_INDEX_NAME = "model_properties"
 # Load from "shared_secrets" docker volume
 dotenv.load_dotenv(dotenv_path="/shared_secrets/server-api-key.env")
-API_KEY = getenv("ELASTIC_SERVER_KEY")
+API_KEY = "VFFIcnM1UUJPWkFRTElWZUprWnA6TjJ4b1paS0RUOGlmVnhLNXQ1cUx0Zw=="
 
 class CustomElasticsearchConnector:
     """
@@ -26,7 +26,7 @@ class CustomElasticsearchConnector:
         verify_certs (bool): Whether to verify SSL certificates.
     """
 
-    def __init__(self, api_key:str=API_KEY, hosts:str=['https://es01:9200'], verify_certs:bool=False):
+    def __init__(self, api_key:str=API_KEY, hosts:str=['https://localhost:9200'], verify_certs:bool=False):
         """
         Initializes the CustomElasticsearchConnector.
 
@@ -40,7 +40,7 @@ class CustomElasticsearchConnector:
         self.verify_certs = verify_certs
         connections.create_connection(hosts=hosts, api_key=api_key, verify_certs=verify_certs, ssl_show_warn=False)
     
-    async def get_all_flows(self, view:str="all", size:int=20, exclude_pcap_data:bool= False):
+    async def get_all_flows(self, view:str="all", size:int=20, include_pcap:bool= False, flow_id:str=None):
         """
         Retrieves all flow documents from Elasticsearch. Optionally, only retrieves flows that have not been seen. 
         Run with asyncio.run(get_all_flows()). Will get the latest flows first.
@@ -48,42 +48,55 @@ class CustomElasticsearchConnector:
         Args:
             view (str): all = all flows with a limt of 10000, seen = only seen flows, unseen = only unseen flows.
             size (int): The number of flows to retrieve. 10000 is the maximum of elastic search.
-            exclude_pcap_data(bool) Exlude the Pcap Data containing the iindividual Packets of the flows
+            include_pcap(bool) Include the Pcap Data containing the iindividual Packets of the flows
 
         Returns:
             DataFrame containing the flow data
         """
-        async def _get_all_flows(self, view, size, exclude_pcap_data):
+        async def _get_all_flows(self, view, size, include_pcap, flow_id):
            
             async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
-                if view == "seen":
-                    s = AsyncSearch(using=client, index=INDEX_NAME) \
-                        .query("match", has_been_seen="true") \
-                        .extra(size=size) \
-                        .sort({"timestamp": {"order": "desc"}})
-                if view == "unseen":
-                    s = AsyncSearch(using=client, index=INDEX_NAME) \
-                        .query("match", has_been_seen="false") \
-                        .extra(size=size) \
-                        .sort({"timestamp": {"order": "desc"}})
-                else: #all
-                    s = AsyncSearch(using=client, index=INDEX_NAME).query("match_all") \
-                        .extra(size=10000) \
-                        .sort({"timestamp": {"order": "desc"}})
+                # Define view query mapping
+                view_queries = {
+                    "seen": {"has_been_seen": "true"},
+                    "unseen": {"has_been_seen": "false"},
+                    "all": None
+                }
+                
+                # Base search
+                s = AsyncSearch(using=client, index=INDEX_NAME)
+                
+                
 
+                # Add view filter if needed
+                if view_queries.get(view):
+                    s = s.query("match", **view_queries[view])
+                else:
+                    s = s.query("match_all")
+                
+                # Add flow_id filter if needed --> Overwrite has been seen criteria
+                if flow_id:
+                    s = s.query("match", flow_id=flow_id)
+
+                # Add source filtering if pcap not needed
+                if not include_pcap:
+                    s = s.source(excludes=['pcap_data'])
+                    
+                # Add size and sorting
+                s = s.extra(size=size).sort({"timestamp": {"order": "desc"}})
+                
+                # Process results
                 df_list = []
                 async for hit in s:
-                    hit_dict = hit.to_dict()
-                    if exclude_pcap_data:
-                        del hit_dict['pcap_data']
-                    df_list.append(pd.DataFrame([hit_dict]))
+                    df_list.append(pd.DataFrame([hit.to_dict()]))
                 
                 df = pd.concat(df_list)
-                # Convert timestamp to datetime
                 df['timestamp'] = pd.to_datetime(df['timestamp'])
-
-            return df #id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
-        return await _get_all_flows(self, view=view, size=size, exclude_pcap_data=exclude_pcap_data)
+                
+                # Convert string to boolean
+                df['has_been_seen'] = df['has_been_seen'].replace('true', True)
+                return df
+        return await _get_all_flows(self, view=view, size=size, include_pcap=include_pcap, flow_id=flow_id)
     
     async def legacy_get_all_flows(self, onlyunseen:bool=False, size:int=20):
         """
@@ -303,6 +316,7 @@ if __name__ == '__main__':
     # print(len(flows[0]))
     from elastic_transport import ConnectionError as ce
     try:
+        model= asyncio.run(cec.get_all_model_properties(size=20))
         flows = asyncio.run(cec.get_all_flows(view="all", size=2))    
         print(flows)
     except ce:
