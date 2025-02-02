@@ -30,10 +30,13 @@ def get_self_created_flow_data() -> DataFrame:
     """
     CEC = CustomElasticsearchConnector() 
     data = asyncio.run(CEC.get_all_flows(view="seen" , exclude_pcap_data=True, size=None))
-    for_retraining = data[data["has_been_seen"] == "true"][['flow_data','attack_class']]
-    return for_retraining.rename(columns={'attack_class': 'attack_type'})
+    if len(data) > 0:
+        for_retraining = data[data["has_been_seen"] == "true"][['flow_data','attack_class']]
+        return for_retraining.rename(columns={'attack_class': 'attack_type'})
+    else: 
+        return data
 
-def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
+def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame) -> DataFrame:
     """
     Merges self-created flow data into the training dataset. Classes are sampled to the size of 5000 but 
     do always include the selfcreated flows.
@@ -45,6 +48,8 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
         DataFrame: A DataFrame containing the merged training dataset. Class size is 5000.
     """
     trainingdata = load("datasources/DataFrame_with_balanced_dataset.pkl") # load("DataFrame_with_balanced_dataset.pkl")
+    if len(own_data) == 0:
+        return trainingdata
     added_classes = own_data['attack_type'].str.lower().value_counts()
     class_names = added_classes.index.str.lower()
     selected = trainingdata[trainingdata['attack_type'].str.lower().isin(class_names.str.lower())] # unnecessary?
@@ -67,7 +72,7 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
     df.sample(frac=1)
     return df
 
-def merge_own_flows_into_trainigdataset_for_binarylassifier(own_data:DataFrame):
+def merge_own_flows_into_trainigdataset_for_binarylassifier(own_data:DataFrame) -> DataFrame:
     """
     Merges self-created flow data into the training dataset. Classes are sampled to the size of the bigger class but 
     do always include the selfcreated flows. This is for a binary classifier (Attack/No Attack).
@@ -78,17 +83,26 @@ def merge_own_flows_into_trainigdataset_for_binarylassifier(own_data:DataFrame):
     Returns:
         DataFrame: A DataFrame containing the merged training dataset. Two classes are returned labeled ATTACK and BENIGN
     """
-    trainingdata = load("scripts/data_sources/binary_dataset_unscaled.pkl")    # This dataset is already balanced to have a many benign as attack flows
-    mapping = {'DDoS': 'ATTACK', 'DoS': 'ATTACK', 'Port Scan': 'ATTACK', 'Bot': 'ATTACK', 'BENIGN': 'benign', 'Brute Force': 'ATTACK', 'Web Attack': 'ATTACK'}
-    own_data = own_data['attack_type'].replace(mapping)
+    trainingdata = load("datasources/binary_dataset_unscaled.pkl")    # This dataset is already balanced to have a many benign as attack flows
+    if len(own_data) == 0:
+        return trainingdata
+    mapping = {'DDoS': 'ATTACK', 'DoS': 'ATTACK', 'Port Scan': 'ATTACK', 'Bot': 'ATTACK', 'BENIGN': 'BENIGN', 'Brute Force': 'ATTACK', 'Web Attack': 'ATTACK'}
+    own_data = own_data.replace(mapping)
 
     added_classes = own_data['attack_type'].value_counts()
     # class_names = added_classes.index.str.lower()
     # selected = trainingdata[trainingdata['attack_type'].isin(added_classes)] # unnecessary?
 
     dfs = []
-
-    diff_benign_attack = added_classes["BENIGN"] - added_classes["ATTACK"] 
+    try:
+        benign_count = added_classes["BENIGN"]
+    except KeyError:
+        benign_count = 0
+    try:
+        attack_count = added_classes["ATTACK"] 
+    except KeyError:
+        attack_count = 0
+    diff_benign_attack = benign_count - attack_count
     
 
     if diff_benign_attack == 0:
@@ -97,21 +111,21 @@ def merge_own_flows_into_trainigdataset_for_binarylassifier(own_data:DataFrame):
         dfs.append(df)
     elif diff_benign_attack > 0: # more benign flows than attack
         df = trainingdata[trainingdata['attack_type'] == "BENIGN"]
-        n = len(trainingdata)/2 - diff_benign_attack # half the trainingdata is benign
+        n = int(len(trainingdata)/2 - diff_benign_attack) # half the trainingdata is benign
         df = df.sample(n=n, random_state=0)
-        df.add(own_data[own_data["BENIGN"]])
+        df.add(own_data[own_data["attack_type"]== "BENIGN"])
         dfs.append(df)
         df = trainingdata[trainingdata["attack_type"] == "ATTACK"]
-        df.add(own_data[own_data["ATTACK"]])
+        df.add(own_data[own_data["attack_type"]=="ATTACK"])
         dfs.append(df)
     else:   # more attack flows than benign
         df = trainingdata[trainingdata['attack_type'] == "ATTACK"]
-        n = len(trainingdata)/2 + diff_benign_attack # half the trainingdata is benign
+        n = int(len(trainingdata)/2 + diff_benign_attack) # half the trainingdata is benign
         df = df.sample(n=n, random_state=0)
-        df.add(own_data[own_data["ATTACK"]])
+        df.add(own_data[own_data["attack_type"]=="ATTACK"]) #TODO check here
         dfs.append(df)
         df = trainingdata[trainingdata["attack_type"] == "BENIGN"]
-        df.add(own_data[own_data["BENIGN"]])
+        df.add(own_data[own_data["attack_type"]== "BENIGN"])
         dfs.append(df)
 
     
@@ -162,7 +176,7 @@ def train_random_forest_for_binary(data:DataFrame) -> tuple:
 
     # Random Forest
     from sklearn.ensemble import RandomForestClassifier
-    rf = RandomForestClassifier(n_estimators = 750, min_samples_split= 2, min_samples_leaf = 1, max_features= 'sqrt', max_depth= 75, bootstrap= False)
+    rf = RandomForestClassifier(n_estimators = 75, min_samples_split= 2, min_samples_leaf = 1, max_features= 'sqrt', max_depth= 75, bootstrap= False)
     rf.fit(X_train, y_train)
 
     return rf, X_train, y_train, X_test, y_test
@@ -185,7 +199,7 @@ def train_random_forest_for_multiclass(data:DataFrame) -> tuple:
 
     # Random Forest
     from sklearn.ensemble import RandomForestClassifier
-    rf = RandomForestClassifier(n_estimators = 1400, min_samples_split= 5, min_samples_leaf = 1, max_features= 'sqrt', max_depth= 75, bootstrap= True)
+    rf = RandomForestClassifier(n_estimators = 140, min_samples_split= 5, min_samples_leaf = 1, max_features= 'sqrt', max_depth= 75, bootstrap= True)
     rf.fit(X_train, y_train)
 
     return rf, X_train, y_train, X_test, y_test
@@ -255,13 +269,13 @@ def create_transferrable_multiphase_classifier_zipfile(binary_model, binary_scal
     Creates a zip file containing two models, two scalers, and two IPCAs.
 
     Args:
-        elastic_id: the id with wich this model is stored.
         binary_model: The trained model for binary Classification.
         binary_scaler: The scaler used for preprocessing for binary_model.
         binary_ipca: The IPCA used for dimensionality reduction for binary_model.
         multi_model: The trained model for multiclass Classification.
         multi_scaler: The scaler used for preprocessing for multi_model.
         multi_ipca: The IPCA used for dimensionality reduction for multi_model.
+    
     """
     files = {"binary_model":binary_model, "binary_scaler":binary_scaler, "binary_ipca":binary_ipca, 
              "multi_model":multi_model, "multi_scaler":multi_scaler, "multi_ipca":multi_ipca}
@@ -275,11 +289,8 @@ def create_transferrable_multiphase_classifier_zipfile(binary_model, binary_scal
         # write file to zip
         zf.write(f"{f}.pkl")
     zf.close()
-    m = hashlib.sha256()
-    with io.BytesIO() as memf:
-        dump(zf, memf)
-        m.update(memf.getvalue())
-    return m.hexdigest()
+    
+
 def archive_zipfile(elastic_id):
     # to store old models
     archive_dir = "old_models"
@@ -345,12 +356,17 @@ def retrain_multimodel_classifiers():
     score = get_score_of_multimodel_classifier(binary_model=binary_model, binary_X_test=binary_X_test, binary_y_test=binary_y_test, 
                                        multi_model=multi_model, mutli_X_test=multi_X_test, mutli_y_test=multi_y_test)
     own_flow_count = own_data.shape[0]
-    zip_hash = create_transferrable_multiphase_classifier_zipfile(binary_model=binary_model, binary_scaler=binary_scaler, binary_ipca=binary_ipca, 
+    create_transferrable_multiphase_classifier_zipfile(binary_model=binary_model, binary_scaler=binary_scaler, binary_ipca=binary_ipca, 
                                                        multi_model=multi_model, multi_scaler=multi_scaler, multi_ipca=multi_ipca)
-    cec = CustomElasticsearchConnector()    
+    cec = CustomElasticsearchConnector()
+    zip_hash = compute_model_hash(ZIPFILE_NAME)
     elastic_id = asyncio.run(cec.save_model_properties(hash_value=zip_hash, timestamp=datetime.now(), own_flow_count=own_flow_count, score=score))
     archive_zipfile(elastic_id)
     return score
 
 if __name__ == '__main__':
-    retrain_multimodel_classifiers()
+    # retrain_multimodel_classifiers()
+    # f = load("/home/georg/Desktop/FaPra/python/fuh/server/combination/datasources/model.pkl")
+    # print(compute_model_hash(ZIPFILE_NAME))
+    own_data = get_self_created_flow_data() # use this ias args in cec: hosts=["https://localhost:9200"], api_key="bGJtWHZaUUJuUXluUWJkZm1ZSHk6MUt6Y0JDaXZUOGFSQ0ZJeHZPYUM5QQ=="
+    x = own_data['attack_type'].value_counts()

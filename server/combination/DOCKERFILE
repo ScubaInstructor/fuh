@@ -28,6 +28,7 @@ COPY templates /app/templates
 COPY static /app/static
 COPY instance /app/instance
 COPY datasources /app/datasources
+COPY multiphase_model_scaler_ipca.zip /app/multiphase_model_scaler_ipca.zip
 
 
 WORKDIR /app

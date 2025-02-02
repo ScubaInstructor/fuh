@@ -77,10 +77,13 @@ class CustomElasticsearchConnector:
                     if exclude_pcap_data:
                         del hit_dict['pcap_data']
                     df_list.append(pd.DataFrame([hit_dict]))
-                
-                df = pd.concat(df_list)
-                # Convert timestamp to datetime
-                df['timestamp'] = pd.to_datetime(df['timestamp'])
+                try: 
+                    df = pd.concat(df_list)
+                    # Convert timestamp to datetime
+                    df['timestamp'] = pd.to_datetime(df['timestamp'])
+                except ValueError as ve:
+                    print(ve)
+                    df = DataFrame()
 
             return df #id_store, dataframes, filestore, probabilities_store, predictions_store, sensor_names, timestamps, sensor_ports, partner_ips, partner_ports, attack_classes, has_been_seen
         return await _get_all_flows(self, view=view, size=size, exclude_pcap_data=exclude_pcap_data)
@@ -281,8 +284,12 @@ class CustomElasticsearchConnector:
                         .sort({"timestamp": {"order": "desc"}})
                 async for hit in s:
                     properties_list.append(DataFrame([hit.to_dict()]))
-                resulting_df = concat(properties_list)
-                resulting_df['timestamp'] = to_datetime(resulting_df['timestamp'])
+                try:
+                    resulting_df = concat(properties_list)
+                    resulting_df['timestamp'] = to_datetime(resulting_df['timestamp'])
+                except ValueError as ve:
+                    print(ve)
+                    resulting_df = DataFrame()
             return resulting_df
         return await _get_all_model_properties(self, size=size)
 
@@ -301,17 +308,17 @@ if __name__ == '__main__':
 
     # print(len(flows1[0]))
     # print(len(flows[0]))
-    from elastic_transport import ConnectionError as ce
-    try:
-        flows = asyncio.run(cec.get_all_flows(view="all", size=2))    
-        print(flows)
-    except ce:
-        print("Errorhandling")
-    pcap = asyncio.run(cec.get_pcap_data("2bb98524-e362-42bd-bcd4-b095423b7e14"))
-    print(pcap)
-    from datetime import datetime
-    import asyncio
-    cec = CustomElasticsearchConnector()
+    # from elastic_transport import ConnectionError as ce
+    # try:
+    #     flows = asyncio.run(cec.get_all_flows(view="all", size=2))    
+    #     print(flows)
+    # except ce:
+    #     print("Errorhandling")
+    # pcap = asyncio.run(cec.get_pcap_data("2bb98524-e362-42bd-bcd4-b095423b7e14"))
+    # print(pcap)
+    # from datetime import datetime
+    # import asyncio
+    cec = CustomElasticsearchConnector(hosts=["https://localhost:9200"], api_key="bGJtWHZaUUJuUXluUWJkZm1ZSHk6MUt6Y0JDaXZUOGFSQ0ZJeHZPYUM5QQ==")
     # uuid = asyncio.run(cec.save_model_properties(hash_value="123456890", timestamp=datetime.now(), own_flow_count=10, score=0.99))
     # print(asyncio.run(cec.get_model_properties(uuid)))
-    # print(asyncio.run(cec.get_all_model_properties()))
+    print(asyncio.run(cec.get_all_model_properties()))

@@ -29,9 +29,13 @@ COPY sniffer.py /app/sniffer.py
 COPY cicflowmeter /app/cicflowmeter
 COPY pipelining_utilities.py /app/pipelining_utilities.py
 COPY httpWriter.py /app/httpWriter.py
-COPY model.pkl /app
-COPY scaler.pkl /app
-COPY ipca_mit_size_34.pkl /app
+COPY binary_model.pkl /app
+COPY binary_scaler.pkl /app
+COPY binary_ipca.pkl /app
+COPY multi_model.pkl /app
+COPY multi_scaler.pkl /app
+COPY multi_ipca.pkl /app
+COPY multiphase_model_scaler_ipca.zip /app/multiphase_model_scaler_ipca.zip
 
 
 WORKDIR /app

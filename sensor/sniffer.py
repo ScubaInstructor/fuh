@@ -51,9 +51,13 @@ else:
     LOCALPREFIX = "./fuh/sensor/" if LOCALPREFIX == None else LOCALPREFIX
 
 # Load the model
-MODELPATH = LOCALPREFIX + "model.pkl" 
-SCALERPATH = LOCALPREFIX + "scaler.pkl"
-IPCAPATH = LOCALPREFIX + "ipca_mit_size_34.pkl"
+ZIPFILEPATH = LOCALPREFIX + "multiphase_model_scaler_ipca.zip"
+BINARY_MODELPATH = LOCALPREFIX + "binary_model.pkl" 
+BINARY_SCALERPATH = LOCALPREFIX + "binary_scaler.pkl"
+BINARY_IPCAPATH = LOCALPREFIX + "binary_ipca.pkl"
+MULTI_MODELPATH = LOCALPREFIX + "multi_model.pkl" 
+MULTI_SCALERPATH = LOCALPREFIX + "multi_scaler.pkl"
+MULTI_IPCAPATH = LOCALPREFIX + "multi_ipca.pkl"
 IPCASIZE = 34 # TODO This is a magic number!
 MODEL_UPDATE_INTERVAL = 6 # update interval in hours
 
@@ -62,11 +66,15 @@ class My_Sniffer():
         '''Initialise the sniffer and create the threadsafe queue for the FLoe-items'''
         self.snif: AsyncSniffer = self.get_intern_sniffer()  # create an Instance of the sniffer 
         self.queue = Queue() 
-        self.model: RandomForestClassifier = load(MODELPATH)
+        self.binary_model: RandomForestClassifier = load(BINARY_MODELPATH)
+        self.multi_model: RandomForestClassifier = load(MULTI_MODELPATH)
         self.model_hash = self.compute_model_hash()
-        self.model_lock = Lock()
-        self.ipca = load(IPCAPATH) if IPCAPATH else IPCAPATH
-        self.scaler = load(SCALERPATH)
+        self.binary_model_lock = Lock()
+        self.binary_ipca = load(BINARY_IPCAPATH) if BINARY_IPCAPATH else BINARY_IPCAPATH
+        self.binary_scaler = load(BINARY_SCALERPATH)
+        self.multi_model_lock = Lock()
+        self.multi_ipca = load(MULTI_IPCAPATH) if MULTI_IPCAPATH else MULTI_IPCAPATH
+        self.multi_scaler = load(MULTI_SCALERPATH)
     
     def start(self):
         '''check for new model, start sniffer and worker-thread'''
@@ -94,9 +102,11 @@ class My_Sniffer():
     def check_for_model_update(self):
         server_hash = self.get_model_hash() # get the latest hash
         if server_hash != self.model_hash:
-            self.model_lock.acquire()
+            # self.binary_model_lock.acquire()
+            # self.multi_model_lock.acquire()
             self.download_new_model()
-            self.model_lock.release() # wait to fully finish the update
+            # self.binary_model_lock.release()
+            # self.multi_model_lock.release() # wait to fully finish the update
     
     def keep_model_updated(self):
         self.check_for_model_update()
@@ -140,11 +150,15 @@ class My_Sniffer():
                 print(f'Working on {item}')  
             # creating a prognosis on the Metadata
             flow_data: dict = DataFrame([item.get_data()])
-            flow_data: DataFrame = adapt_for_prediction(data=flow_data,scaler=self.scaler,ipca=self.ipca,ipca_size=IPCASIZE)
-            self.model_lock.acquire()
-            prediction = self.model.predict(flow_data) # returns a numpy ndarray
-            self.model_lock.release()
-            proba = self.model.predict_proba(flow_data)
+            binary_flow_data: DataFrame = adapt_for_prediction(data=flow_data,scaler=self.binary_scaler,ipca=self.binary_ipca,ipca_size=IPCASIZE)
+            self.binary_model_lock.acquire()
+            prediction = self.binary_model.predict(binary_flow_data) # returns a numpy ndarray
+            self.binary_model_lock.release()
+            
+            multi_flow_data: DataFrame = adapt_for_prediction(data=flow_data,scaler=self.multi_scaler,ipca=self.multi_ipca,ipca_size=IPCASIZE)
+            self.multi_model_lock.acquire()
+            proba = self.multi_model.predict_proba(multi_flow_data)
+            self.multi_model_lock.release()
 
             if DEBUGGING:
                 print(f"Prediction is: {prediction} with certainty of {proba.max()}")
@@ -165,7 +179,7 @@ class My_Sniffer():
                 # prepare the dict with the probabilities
                 probabilities = {}
                 for i in range(len(proba[0])):
-                    probabilities[self.model.classes_[i]] = proba[0][i]
+                    probabilities[self.multi_model.classes_[i]] = proba[0][i]
                 
                 # get ip and port numbers of flow
                 my_ip = get_if_addr(interfaces.conf.iface)
@@ -244,7 +258,7 @@ class My_Sniffer():
             str: The hash value
         """
         hash_func = hashlib.sha256()
-        with open(MODELPATH, 'rb') as file:
+        with open(ZIPFILEPATH, 'rb') as file:
             # Read the file in chunks of 8192 bytes
             while chunk := file.read(8192):
                 hash_func.update(chunk)
@@ -283,16 +297,24 @@ class My_Sniffer():
         response =  asyncio.run(_download_new_model(self=self))
         
         # write the file
-        zipfile_name = "model_scaler_ipca.zip"
+        zipfile_name = ZIPFILEPATH
         with open(zipfile_name, "wb") as f:
             f.write(response.content)
         # unzip the zip file
         with ZipFile(zipfile_name,"r") as z:
             z.extractall(".")
         
-        self.model = load(MODELPATH)
-        self.scaler = load(SCALERPATH)
-        self.ipca = load(IPCAPATH)
+        self.binary_model_lock.acquire()
+        self.binary_model = load(BINARY_MODELPATH)
+        self.binary_scaler = load(BINARY_SCALERPATH)
+        self.binary_ipca = load(BINARY_IPCAPATH)
+        self.binary_model_lock.release()
+
+        self.multi_model_lock.acquire()
+        self.multi_model = load(MULTI_MODELPATH)
+        self.multi_scaler = load(MULTI_SCALERPATH)
+        self.multi_ipca = load(MULTI_IPCAPATH)
+        self.multi_model_lock.release()
         
         self.model_hash = self.compute_model_hash()
 

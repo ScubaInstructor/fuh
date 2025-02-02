@@ -16,7 +16,7 @@ from threading import Thread
 from elastic_connector import CustomElasticsearchConnector, API_KEY, INDEX_NAME
 from discord_bot import DiscordClient
 from dotenv import load_dotenv
-from retrainer import retrain
+from retrainer import retrain_multimodel_classifiers, ZIPFILE_NAME
 
 matplotlib.use('Agg') 
 load_dotenv()
@@ -207,7 +207,7 @@ def get_model_hash():
         return jsonify({'error': 'Token expired'}), 401
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
-    return jsonify({'message': 'Access granted', 'model_hash': modelhash})
+    return jsonify({'message': 'Access granted', 'model_hash': modelhash}) 
 
 
 @app.route('/upload', methods=['POST'])
@@ -382,8 +382,8 @@ def details(id):
 @app.route('/retrain')
 @login_required
 def retrain_button_pushed():
-    stats = retrain()
-    set_the_server_hash("model.pkl")
+    stats = retrain_multimodel_classifiers()
+    set_the_server_hash(ZIPFILE_NAME)
     print(stats)
     print("DEBUG: Button pushed")
     return redirect(url_for('index'))  # Back to index
@@ -405,12 +405,12 @@ def get_latest_model():
     token = request.headers.get('Authorization').split()[1]
     try:
         jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
-        filename = "model_scaler_ipca.zip"
+        filename = ZIPFILE_NAME
         if Path(filename).is_file():
             return send_file(
                 filename,
                 as_attachment=True,
-                download_name=f"model_scaler_ipca.zip"  
+                download_name=ZIPFILE_NAME
             )
         return "File not found", 404
     except jwt.ExpiredSignatureError: # Not in use TODO check if neccessary
@@ -433,7 +433,7 @@ def classified_requests():
 
 if __name__ == '__main__':
     generate_env_file_for_sensors("sensors")
-    set_the_server_hash("datasources/model.pkl")
+    set_the_server_hash(ZIPFILE_NAME)
     print(f"modelhash is now {modelhash}")
     last_notification = datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY)
     app.run(debug=True, host="0.0.0.0", port=8888)
