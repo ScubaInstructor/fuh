@@ -1,2 +1,3 @@
-discord
-dotenv
+version https://git-lfs.github.com/spec/v1
+oid sha256:474045ddbc40c0960c1f30744de25340d150170cc497419d7dd508499cfc7a6c
+size 15

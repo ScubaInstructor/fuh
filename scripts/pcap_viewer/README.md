@@ -1,12 +1,3 @@
-### Arkime Container
-
-Ein Docker-Compose Projekt das Elastic Search und Arkime Verbindet. 
-
-https://arkime.com/
-
-Es können Pcap Dateien in ein Verzeichnis hochgeladen werden und diese 
-werden durch einen Cronjob autuomatisch in Arkime importiert. 
-
-*.env* Datei anpassen, *update_consume_folder_cron* anpassen und mit `docker-compose up -d` starten.
-
-Angepasster Code von https://github.com/mammo0/docker-arkime
+version https://git-lfs.github.com/spec/v1
+oid sha256:30ea5e3b6e92ea8814f19ebfdab6c928ed46144d2dde0350828932fdc881b218
+size 412

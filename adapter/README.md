@@ -1,5 +1,3 @@
-### Adapter
-Ein Tool mit drei Funktionen um Daten von cicflowmeter und CIC-IDS-2017-Datenset in ein gemeinsames Format zu überführen. 
-
-Tests können mit `pytest tests_for_adapter.py` ausgeführt werden. Vielleicht müssen noch mehr tests gemacht werden um die Software abzusichern...
-
+version https://git-lfs.github.com/spec/v1
+oid sha256:558456724a0174562b9d39a765c97816209a868b26fe5382bca27c522ae82b68
+size 288

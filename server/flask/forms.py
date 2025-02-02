@@ -1,8 +1,3 @@
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Length
-
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=150)])
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=8)])
-    submit = SubmitField('Login')
+version https://git-lfs.github.com/spec/v1
+oid sha256:4cb55f9943afbf06bbb1f8bc2523111058958d10a0067880fa090ccf987231fd
+size 383

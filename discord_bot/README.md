@@ -1,8 +1,3 @@
-## Erster Discord Bot Versuch
-### Features
-
-- Sendet bei Start Nachricht an gegebenen Kanal
-- Bei Reaktion auf diese Nachricht wird die Nachricht verändert und Folgeaktionen sind möglich
-
-### Quickstart
-Eine Datei mit Namen `.env` muss, mit Inhalten wie in `.env.example` gezeigt, erstellt werden. Danach kann mit `python3  discord_main.py`der Bot gestartet werden. Er reagiert auf 👍 Reaktionen.
+version https://git-lfs.github.com/spec/v1
+oid sha256:45e1a460a37f9e5432400a26830308758bf9a7da47b894e296d7cdc4aa77dd67
+size 401

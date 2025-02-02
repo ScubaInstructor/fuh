@@ -1,9 +1,3 @@
-scapy >= 2.6.1
-numpy
-pandas
-scikit-learn
-python-dotenv
-paramiko 
-imbalanced-learn
-requests
-elasticsearch
+version https://git-lfs.github.com/spec/v1
+oid sha256:8fa9c4fabdd086686d9701a30f8c86ff76a5474315cc54f0aec5b4269e972ce1
+size 105

@@ -1,19 +1,3 @@
-#%%
-import joblib
-import os
-from cicflowmeter import flow
-from utilities import erstelle_datei, sende_BytesIO_datei_per_scp
-f: flow.Flow = joblib.load('flow2.pkl')
-
-#%%
-
-flow_bytesio = erstelle_datei(flow=f)
-#%%
-HOST="localhost"
-USER="georg"
-PATH="/tmp/arkime/pcap/test1.pcap"
-SSHFILE=os.path.expanduser('~')+"/.ssh/id_ed25519.pub"
-sende_BytesIO_datei_per_scp(pcap_buffer=flow_bytesio, ziel_host=HOST,
-                            ziel_pfad=PATH,username=USER, mySSHK=SSHFILE)
-
-# %%
+version https://git-lfs.github.com/spec/v1
+oid sha256:0923a6a4f69191ac54639e73d8de1f0e010e45a485e66d9573d184f4dfc84902
+size 482

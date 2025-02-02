@@ -1,1 +1,3 @@
-{"id":"network-analysts-dashboard","name":"Network Analysts Dashboard","description":"This is the dashboard for the network analysts to inspect and categorize the anomalies that arrived at the server.","color":"#9170B8","initials":"NA","imageUrl":"","disabledFeatures":["enterpriseSearch","logs","infrastructure","apm","inventory","uptime","observabilityCases","slo","siem","securitySolutionCases","dev_tools","advancedSettings","indexPatterns","filesManagement","filesSharedImage","savedObjectsManagement","savedQueryManagement","savedObjectsTagging","osquery","actions","generalCases","guidedOnboardingFeature","rulesSettings","maintenanceWindow","stackAlerts","fleetv2","fleet","dataQuality","monitoring","discover","canvas","maps","ml","visualize"]}
+version https://git-lfs.github.com/spec/v1
+oid sha256:04719787210859688f588390057389ec2e88f16051e8713ffb37297e59277020
+size 754

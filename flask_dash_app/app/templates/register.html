@@ -1,32 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Register</title>
-</head>
-<body>
-    <h1>Register</h1>
-    <!-- Flash messages for feedback -->
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <ul>
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
-
-    <!-- Registration form -->
-    <form method="POST">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
-        <br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-        <br>
-        <button type="submit">Register</button>
-    </form>
-
-    <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a>.</p>
-</body>
-</html>
+version https://git-lfs.github.com/spec/v1
+oid sha256:a1635746b3c4026605e98b3dd5f1e0fef41c7085b0e605f27df60ac07fc0b049
+size 873

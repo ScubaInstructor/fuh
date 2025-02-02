@@ -1,6 +1,3 @@
-ARKIMEDIR="/opt/arkime"
-PCAPDIR="/data/pcap"
-# must be ended with a new line "LF" (Unix) and not "CRLF" (Windows)
-* * * * * /bin/bash /data/arkime-parse-pcap-folder.sh -d $PCAPDIR >> /var/log/cron.log 2>&1
-# An empty line is required at the end of this file for a valid cron file.
-
+version https://git-lfs.github.com/spec/v1
+oid sha256:ec94cd94e4d00f120b64f1210b1813cd2a64525cbf05860e898aa1f863910a2a
+size 282

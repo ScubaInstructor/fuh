@@ -1,15 +1,3 @@
-flask
-PyJWT
-matplotlib
-geoip2fast
-werkzeug
-elasticsearch
-elasticsearch_dsl[async]
-discord
-python-dotenv
-Flask-Login 
-Flask-SQLAlchemy
-Flask-WTF
-pandas
-scikit-learn
-imblearn
+version https://git-lfs.github.com/spec/v1
+oid sha256:8632b84da48d3cbdf676b171122f248ea73e4b62e2f23c403d45051eb3b727b8
+size 172

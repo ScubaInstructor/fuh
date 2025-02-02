@@ -1,7 +1,3 @@
-from geoip2fast import GeoIP2Fast
-from flagpy import get_flag_img
-G = GeoIP2Fast(verbose=False)
-G.update_all()
-l = G.lookup('1.2.3.4')
-i = get_flag_img(l.country_name)
-i.save('static/flag.png')
+version https://git-lfs.github.com/spec/v1
+oid sha256:17f59275f4e37798132e4c0c1d072ada5f07e71695dc4579aa5a82a40dee79e1
+size 194

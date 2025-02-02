@@ -1,7 +1,3 @@
-### Flask Server
-
-Copy `.env_example` to `.env` and set values to your liking.
-
-Run `python  user_creator.py {username} {password}` in this folder to create a user and add it to the userdatabase. After that there should be a database `instance/users.db` inside the folder where this script and the server is located. 
-
-Start server with `python akins_verbesserter_flask_server.py`.
+version https://git-lfs.github.com/spec/v1
+oid sha256:bb4b07cf7f7a9c36193e8dec2b1a2e40568575d2b97f9af0f1b3777dfaa6b2dd
+size 381

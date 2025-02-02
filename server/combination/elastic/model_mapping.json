@@ -1,27 +1,3 @@
-{
-    "mappings": {
-      "dynamic": "false",
-      "properties": {
-        
-        "model_hash": {
-          "type": "keyword"
-        },
-
-        "score": {
-            "type": "float"
-        },
-
-        "timestamp": {
-        "type": "date"
-        }, 
-
-        "own_flow_count": {
-            "type": "integer"
-        },
-
-        "uuid": {
-          "type": "Keyword"
-        }
-      }
-    }
-  }
+version https://git-lfs.github.com/spec/v1
+oid sha256:98a2d2a89ae1fff86c1b60b1f97d8e264afaaa40d1b53129abf05e7a5bd55084
+size 402

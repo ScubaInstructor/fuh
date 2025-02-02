@@ -1,5 +1,3 @@
-EXPIRED_UPDATE = 240
-CLUMP_TIMEOUT = 1
-ACTIVE_TIMEOUT = 5
-BULK_BOUND = 4
-GARBAGE_COLLECT_PACKETS = 1000
+version https://git-lfs.github.com/spec/v1
+oid sha256:0516a78d8f7e234e5c800dd82becfa589aed322a57ca98b19f2261dd58cfe17f
+size 104

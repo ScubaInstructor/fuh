@@ -1,36 +1,3 @@
-FROM python:3.11-alpine
-
-# # Install necessary dependencies 
-RUN apk --no-cache add procps  gcc g++ musl-dev python3-dev py3-scikit-learn openblas-dev
-
-# Create /app folder
-RUN mkdir /app
-
-# Copy requirements.txt
-COPY requirements.txt /app
-
-# Install Python packages from requirements.txt
-RUN pip install --upgrade pip setuptools wheel
-RUN pip install --no-cache-dir -r /app/requirements.txt
-
-# # Symlink python3 to python
-# RUN ln -sf /usr/local/bin/python3 /usr/bin/python
-
-# Copying the necessary files to working folder
-COPY .env /app/.env
-COPY akins_verbesserter_flask_server.py /app/server.py
-COPY discord_bot.py /app/discord_bot.py
-COPY elastic_connector.py /app/elastic_connector.py
-COPY forms.py /app/forms.py
-COPY retrainer.py /app/retrainer.py
-COPY pipelining_utilities.py /app/pipelining_utilities.py
-COPY templates /app/templates
-COPY static /app/static
-COPY instance /app/instance
-COPY datasources /app/datasources
-COPY multiphase_model_scaler_ipca.zip /app/multiphase_model_scaler_ipca.zip
-
-
-WORKDIR /app
-
-CMD ["/usr/local/bin/python3", "-u", "server.py", "--host=0.0.0.0"]
+version https://git-lfs.github.com/spec/v1
+oid sha256:deed8477038b1565a48da20dc31bba48661304d870f4dd80e927b92cbb653101
+size 1088
