@@ -260,7 +260,7 @@ def upload_to_flask_server(data: dict):
     return asyncio.run(_upload_to_flask_server(data=data))
 
 def get_model_hash():
-    hw = HttpWriter("http://localhost:8888/get_model_hash")
+    hw = HttpWriter("http://localhost:5000/get_model_hash")
     return hw.get_model_hash(token=SERVER_TOKEN)
 
 print(get_model_hash())
