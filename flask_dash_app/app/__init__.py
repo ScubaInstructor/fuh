@@ -10,8 +10,8 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 # Create Flask app
 app = Flask(__name__)
-MODELNAME = "model.pkl"
-model_hash:str # the hash of the current model 
+MODELNAME = "models/model.pkl"
+model_hash:str = "" # the hash of the current model 
 
 def create_app():
     load_dotenv()
