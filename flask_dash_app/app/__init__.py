@@ -1,3 +1,4 @@
+import hashlib
 from os import getenv
 from dotenv import load_dotenv
 from flask import Flask
@@ -9,6 +10,8 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 # Create Flask app
 app = Flask(__name__)
+MODELNAME = "model.pkl"
+model_hash:str # the hash of the current model 
 
 def create_app():
     load_dotenv()
@@ -32,3 +35,20 @@ def create_app():
     init_dash_app(app)
 
     return app
+
+def compute_file_hash(file_path: str) -> str:
+        """Compute the hash of a file using the sha265 algorithm.
+        
+        Args:
+            - file_path (str) = the path to the file
+        
+        Returns:
+            str: The hash value
+        """
+        hash_func = hashlib.sha256()
+        with open(file_path, 'rb') as file:
+            # Read the file in chunks of 8192 bytes
+            while chunk := file.read(8192):
+                hash_func.update(chunk)
+        
+        return hash_func.hexdigest()

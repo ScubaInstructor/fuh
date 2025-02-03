@@ -1,9 +1,10 @@
 from flask import Blueprint, jsonify, render_template, redirect, request
 from flask_login import login_required, current_user
 import jwt
-from . import db, app
+from . import db, app, MODELNAME, compute_file_hash, model_hash
 
 main_routes = Blueprint('main', __name__)
+model_hash = compute_file_hash(MODELNAME)
 
 @main_routes.route('/')
 @login_required
@@ -30,4 +31,4 @@ def get_model_hash():
         return jsonify({'error': 'Invalid token'}), 401
     # Everything is well and we return the hash
     # TODO insert hash and add the respective functions and variables
-    return jsonify({'message': 'Access granted', 'model_hash': "INSERT HERE THE HASH"})
+    return jsonify({'message': 'Access granted', 'model_hash': model_hash})
