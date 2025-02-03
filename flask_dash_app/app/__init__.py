@@ -41,7 +41,6 @@ def create_app():
     # Initialize Dash app
     from .dash_app import init_dash_app
     init_dash_app(app)
-    restore_model_to_previous_version("test")
     return app
 
 def compute_file_hash(file_path: str) -> str:
