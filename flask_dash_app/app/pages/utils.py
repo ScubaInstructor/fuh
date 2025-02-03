@@ -18,7 +18,9 @@ def generate_env_file_for_sensors(user_id):
         'exp': datetime.now(timezone.utc) + timedelta(seconds=1)
     }
     token = jwt.encode(payload, key, algorithm='HS256')
-    FLASK_PORT_NUMBER = getenv('FLASK_PORT_NUMBER')
+    # TODO, update environment config to include port
+    #FLASK_PORT_NUMBER = getenv('FLASK_PORT_NUMBER')
+    FLASK_PORT_NUMBER = "5000"
     header_text=f'''# LOCAL CONFIGURATION 
 SNIFFING_INTERFACE="" # This can be set to a specific network interface to listen to, else all interfaces are listened to 
 DEBUGGING="1"   # Sends all Flows to server and be more noisy
