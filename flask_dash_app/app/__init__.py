@@ -1,17 +1,25 @@
 import hashlib
 from os import getenv
+from shutil import copyfile
+import zipfile
 from dotenv import load_dotenv
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+
+from joblib import dump
 
 # Initialize extensions
 db = SQLAlchemy()
 login_manager = LoginManager()
 # Create Flask app
 app = Flask(__name__)
-MODELNAME = "flask_dash_app/models/model.pkl"
+MODELPATH = "flask_dash_app/models/"
+ZIPFILENAME = "model_scaler_ipca.zip"
+MODELNAME = "model.pkl"
+MODELARCHIVEPATH = MODELPATH + "old_models"
 model_hash:str = "" # the hash of the current model 
+
 
 def create_app():
     load_dotenv()
@@ -33,7 +41,7 @@ def create_app():
     # Initialize Dash app
     from .dash_app import init_dash_app
     init_dash_app(app)
-
+    restore_model_to_previous_version("test")
     return app
 
 def compute_file_hash(file_path: str) -> str:
@@ -52,3 +60,22 @@ def compute_file_hash(file_path: str) -> str:
                 hash_func.update(chunk)
         
         return hash_func.hexdigest()
+
+def restore_model_to_previous_version(elastic_id:str) -> None | FileNotFoundError:
+    """ Extract the model with the specified id from the respective file in the archive folder and replace the current model.
+
+    Args:
+        elastic_id (str): the uuid for the model which should be used by the sensors from now on. 
+    Returns:
+        None if everything goes well or FileNotFoundError if the file doesn't exist
+    
+    """
+    global model_hash
+    try:
+        copyfile(f"{MODELARCHIVEPATH}/{elastic_id}.zip", MODELPATH + ZIPFILENAME)
+        zf = zipfile.ZipFile(MODELPATH + ZIPFILENAME, "r")
+        zf.extract(member=MODELNAME, path=MODELPATH)
+        model_hash = compute_file_hash(MODELPATH + MODELNAME)
+    except FileNotFoundError:
+        print("Requested File not found")
+        raise FileNotFoundError

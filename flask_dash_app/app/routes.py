@@ -1,10 +1,10 @@
 from flask import Blueprint, jsonify, render_template, redirect, request
 from flask_login import login_required, current_user
 import jwt
-from . import db, app, MODELNAME, compute_file_hash, model_hash
+from . import db, app, MODELNAME, MODELPATH, compute_file_hash, model_hash
 
 main_routes = Blueprint('main', __name__)
-model_hash = compute_file_hash(MODELNAME)
+model_hash = compute_file_hash(MODELPATH + MODELNAME)
 
 @main_routes.route('/')
 @login_required
