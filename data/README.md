@@ -61,5 +61,86 @@
 | DoS Slowloris | 3859 | 1847 |
 | Heartbleed | 11 | - |
 
-This summary provides an overview of the network traffic data, including file sizes and a breakdown of different attack types with their successful and attempted instances.
+# Network Traffic Analysis Summary (2018 Dataset)
 
+## CSECICIDS2018 File data files
+
+| File Name | Size (MB) |
+|-----------|-----------|
+| Friday-02-03-2018.csv | 3518.71 |
+| Friday-02-03-2018_BENIGN_6168188.csv | 3439.52 |
+| Friday-02-03-2018_Botnet Ares - Attempted_262.csv | 0.10 |
+| Friday-02-03-2018_Botnet Ares_142921.csv | 79.16 |
+| Friday-16-02-2018.csv | 4016.60 |
+| Friday-16-02-2018_BENIGN_5481500.csv | 2938.31 |
+| Friday-16-02-2018_DoS Hulk - Attempted_86.csv | 0.03 |
+| Friday-16-02-2018_DoS Hulk_1803160.csv | 1039.15 |
+| Friday-16-02-2018_FTP-BruteForce - Attempted_105520.csv | 39.00 |
+| Friday-23-02-2018.csv | 3251.37 |
+| Friday-23-02-2018_BENIGN_5976251.csv | 3251.21 |
+| Friday-23-02-2018_Web Attack - Brute Force - Attempted_61.csv | 0.04 |
+| Friday-23-02-2018_Web Attack - Brute Force_62.csv | 0.04 |
+| Friday-23-02-2018_Web Attack - SQL - Attempted_10.csv | 0.01 |
+| Friday-23-02-2018_Web Attack - SQL_23.csv | 0.01 |
+| Friday-23-02-2018_Web Attack - XSS - Attempted_1.csv | 0.00 |
+| Friday-23-02-2018_Web Attack - XSS_73.csv | 0.05 |
+| Thursday-01-03-2018.csv | 3631.82 |
+| Thursday-01-03-2018_BENIGN_6511554.csv | 3615.74 |
+| Thursday-01-03-2018_Infiltration - Communication Victim Attacker_161.csv | 0.11 |
+| Thursday-01-03-2018_Infiltration - Dropbox Download - Attempted_13.csv | 0.01 |
+| Thursday-01-03-2018_Infiltration - Dropbox Download_39.csv | 0.03 |
+| Thursday-01-03-2018_Infiltration - NMAP Portscan_39634.csv | 15.96 |
+| Thursday-15-02-2018.csv | 2853.91 |
+| Thursday-15-02-2018_BENIGN_5372471.csv | 2830.39 |
+| Thursday-15-02-2018_DoS GoldenEye - Attempted_4301.csv | 2.53 |
+| Thursday-15-02-2018_DoS GoldenEye_22560.csv | 14.60 |
+| Thursday-15-02-2018_DoS Slowloris - Attempted_2280.csv | 1.03 |
+| Thursday-15-02-2018_DoS Slowloris_8490.csv | 5.29 |
+| Thursday-22-02-2018.csv | 3312.77 |
+| Thursday-22-02-2018_BENIGN_6070945.csv | 3312.63 |
+| Thursday-22-02-2018_Web Attack - Brute Force - Attempted_76.csv | 0.05 |
+| Thursday-22-02-2018_Web Attack - Brute Force_69.csv | 0.05 |
+| Thursday-22-02-2018_Web Attack - SQL - Attempted_4.csv | 0.00 |
+| Thursday-22-02-2018_Web Attack - SQL_16.csv | 0.01 |
+| Thursday-22-02-2018_Web Attack - XSS - Attempted_3.csv | 0.00 |
+| Thursday-22-02-2018_Web Attack - XSS_40.csv | 0.03 |
+| Tuesday-20-02-2018.csv | 3271.39 |
+| Tuesday-20-02-2018_BENIGN_5764497.csv | 3096.63 |
+| Tuesday-20-02-2018_DDoS-LOIC-HTTP_289328.csv | 175.21 |
+| Tuesday-20-02-2018_DDoS-LOIC-UDP - Attempted_80.csv | 0.04 |
+| Tuesday-20-02-2018_DDoS-LOIC-UDP_797.csv | 0.39 |
+| Wednesday-14-02-2018.csv | 3111.50 |
+| Wednesday-14-02-2018_BENIGN_5610799.csv | 2979.44 |
+| Wednesday-14-02-2018_FTP-BruteForce - Attempted_193354.csv | 70.19 |
+| Wednesday-14-02-2018_SSH-BruteForce_94197.csv | 61.74 |
+| Wednesday-21-02-2018.csv | 3769.48 |
+| Wednesday-21-02-2018_BENIGN_5878399.csv | 3171.30 |
+| Wednesday-21-02-2018_DDoS-HOIC_1082293.csv | 597.28 |
+| Wednesday-21-02-2018_DDoS-LOIC-UDP - Attempted_171.csv | 0.08 |
+| Wednesday-21-02-2018_DDoS-LOIC-UDP_1730.csv | 0.85 |
+| Wednesday-28-02-2018.csv | 3635.55 |
+| Wednesday-28-02-2018_BENIGN_6518882.csv | 3615.09 |
+| Wednesday-28-02-2018_Infiltration - Communication Victim Attacker_43.csv | 0.03 |
+| Wednesday-28-02-2018_Infiltration - Dropbox Download - Attempted_15.csv | 0.01 |
+| Wednesday-28-02-2018_Infiltration - Dropbox Download_46.csv | 0.03 |
+| Wednesday-28-02-2018_Infiltration - NMAP Portscan_49740.csv | 20.32 |
+
+## CSECICIDS2018 Attack Summary
+
+| Attack Type | Successful | Attempted |
+|-------------|------------|-----------|
+| Botnet Ares | 142921 | 262 |
+| DoS Hulk | 1803160 | 86 |
+| FTP-BruteForce | - | 298874 |
+| Web Attack - Brute Force | 131 | 137 |
+| Web Attack - SQL Injection | 39 | 14 |
+| Web Attack - XSS | 113 | 4 |
+| Infiltration - Communication | 204 | - |
+| Infiltration - Dropbox Download | 85 | 28 |
+| Infiltration - NMAP Portscan | 89374 | - |
+| DoS GoldenEye | 22560 | 4301 |
+| DoS Slowloris | 8490 | 2280 |
+| DDoS-LOIC-HTTP | 289328 | - |
+| DDoS-LOIC-UDP | 2527 | 251 |
+| DDoS-HOIC | 1082293 | - |
+| SSH-BruteForce | 94197 | - |
