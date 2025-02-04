@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, render_template, redirect, request
 from flask_login import login_required, current_user
 import jwt
-from . import db, app, MODELNAME, MODELPATH, compute_file_hash, model_hash, cec
+from . import db, app, MODELNAME, MODELPATH, NOTIFICATION_ACTIVE, compute_file_hash, notify_users, model_hash, cec
 #from elastic_connector import CustomElasticsearchConnector, API_KEY, INDEX_NAME
 import asyncio
 from flask import current_app
@@ -78,8 +78,8 @@ def upload():
                     return jsonify({"error": "Sensor doesn't exists"}), 401
             
             #  Discord notification to do 
-            # if NOTIFICATION_ACTIVE:
-            #     notify_users() 
+            if NOTIFICATION_ACTIVE:
+                notify_users() 
         else:
             return jsonify({"error": "Malformed data"}), 400
 

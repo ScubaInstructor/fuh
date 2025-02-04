@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import hashlib
 from os import getenv
 from shutil import copyfile
@@ -7,6 +8,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from .elastic_connector import CustomElasticsearchConnector
+from .discord_bot import DiscordClient
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -18,6 +20,15 @@ ZIPFILENAME = "model_scaler_ipca.zip"
 MODELNAME = "model.pkl"
 MODELARCHIVEPATH = MODELPATH + "old_models"
 model_hash:str = "" # the hash of the current model 
+
+load_dotenv()
+# Discord Setup
+NOTIFICATION_ACTIVE = getenv('NOTIFICATION_ACTIVE')  == '1'
+DISCORD_CHANNEL_ID = getenv('DISCORD_CHANNEL_ID')
+DISCORD_TOKEN = getenv('DISCORD_TOKEN')
+DISCORD_NOTIFICATION_DELAY = 1 # number of hours for timedelay between notifications
+discord_client = DiscordClient(channel_id=DISCORD_CHANNEL_ID)
+last_notification = datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY)
 
 # Initialize Elasticsearch connector and get data
 cec = CustomElasticsearchConnector()
@@ -79,3 +90,9 @@ def restore_model_to_previous_version(elastic_id:str) -> None | FileNotFoundErro
     except FileNotFoundError:
         print("Requested File not found")
         raise FileNotFoundError
+
+def notify_users():
+    global last_notification
+    if last_notification < datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY):
+        discord_client.run(token=DISCORD_TOKEN)
+        last_notification = datetime.now()
