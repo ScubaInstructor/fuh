@@ -39,7 +39,13 @@ try:
     mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
     # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
     # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
+    if df.empty:
+        trigger = "empty"
+    else:
+        # Normal behaviour trigger
+        trigger = "normal"
 except Exception as e:
+    trigger = "error"
     df = pd.DataFrame()
 
 # Special Component Builders
@@ -287,7 +293,8 @@ def update_grid(clickData, n_clicks_submit, n_clicks_reset):
 
 
 # Check for failed elastic connection
-if df.empty:
+print(trigger)
+if trigger == "error":
     layout = html.Div([
         dbc.Alert(
             "Could not connect to Elasticsearch. Please check your connection and try again.",
@@ -297,7 +304,16 @@ if df.empty:
         ),
         dbc.NavLink("Refresh", href="/inbox/", style={"margin-top": "20px", "text-decoration": "underline"})
     ])
-
+elif trigger == "empty":
+    layout = html.Div([
+        dbc.Alert(
+            "No data available yet. Wait for incoming flows.",
+            color="warning",
+            dismissable=False,
+            is_open=True,
+        ),
+        dbc.NavLink("Refresh", href="/inbox/", style={"margin-top": "20px", "text-decoration": "underline"})
+    ])
 else:    
     # Layout Components
     layout = html.Div([

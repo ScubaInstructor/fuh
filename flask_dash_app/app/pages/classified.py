@@ -6,8 +6,11 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
-
+from flask_login import current_user
 import plotly.express as px
+from ..models import User, db
+from flask import current_app
+
 
 from ..elastic_connector import CustomElasticsearchConnector
 import asyncio
@@ -18,6 +21,17 @@ from .grid_components import (create_world_map, make_pie_chart, make_detailed_gr
 
 # Initialize  Dash App
 dash.register_page(__name__, path='/classified/')
+
+def is_admin():
+    try:
+        if current_user.is_authenticated:
+            print(f"User authenticated: {current_user.username}")
+            print(f"User role: {current_user.role}")
+            return True
+        return False
+    except Exception as e:
+        print(f"Error checking admin status: {e}")
+        return False
 
 # Number of flows to display
 flow_nr = 10000
@@ -39,7 +53,13 @@ try:
     mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
     # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
     # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
+    if df.empty:
+        trigger = "empty"
+    else:
+        # Normal behaviour trigger
+        trigger = "normal"
 except Exception as e:
+    trigger = "error"
     df = pd.DataFrame()
 
 # Special Component Builders
@@ -219,13 +239,48 @@ def update_grid(n_clicks_submit, n_clicks_reset, selected_type, selected_row_dat
     print("Default grid load...")
     return dash.no_update
 
+@callback(
+    Output("retrain-button", "children"),
+    Input("url", "pathname")
+)
+def update_retrain_button(search):
+    if is_admin():
+        return dbc.Button("Retrain Model", id="retrain-model", color="primary", className="mt-2", n_clicks=None)
+
+@callback(
+    [Output("retrain-status", "children"),
+     Output("retrain-model", "disabled")],
+    Input("retrain-model", "n_clicks"),
+    prevent_initial_call=True
+)
+def retrain_model(n_clicks):
+    if not n_clicks:
+        return dash.no_update, dash.no_update
+    
+    try:
+        # Add model retraining logic here
+        return html.Div("Model retrained successfully!", style={"color": "green"}), False
+    except Exception as e:
+        return html.Div(f"Error retraining model: {str(e)}", style={"color": "red"}), False
+
+
 
 # Check for failed elastic connection
-if df.empty:
+if trigger == "error":
     layout = html.Div([
         dbc.Alert(
             "Could not connect to Elasticsearch. Please check your connection and try again.",
             color="danger",
+            dismissable=False,
+            is_open=True,
+        ),
+        dbc.NavLink("Refresh", href="/classified/", style={"margin-top": "20px", "text-decoration": "underline"})
+    ])
+elif trigger == "empty":
+    layout = html.Div([
+        dbc.Alert(
+            "No classified flows available yet.",
+            color="warning",
             dismissable=False,
             is_open=True,
         ),
@@ -245,7 +300,9 @@ else:
             # Left side - Grid
             dbc.Col([
                 make_grid(df, seen=True, grid_id="seen_grid", columns=[{"field": "timestamp"},{"field": "sensor_name"},{"field": "partner_ip"},{"field": "attack_class"},{"field": "flow_id"}]),
-                dbc.Button("Reset", id="classified-reset-grid", className="ms-auto", n_clicks=None, style={"margin-top": "2px"})
+                dbc.Button("Reset", id="classified-reset-grid", className="ms-auto", n_clicks=None, style={"margin-top": "2px"}),
+                html.Div(id="retrain-button"),
+                html.Div(id="retrain-status")
             ], width=6, style={"border": "1px solid #ddd", "padding": "10px"}),  # Add border and padding for debugging
             # Right side - Pie Chart
             dbc.Col([
