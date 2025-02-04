@@ -1,7 +1,7 @@
 
 # Network Traffic Analysis Summary
 
-## CICIDS2017 data files
+## CIC-IDS-2017 data files
 
 | File Name | Size (MB) |
 |-----------|-----------|
@@ -42,7 +42,7 @@
 | wednesday_DoS Slowloris_3859.csv | 2.43 |
 | wednesday_Heartbleed_11.csv | 0.01 |
 
-## CICIDS2017 Attack Summary
+## CIC-IDS-2017 Attack Summary
 
 | Attack Type | Successful | Attempted |
 |-------------|------------|-----------|
@@ -64,7 +64,7 @@
 
 # Network Traffic Analysis Summary (2018 Dataset)
 
-## CSECICIDS2018 File data files
+## CSE-CIC-IDS 2018 File data files
 
 | File Name | Size (MB) |
 |-----------|-----------|
@@ -126,7 +126,7 @@
 | Wednesday-28-02-2018_Infiltration - Dropbox Download_46.csv | 0.03 |
 | Wednesday-28-02-2018_Infiltration - NMAP Portscan_49740.csv | 20.32 |
 
-## CSECICIDS2018 Attack Summary
+## CSE-CIC-IDS 2018 Attack Summary
 
 | Attack Type | Successful | Attempted |
 |-------------|------------|-----------|
