@@ -129,18 +129,19 @@
 
 | Attack Type | Successful | Attempted |
 |-------------|------------|-----------|
-| Botnet Ares | 142921 | 262 |
-| DoS Hulk | 1803160 | 86 |
-| FTP-BruteForce | - | 298874 |
+| Botnet Ares | 142,921 | 262 |
+| DoS Hulk | 1,803,160 | 86 |
+| FTP-BruteForce | - | 298,874 |
 | Web Attack - Brute Force | 131 | 137 |
 | Web Attack - SQL Injection | 39 | 14 |
 | Web Attack - XSS | 113 | 4 |
 | Infiltration - Communication | 204 | - |
 | Infiltration - Dropbox Download | 85 | 28 |
-| Infiltration - NMAP Portscan | 89374 | - |
-| DoS GoldenEye | 22560 | 4301 |
-| DoS Slowloris | 8490 | 2280 |
-| DDoS-LOIC-HTTP | 289328 | - |
-| DDoS-LOIC-UDP | 2527 | 251 |
-| DDoS-HOIC | 1082293 | - |
-| SSH-BruteForce | 94197 | - |
+| Infiltration - NMAP Portscan | 89,374 | - |
+| DoS GoldenEye | 22,560 | 4,301 |
+| DoS Slowloris | 8,490 | 2,280 |
+| DDoS-LOIC-HTTP | 289,328 | - |
+| DDoS-LOIC-UDP | 2,527 | 251 |
+| DDoS-HOIC | 1,082,293 | - |
+| SSH-BruteForce | 94,197 | - |
+| **Total** | **3,535,422** | **306,237** |
