@@ -46,20 +46,21 @@
 
 | Attack Type | Successful | Attempted |
 |-------------|------------|-----------|
-| Botnet | 736 | 4067 |
-| DDoS | 95144 | - |
-| Portscan | 159066 | - |
+| Botnet | 736 | 4,067 |
+| DDoS | 95,144 | - |
+| Portscan | 159,066 | - |
 | Infiltration | 36 | 45 |
-| Web Attack - Brute Force | 73 | 1292 |
+| Web Attack - Brute Force | 73 | 1,292 |
 | Web Attack - SQL Injection | 13 | 5 |
 | Web Attack - XSS | 18 | 655 |
-| FTP-Patator | 3972 | 12 |
-| SSH-Patator | 2961 | 27 |
-| DoS GoldenEye | 7567 | 80 |
-| DoS Hulk | 158468 | 581 |
-| DoS Slowhttptest | 1740 | 3368 |
-| DoS Slowloris | 3859 | 1847 |
+| FTP-Patator | 3,972 | 12 |
+| SSH-Patator | 2,961 | 27 |
+| DoS GoldenEye | 7,567 | 80 |
+| DoS Hulk | 158,468 | 581 |
+| DoS Slowhttptest | 1,740 | 3,368 |
+| DoS Slowloris | 3,859 | 1,847 |
 | Heartbleed | 11 | - |
+| **Total** | **433,664** | **11,979** |
 
 # Network Traffic Analysis Summary (2018 Dataset)
 
