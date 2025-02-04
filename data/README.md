@@ -1,7 +1,7 @@
 
 # Network Traffic Analysis Summary
 
-## CICIDS2017
+## CICIDS2017 data files
 
 | File Name | Size (MB) |
 |-----------|-----------|
@@ -42,7 +42,7 @@
 | wednesday_DoS Slowloris_3859.csv | 2.43 |
 | wednesday_Heartbleed_11.csv | 0.01 |
 
-## Attack Summary
+## CICIDS2017 Attack Summary
 
 | Attack Type | Successful | Attempted |
 |-------------|------------|-----------|
