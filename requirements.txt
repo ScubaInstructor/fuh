@@ -34,3 +34,4 @@ setuptools
 dash_bootstrap_components
 dash_ag_grid
 geoip2
+plotly==5.24.1
