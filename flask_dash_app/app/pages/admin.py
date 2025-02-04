@@ -2,7 +2,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html, callback, State
 from .utils import generate_env_file_for_sensors, get_secret_key
-from ..models import User, db
+from ..models import User, db, Sensor
 import dash_ag_grid as dag
 from flask import current_app
 
@@ -76,56 +76,68 @@ def model_management_content():
     ])
 
 def sensor_management_content():
+    with current_app.app_context():
+        sensors = Sensor.query.all()
+        sensors_list = [{"name": sensor.name, "created_at": sensor.created_at.strftime("%Y-%m-%d %H:%M:%S")} for sensor in sensors]
+
     return html.Div([
         html.H3("Sensor Management"),
-        dbc.Form([
-            dbc.Row([
-                dbc.Col([
-                    dbc.Label("Sensor Name"),
-                    dbc.Input(
-                        id="sensor-name-input",
-                        type="text",
-                        placeholder="Enter sensor name",
-                        pattern="^[a-zA-Z0-9_]*$",
-                        invalid=False
-                    ),
-                    dbc.FormFeedback(
-                        "Please use only letters, numbers, and underscores",
-                        type="invalid"
-                    ),
-                ])
-            ]),
-            dbc.Button(
-                "Download Sensor", 
-                id="submit-sensor", 
-                color="primary", 
-                className="mt-3"
-            ),
-            dcc.Download(id="download-sensor"),
+        dbc.Row([
+            dbc.Col([
+                dbc.Input(id="sensor-name-input", placeholder="Enter sensor name", type="text"),
+                dbc.Button("Create Sensor", id="submit-sensor", color="primary", className="mt-2"),
+                html.Div(id="sensor-submit-output"),
+                dcc.Download(id="download-sensor")
+            ], width=4),
         ]),
-        html.Div(id="sensor-submit-output")
+        html.Hr(),
+        dag.AgGrid(
+            id="sensors-grid",
+            rowData=sensors_list,
+            columnDefs=[
+                {"field": "name", "sortable": True, "filter": True},
+                {"field": "created_at", "sortable": True, "filter": True}
+            ],
+            defaultColDef={"resizable": True},
+            dashGridOptions={"pagination": True},
+            style={"height": 400}
+        )
     ])
 
 @callback(
     [Output("sensor-name-input", "invalid"),
      Output("sensor-submit-output", "children"),
-     Output("download-sensor", "data")],
+     Output("download-sensor", "data"),
+     Output("sensors-grid", "rowData")],
     Input("submit-sensor", "n_clicks"),
     State("sensor-name-input", "value"),
     prevent_initial_call=True
 )
 def submit_sensor(n_clicks, sensor_name):
     if not sensor_name:
-        return True, "Please enter a sensor name", None
+        return True, "Please enter a sensor name", None, dash.no_update
     if not sensor_name.replace('_', '').isalnum():
-        return True, "Invalid sensor name format", None
-    sensor = generate_env_file_for_sensors(sensor_name)
-    dl_content = dict(
-        content=sensor,
-        filename=f"{sensor_name}.env",
-        type=".env"
-    )
-    return False, f"Sensor {sensor_name} configuration created successfully", dl_content
+        return True, "Invalid sensor name format", None, dash.no_update
+        
+    try:
+        with current_app.app_context():
+            new_sensor = Sensor(name=sensor_name)
+            db.session.add(new_sensor)
+            db.session.commit()
+            
+            # Get updated sensor list
+            sensors = Sensor.query.all()
+            sensors_list = [{"name": s.name, "created_at": s.created_at.strftime("%Y-%m-%d %H:%M:%S")} for s in sensors]
+            
+        sensor_env = generate_env_file_for_sensors(sensor_name)
+        dl_content = dict(
+            content=sensor_env,
+            filename=f"{sensor_name}.env",
+            type=".env"
+        )
+        return False, f"Sensor {sensor_name} created successfully", dl_content, sensors_list
+    except Exception as e:
+        return True, f"Error creating sensor: {str(e)}", None, dash.no_update
 
 # @callback(
 #     [Output("users-grid", "rowData"),

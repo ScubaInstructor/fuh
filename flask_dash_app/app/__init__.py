@@ -6,8 +6,7 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-
-from joblib import dump
+from .elastic_connector import CustomElasticsearchConnector
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -20,11 +19,13 @@ MODELNAME = "model.pkl"
 MODELARCHIVEPATH = MODELPATH + "old_models"
 model_hash:str = "" # the hash of the current model 
 
+# Initialize Elasticsearch connector and get data
+cec = CustomElasticsearchConnector()
 
 def create_app():
     load_dotenv()
     app.secret_key = getenv('your_secret_key')
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Initialize extensions

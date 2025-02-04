@@ -38,7 +38,7 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user_role = request.form.get('role', 'user')   # e.g., from a dropdown
+        user_role = request.form.get('role', 'admin')   # e.g., from a dropdown
         if User.query.filter_by(username=username).first():
             flash('Username already exists!')
         else:
