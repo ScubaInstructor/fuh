@@ -1,11 +1,7 @@
-Data
 
-
-
-CICIDS2017:
 # Network Traffic Analysis Summary
 
-## File Size List
+## CICIDS2017
 
 | File Name | Size (MB) |
 |-----------|-----------|
