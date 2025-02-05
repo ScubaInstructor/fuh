@@ -12,17 +12,18 @@ DATASET_engelen_improved/CICIDS2017_improved# ../count_data_records.sh
 Total number of records (excluding headers): 2099976
 ```
 
+Verifizierung der Gesamtzahl der network flows im Datenset CSE-CIC-IDS 2018:
+```console
+DATASET_engelen_improved/CSECICIDS2018_improved# ../count_data_records.sh
+Total number of records (excluding headers): 63195145
+```
+
 | Dataset | Size (MB) | Number of Records |
 |---------|----------:|-------------------|
 | CICIDS2017 | 327.55 | 2,099,976 |
-| CSECICIDS2018 | 9,939.50 | 10,426,851,729 |
+| CSECICIDS2018 | 9,939.50 | 63,195,145 |
 | **Total** | **10,267.05** | **** |
 
-Verifizierung der Gesamtzahl der network flows im Datenset CSE-CIC-IDS 2018:
-```console
-DATASET_engelen_improved/CICIDS2017_improved# ../count_data_records.sh
-Total number of records (excluding headers): 2099976
-```
 
 ## CIC-IDS-2017 data files
 
