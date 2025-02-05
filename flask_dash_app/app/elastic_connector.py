@@ -14,7 +14,7 @@ INDEX_NAME = "network_flows" # TODO extract from docker-compose
 MODEL_INDEX_NAME = "model_properties"
 # Load from "shared_secrets" docker volume
 dotenv.load_dotenv(dotenv_path="/shared_secrets/server-api-key.env")
-API_KEY = "VFFIcnM1UUJPWkFRTElWZUprWnA6TjJ4b1paS0RUOGlmVnhLNXQ1cUx0Zw=="
+API_KEY = "ZlNxdjBwUUJCVVdKMnVFbFljcng6ZzdYQzA1anNRa21Ubjh5bmtnVktTdw=="
 
 class CustomElasticsearchConnector:
     """
@@ -89,13 +89,15 @@ class CustomElasticsearchConnector:
                 df_list = []
                 async for hit in s:
                     df_list.append(pd.DataFrame([hit.to_dict()]))
+                if len(df_list) > 0:
+                    df = pd.concat(df_list)
+                    df['timestamp'] = pd.to_datetime(df['timestamp'])
                 
-                df = pd.concat(df_list)
-                df['timestamp'] = pd.to_datetime(df['timestamp'])
-                
-                # Convert string to boolean
-                df['has_been_seen'] = df['has_been_seen'].replace('true', True)
-                return df
+                    # Convert string to boolean
+                    df['has_been_seen'] = df['has_been_seen'].replace('true', True)
+                    return df
+                else: 
+                    return DataFrame()
         return await _get_all_flows(self, view=view, size=size, include_pcap=include_pcap, flow_id=flow_id)
     
     async def legacy_get_all_flows(self, onlyunseen:bool=False, size:int=20):
@@ -314,18 +316,21 @@ if __name__ == '__main__':
 
     # print(len(flows1[0]))
     # print(len(flows[0]))
-    from elastic_transport import ConnectionError as ce
-    try:
-        #model= asyncio.run(cec.get_all_model_properties(size=20))
-        flows = asyncio.run(cec.get_all_flows(view="all", size=2))    
-        print(flows)
-    except ce:
-        print("Errorhandling")
-    pcap = asyncio.run(cec.get_pcap_data("2bb98524-e362-42bd-bcd4-b095423b7e14"))
-    print(pcap)
-    from datetime import datetime
-    import asyncio
-    cec = CustomElasticsearchConnector()
+    # from elastic_transport import ConnectionError as ce
+    # try:
+    #     #model= asyncio.run(cec.get_all_model_properties(size=20))
+    #     flows = asyncio.run(cec.get_all_flows(view="all", size=2))    
+    #     print(flows)
+    # except ce:
+    #     print("Errorhandling")
+    # pcap = asyncio.run(cec.get_pcap_data("2bb98524-e362-42bd-bcd4-b095423b7e14"))
+    # print(pcap)
+    # from datetime import datetime
+    # import asyncio
+    # cec = CustomElasticsearchConnector()
     # uuid = asyncio.run(cec.save_model_properties(hash_value="123456890", timestamp=datetime.now(), own_flow_count=10, score=0.99))
     # print(asyncio.run(cec.get_model_properties(uuid)))
     # print(asyncio.run(cec.get_all_model_properties()))
+    x = asyncio.run(cec.get_all_flows(view="seen", size=10000))
+    print(len(x))
+    

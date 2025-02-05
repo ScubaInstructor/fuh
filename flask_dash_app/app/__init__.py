@@ -6,21 +6,23 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from .elastic_connector import CustomElasticsearchConnector
 
+from .elastic_connector import CustomElasticsearchConnector
+from .modelhash_container import Modelhash_Container
 # Initialize extensions
 db = SQLAlchemy()
 login_manager = LoginManager()
 # Create Flask app
 app = Flask(__name__)
-MODELPATH = "flask_dash_app/models/"
+APPPATH = "app/"
+MODELPATH = "models/"
 ZIPFILENAME = "model_scaler_ipca.zip"
 MODELNAME = "model.pkl"
 MODELARCHIVEPATH = MODELPATH + "old_models"
-model_hash:str = "" # the hash of the current model 
 
 # Initialize Elasticsearch connector and get data
 cec = CustomElasticsearchConnector()
+mc = Modelhash_Container("flask_dash_app/"+APPPATH+MODELPATH+MODELNAME)
 
 def create_app():
     load_dotenv()
@@ -42,26 +44,31 @@ def create_app():
     # Initialize Dash app
     from .dash_app import init_dash_app
     init_dash_app(app)
+
+    # TODO remove as only debug 
+    # from .retrainer import retrain
+    # mc.set_hash(retrain())
+    
     return app
 
-def compute_file_hash(file_path: str) -> str:
-        """Compute the hash of a file using the sha265 algorithm.
+# def compute_file_hash(file_path: str) -> str: # DEPRECATED as it is now in Container class
+#         """Compute the hash of a file using the sha265 algorithm.
         
-        Args:
-            - file_path (str) = the path to the file
+#         Args:
+#             - file_path (str) = the path to the file
         
-        Returns:
-            str: The hash value
-        """
-        hash_func = hashlib.sha256()
-        with open(file_path, 'rb') as file:
-            # Read the file in chunks of 8192 bytes
-            while chunk := file.read(8192):
-                hash_func.update(chunk)
+#         Returns:
+#             str: The hash value
+#         """
+#         hash_func = hashlib.sha256()
+#         with open(file_path, 'rb') as file:
+#             # Read the file in chunks of 8192 bytes
+#             while chunk := file.read(8192):
+#                 hash_func.update(chunk)
         
-        return hash_func.hexdigest()
+#         return hash_func.hexdigest()
 
-def restore_model_to_previous_version(elastic_id:str) -> None | FileNotFoundError:
+def restore_model_to_previous_version(elastic_id:str, mc: Modelhash_Container) -> None | FileNotFoundError:
     """ Extract the model with the specified id from the respective file in the archive folder and replace the current model.
 
     Args:
@@ -70,12 +77,13 @@ def restore_model_to_previous_version(elastic_id:str) -> None | FileNotFoundErro
         None if everything goes well or FileNotFoundError if the file doesn't exist
     
     """
-    global model_hash
     try:
-        copyfile(f"{MODELARCHIVEPATH}/{elastic_id}.zip", MODELPATH + ZIPFILENAME)
-        zf = zipfile.ZipFile(MODELPATH + ZIPFILENAME, "r")
-        zf.extract(member=MODELNAME, path=MODELPATH)
-        model_hash = compute_file_hash(MODELPATH + MODELNAME)
+        copyfile(f"{"flask_dash_app/" + APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip", "flask_dash_app/" + APPPATH + MODELPATH + ZIPFILENAME)
+        zf = zipfile.ZipFile("flask_dash_app/" + APPPATH + MODELPATH + ZIPFILENAME, "r")
+        zf.extract(member=MODELNAME, path="flask_dash_app/" + APPPATH + MODELPATH)
+        mc.set_hash(mc.compute_file_hash("flask_dash_app/" + APPPATH + MODELPATH + MODELNAME))
     except FileNotFoundError:
         print("Requested File not found")
         raise FileNotFoundError
+
+         
