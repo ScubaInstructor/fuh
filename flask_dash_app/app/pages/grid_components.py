@@ -84,7 +84,7 @@ def make_prediction_pie_chart(fig_id, selected_rows, metric):
     """
     detail_df = pd.DataFrame(selected_rows)
     prediction_counts = detail_df[metric].value_counts()
-    title = metric.capitalize() + " Probabilities"
+    title = "Predictions"
     return dcc.Graph(
         id=fig_id,
         figure=px.pie(

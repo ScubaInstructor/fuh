@@ -45,7 +45,7 @@ def get_model_hash():
     # TODO insert hash and add the respective functions and variables
     return jsonify({'message': 'Access granted', 'model_hash': mc.get_hash()})
 
-@app.route('/upload', methods=['POST'])
+@main_routes.route('/upload', methods=['POST'])
 def upload():
     # check auth
     token = request.headers.get('Authorization').split()[1]
@@ -97,7 +97,7 @@ def upload():
         return jsonify({'error': 'Invalid token'}), 401
     return jsonify({'message': 'Access granted', 'user_id': payload['user_id']})
 
-@app.route('/get_latest_model')
+@main_routes.route('/get_latest_model')
 def get_latest_model():
     # check auth
     token = request.headers.get('Authorization').split()[1]
