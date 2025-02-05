@@ -194,7 +194,7 @@ DATASET_engelen_improved/CSECICIDS2018_improved>..\combine_dataset.sh processed-
 
 ## Vergleich Angriffskategorien CIC-IDS-2017 und CSE-CIC-IDS 2018
 
-Angriffsgruppe | CICIDS2017 Kategorie | CSE-CIC-IDS2018 Kategorie | Beurteilung |
+| Angriffsgruppe | CICIDS2017 Kategorie | CSE-CIC-IDS2018 Kategorie | Beurteilung |
 |----------------|----------------------|---------------------------|-------------|
 | Brute Force | FTP-Patator | FTP-BruteForce | Gleich, nur andere Bezeichnung |
 | Brute Force | SSH-Patator | SSH-BruteForce | Gleich, nur andere Bezeichnung |
@@ -205,12 +205,12 @@ Angriffsgruppe | CICIDS2017 Kategorie | CSE-CIC-IDS2018 Kategorie | Beurteilung 
 | DDoS | - | DDoS HOIC | Nur in 2018 |
 | DDoS | - | DDoS LOIC-HTTP | Nur in 2018 |
 | DDoS | - | DDoS LOIC-UDP | Nur in 2018 |
-| Heartbleed | Heartbleed | Heartleech (nicht gefunden) | Ähnlicher Angriff, in 2018 nicht bestätigt |
+| Heartbleed | Heartbleed | - | Nur in 2017 |
 | Web Angriff | Web Attack - SQL Injection | Web Attack - SQL Injection | Identisch |
 | Web Angriff | Web Attack - XSS | Web Attack - XSS | Identisch |
 | Web Angriff | Web Attack - Brute Force | Web Attack - Brute Force | Identisch |
 | Infiltration | Infiltration | Infiltration | Vermutlich ähnlich, Details fehlen für 2018 |
-| Botnet | Botnet | Botnet Ares | Ähnlicher Angriff, aber unterschiedliche Botnet-Implementierung |
+| Botnet | Bot | Botnet Ares | Spezifischer Botnet-Typ in 2018 |
 | Port Scan | PortScan | - | Nur in 2017, in 2018 Teil von Infiltration |
 
 Quellen:  
