@@ -2,7 +2,6 @@
 # Network Traffic Analysis Summary
 
 ## CIC-IDS-2017 data files
-You're absolutely right. Here's the correct sorting in day order:
 
 | Filename | Records | % of Total | Size (MB) |
 |----------|--------:|------------|----------:|
