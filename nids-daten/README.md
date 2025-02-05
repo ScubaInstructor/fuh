@@ -62,30 +62,38 @@ Total number of records (excluding headers): 63195145
 | friday_Portscan_159066.csv | 159,066 | 7.57% | 59.02 |
 | **Total** | **2,099,926** | **100.00%** | **1,098.91** |
 
-Aufteilung der Datein:
+Aufteilung der Dateien:
 ```console
 DATASET_engelen_improved\CICIDS2017_improved>..\split_dataset.sh . processed-dataset-split
 ```
 
 ## CIC-IDS-2017 Attack Summary
 
-| Attack Type | Number of Attacks | % of Total |
-|-------------|------------------:|------------|
-| Botnet | 4,803 | 1.26% |
-| DDoS | 95,144 | 24.93% |
-| DoS GoldenEye | 7,647 | 2.00% |
-| DoS Hulk | 159,049 | 41.68% |
-| DoS Slowhttptest | 5,108 | 1.34% |
-| DoS Slowloris | 5,706 | 1.50% |
-| FTP-Patator | 3,984 | 1.04% |
-| Heartbleed | 11 | 0.00% |
-| Infiltration | 71,848 | 18.83% |
-| Portscan | 159,066 | 41.69% |
-| SSH-Patator | 2,988 | 0.78% |
-| Web Attack - Brute Force | 1,365 | 0.36% |
-| Web Attack - SQL Injection | 18 | 0.00% |
-| Web Attack - XSS | 673 | 0.18% |
-| **Total** | **381,410** | **100.00%** |
+| Attack Type | Records | % of Total Records | % of Total Attacks |
+|-------------|--------:|-------------------:|-------------------:|
+| BENIGN | 1,582,566 | 75.3631% | N/A |
+| Botnet | 4,803 | 0.2287% | 0.9278% |
+| DDoS | 95,144 | 4.5308% | 18.3810% |
+| DoS GoldenEye | 7,647 | 0.3641% | 1.4773% |
+| DoS Hulk | 159,049 | 7.5740% | 30.7225% |
+| DoS Slowhttptest | 5,108 | 0.2432% | 0.9866% |
+| DoS Slowloris | 5,706 | 0.2717% | 1.1022% |
+| FTP-Patator | 3,984 | 0.1897% | 0.7697% |
+| Heartbleed | 11 | 0.0005% | 0.0021% |
+| Infiltration | 71,848 | 3.4214% | 13.8778% |
+| Portscan | 159,066 | 7.5748% | 30.7258% |
+| SSH-Patator | 2,988 | 0.1423% | 0.5772% |
+| Web Attack - Brute Force | 1,365 | 0.0650% | 0.2637% |
+| Web Attack - SQL Injection | 18 | 0.0009% | 0.0035% |
+| Web Attack - XSS | 673 | 0.0320% | 0.1300% |
+| **Total Attacks** | **517,410** | **24.6391%** | **100.0000%** |
+| **Total (including BENIGN)** | **2,099,976** | **100.0000%** | **N/A** |
+
+Zusammenfassung der Dateien basierend auf Kategorie:
+```console
+DATASET_engelen_improved\CICIDS2017_improved>..\combine_dataset.sh processed-dataset-split processed-dataset-combined
+```
+
 
 # Network Traffic Analysis Summary (2018 Dataset)
 
