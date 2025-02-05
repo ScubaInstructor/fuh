@@ -117,21 +117,19 @@ Here's the markdown table sorted by weekday and date, with the number of records
 
 ## CSE-CIC-IDS 2018 Attack Summary
 
-| Attack Type | Successful | Attempted |
-|-------------|------------|-----------|
-| Botnet Ares | 142,921 | 262 |
-| DoS Hulk | 1,803,160 | 86 |
-| FTP-BruteForce | - | 298,874 |
-| Web Attack - Brute Force | 131 | 137 |
-| Web Attack - SQL Injection | 39 | 14 |
-| Web Attack - XSS | 113 | 4 |
-| Infiltration - Communication | 204 | - |
-| Infiltration - Dropbox Download | 85 | 28 |
-| Infiltration - NMAP Portscan | 89,374 | - |
-| DoS GoldenEye | 22,560 | 4,301 |
-| DoS Slowloris | 8,490 | 2,280 |
-| DDoS-LOIC-HTTP | 289,328 | - |
-| DDoS-LOIC-UDP | 2,527 | 251 |
-| DDoS-HOIC | 1,082,293 | - |
-| SSH-BruteForce | 94,197 | - |
-| **Total** | **3,535,422** | **306,237** |
+| Attack Type | Number of Attacks | % of Total |
+|-------------|------------------:|------------|
+| Botnet Ares | 143,183 | 3.81% |
+| DDoS-HOIC | 1,082,293 | 28.80% |
+| DDoS-LOIC-HTTP | 289,328 | 7.70% |
+| DDoS-LOIC-UDP | 2,778 | 0.07% |
+| DoS GoldenEye | 26,861 | 0.71% |
+| DoS Hulk | 1,803,246 | 47.98% |
+| DoS Slowloris | 10,770 | 0.29% |
+| FTP-BruteForce | 298,874 | 7.95% |
+| Infiltration | 89,691 | 2.39% |
+| SSH-BruteForce | 94,197 | 2.51% |
+| Web Attack - Brute Force | 268 | 0.01% |
+| Web Attack - SQL | 53 | 0.00% |
+| Web Attack - XSS | 117 | 0.00% |
+| **Total** | **3,757,659** | **100.00%** |
