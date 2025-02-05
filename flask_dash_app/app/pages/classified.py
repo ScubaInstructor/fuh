@@ -193,11 +193,13 @@ def download_pcap(n_clicks, selected_row_data):
     # Request pcap data for flow id
     item = asyncio.run(cec.get_all_flows(view="all", size=1, include_pcap=True, flow_id=selected_row_data[0]["flow_id"]))
     detail_df = pd.DataFrame(item)
-    pcap_data = detail_df["pcap_data"].values[0]
+    pcap_data = (detail_df["pcap_data"].values[0])
     flow_id = detail_df["flow_id"].values[0]
-
+    
+    # Return as downloadable file
     return dict(
         content=pcap_data,
+        base64=True,
         filename=f"flow_{flow_id}.pcap",
         type="application/vnd.tcpdump.pcap"
     )
