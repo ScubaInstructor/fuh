@@ -213,6 +213,6 @@ Angriffsgruppe | CICIDS2017 Kategorie | CSE-CIC-IDS2018 Kategorie | Beurteilung 
 | Botnet | Botnet | Botnet Ares | Ähnlicher Angriff, aber unterschiedliche Botnet-Implementierung |
 | Port Scan | PortScan | - | Nur in 2017, in 2018 Teil von Infiltration |
 
-Quelle:
-[1] https://intrusion-detection.distrinet-research.be/CNS2022/CICIDS2017.html
-[2] https://intrusion-detection.distrinet-research.be/CNS2022/CSECICIDS2018.html
+Quellen:  
+[1] https://intrusion-detection.distrinet-research.be/CNS2022/CICIDS2017.html  
+[2] https://intrusion-detection.distrinet-research.be/CNS2022/CSECICIDS2018.html  
