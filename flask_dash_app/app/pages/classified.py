@@ -9,6 +9,8 @@ from datetime import datetime, timedelta
 from flask_login import current_user
 import plotly.express as px
 from ..models import User, db
+from ..retrainer import retrain
+from .. import mc
 from flask import current_app
 
 
@@ -258,9 +260,8 @@ def update_retrain_button(search):
 def retrain_model(n_clicks):
     if not n_clicks:
         return dash.no_update, dash.no_update
-    
     try:
-        # Add model retraining logic here
+        mc.set_hash(retrain())
         return html.Div("Model retrained successfully!", style={"color": "green"}), False
     except Exception as e:
         return html.Div(f"Error retraining model: {str(e)}", style={"color": "red"}), False

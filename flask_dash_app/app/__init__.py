@@ -7,6 +7,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 
+
 from .elastic_connector import CustomElasticsearchConnector
 from .modelhash_container import Modelhash_Container
 # Initialize extensions
@@ -45,10 +46,6 @@ def create_app():
     from .dash_app import init_dash_app
     init_dash_app(app)
 
-    # TODO remove as only debug 
-    # from .retrainer import retrain
-    # mc.set_hash(retrain())
-    
     return app
 
 # def compute_file_hash(file_path: str) -> str: # DEPRECATED as it is now in Container class
