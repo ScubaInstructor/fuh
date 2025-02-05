@@ -10,6 +10,8 @@ from numpy import ndarray
 from .pipelining_utilities import adapt_cicids2017_for_training
 import zipfile
 from sklearn.metrics import precision_recall_fscore_support as f_score
+from sklearn.metrics import accuracy_score as ascore
+
 
 from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
 
@@ -180,7 +182,9 @@ def retrain() -> str:
     mergeddata = merge_own_flows_into_trainigdataset_for_multiclassifier(own_data=own_data)
     processed_data, scaler, ipca, ipca_size  = adapt_cicids2017_for_training(data=mergeddata, balance_the_data=False)
     model, X_train, y_train, X_test, y_test = train_random_forest(processed_data)
-    score = get_f1_score(model, X_test, y_test) # TODO change to accuracy
+    # score = get_f1_score(model, X_test, y_test) # TODO change to accuracy
+    predicted = model.predict(X_test)
+    score = ascore(y_test,predicted)
     own_flow_count = own_data.shape[0]
     print(own_flow_count)
     model_hash = compute_model_hash(model)
