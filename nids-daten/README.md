@@ -6,7 +6,7 @@ Total number of records:
 ```console
 #count_data_records.sh
 Total number of records (excluding headers): 2099976
-´´´
+```
 
 | Filename | Records | % of Total | Size (MB) |
 |----------|--------:|------------|----------:|
