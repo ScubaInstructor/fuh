@@ -191,3 +191,23 @@ Zusammenfassung der Dateien basierend auf Kategorie:
 ```console
 DATASET_engelen_improved/CSECICIDS2018_improved>..\combine_dataset.sh processed-dataset-split processed-dataset-combined
 ```
+
+
+Angriffsgruppe | CICIDS2017 Kategorie | CSE-CIC-IDS2018 Kategorie | Beurteilung |
+|----------------|----------------------|---------------------------|-------------|
+| Brute Force | FTP-Patator | FTP-BruteForce | Gleich, nur andere Bezeichnung |
+| Brute Force | SSH-Patator | SSH-BruteForce | Gleich, nur andere Bezeichnung |
+| DoS | DoS Hulk | DoS Hulk | Identisch |
+| DoS | DoS GoldenEye | DoS GoldenEye | Identisch |
+| DoS | DoS Slowloris | DoS Slowloris | Identisch |
+| DoS | DoS Slowhttptest | DoS Slowhttptest (nicht erfolgreich durchgeführt) | Gleicher Angriff, in 2018 fehlgeschlagen |
+| DDoS | - | DDoS HOIC | Nur in 2018 |
+| DDoS | - | DDoS LOIC-HTTP | Nur in 2018 |
+| DDoS | - | DDoS LOIC-UDP | Nur in 2018 |
+| Heartbleed | Heartbleed | Heartleech (nicht gefunden) | Ähnlicher Angriff, in 2018 nicht bestätigt |
+| Web Angriff | Web Attack - SQL Injection | Web Attack - SQL Injection | Identisch |
+| Web Angriff | Web Attack - XSS | Web Attack - XSS | Identisch |
+| Web Angriff | Web Attack - Brute Force | Web Attack - Brute Force | Identisch |
+| Infiltration | Infiltration | Infiltration | Vermutlich ähnlich, Details fehlen für 2018 |
+| Botnet | Botnet | Botnet Ares | Ähnlicher Angriff, aber unterschiedliche Botnet-Implementierung |
+| Port Scan | PortScan | - | Nur in 2017, in 2018 Teil von Infiltration |
