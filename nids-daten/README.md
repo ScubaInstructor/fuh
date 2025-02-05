@@ -150,6 +150,10 @@ DATASET_engelen_improved\CICIDS2017_improved>..\combine_dataset.sh processed-dat
 | Friday-02-03-2018_Botnet Ares_142921.csv | 142,921 | 0.23% | 79.16 |
 | **Total** | **63,195,145** | **100.00%** | **28,372.55** |
 
+Aufteilung der Dateien:
+```console
+DATASET_engelen_improved/CSECICIDS2018_improved>..\split_dataset.sh . processed-dataset-split
+```
 
 ## CSE-CIC-IDS 2018 Attack Summary
 
@@ -182,3 +186,8 @@ DATASET_engelen_improved\CICIDS2017_improved>..\combine_dataset.sh processed-dat
 | Web Attack - XSS | 113 | 0.0002% | 0.0029% |
 | **Total Attacks** | **3,841,659** | **6.0806%** | **100.0000%** |
 | **Total (including BENIGN)** | **63,195,145** | **100.0000%** | **N/A** |
+
+Zusammenfassung der Dateien basierend auf Kategorie:
+```console
+DATASET_engelen_improved/CSECICIDS2018_improved>..\combine_dataset.sh processed-dataset-split processed-dataset-combined
+```
