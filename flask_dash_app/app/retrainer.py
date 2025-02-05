@@ -14,6 +14,7 @@ from sklearn.metrics import accuracy_score as ascore
 
 
 from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
+from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
 
 DEBUGGING = True
 
