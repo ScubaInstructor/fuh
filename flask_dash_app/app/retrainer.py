@@ -11,7 +11,7 @@ from .pipelining_utilities import adapt_cicids2017_for_training
 import zipfile
 from sklearn.metrics import precision_recall_fscore_support as f_score
 
-from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, ZIPFILENAME, model_hash
+from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
 
 DEBUGGING = True
 
@@ -25,8 +25,11 @@ def get_self_created_flow_data() -> DataFrame:
     """
     CEC = CustomElasticsearchConnector() 
     data = asyncio.run(CEC.get_all_flows(view="seen", size=10000))
-    for_retraining = data[data["has_been_seen"] == "true"][['flow_data','attack_class']]
-    return for_retraining.rename(columns={'attack_class': 'attack_type'})
+    if len(data) > 0:
+        for_retraining = data[data["has_been_seen"] == True][['flow_data','attack_class']]
+        return for_retraining.rename(columns={'attack_class': 'attack_type'})
+    else: 
+        return DataFrame()
 
 def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
     """
@@ -62,8 +65,6 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
             df.add(own_flows_of_same_class)
             dfs.append(df)
         
-        # TODO assert all classes are 5000 entries strong
-
         # Combine all classes
         df = concat(dfs, ignore_index = True)
     df.sample(frac=1)
@@ -135,10 +136,10 @@ def create_transferrable_zipfile(elastic_id, model, scaler, ipca):
     files = {"model":model, "scaler":scaler, "ipca":ipca}
     
     # to store old models
-    makedirs(MODELARCHIVEPATH, exist_ok = True)
+    makedirs("flask_dash_app/" + APPPATH +MODELARCHIVEPATH, exist_ok = True)
 
     # create zipfile
-    zf = zipfile.ZipFile(MODELPATH + ZIPFILENAME, "w")
+    zf = zipfile.ZipFile("flask_dash_app/" + APPPATH +MODELPATH + ZIPFILENAME, "w")
 
     for f in files:
         # dump new file
@@ -147,7 +148,7 @@ def create_transferrable_zipfile(elastic_id, model, scaler, ipca):
         zf.write(f"{f}.pkl")
     zf.close()
     # Copy the model to archive with the name of the ip of the elastic document
-    copyfile(zf.filename, f"{MODELARCHIVEPATH}/{elastic_id}.zip")
+    copyfile(zf.filename, f"{"flask_dash_app/" + APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip")
 
 def compute_model_hash(model) -> str:
         """Compute the hash of the model without writing it to disk using the sha265 algorithm.
@@ -168,28 +169,30 @@ def compute_model_hash(model) -> str:
         return m.hexdigest()
 
    
-def retrain() -> ndarray:
+def retrain() -> str:
     """
     Retrains the model using self-created flow data. Stores the model as {elastic_id}.zip in the modelarchive, and sets the new model hash.
 
     Returns:
-        ndarray: Cross-validation scores of the retrained model.
+        str: the new hashvalue
     """
     own_data = get_self_created_flow_data()
     mergeddata = merge_own_flows_into_trainigdataset_for_multiclassifier(own_data=own_data)
     processed_data, scaler, ipca, ipca_size  = adapt_cicids2017_for_training(data=mergeddata, balance_the_data=False)
     model, X_train, y_train, X_test, y_test = train_random_forest(processed_data)
-    score = get_f1_score(model, X_test, y_test)
+    score = get_f1_score(model, X_test, y_test) # TODO change to accuracy
     own_flow_count = own_data.shape[0]
-    global model_hash
+    print(own_flow_count)
     model_hash = compute_model_hash(model)
-    #print(model_hash)
+    dump(model, "flask_dash_app/" + APPPATH + MODELPATH + MODELNAME)
     cec = CustomElasticsearchConnector()
     elastic_id = asyncio.run(cec.save_model_properties(hash_value=model_hash, timestamp=datetime.now(), own_flow_count=own_flow_count, score=score))
     create_transferrable_zipfile(elastic_id, model, scaler, ipca)
-    return evaluate_model(model, X_train, y_train)
+    return model_hash
 
 
 
 if __name__ == '__main__':
-    retrain()
+    #retrain()
+    x = get_self_created_flow_data()
+    print(x)

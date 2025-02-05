@@ -2,14 +2,13 @@ from pathlib import Path
 from flask import Blueprint, jsonify, render_template, redirect, request, send_file
 from flask_login import login_required, current_user
 import jwt
-from . import db, app, MODELNAME, MODELPATH, ZIPFILENAME, compute_file_hash, model_hash, cec
+from . import db, app, MODELNAME, MODELPATH, ZIPFILENAME, mc, cec
 #from elastic_connector import CustomElasticsearchConnector, API_KEY, INDEX_NAME
 import asyncio
 from flask import current_app
 from .models import Sensor
 
 main_routes = Blueprint('main', __name__)
-model_hash = compute_file_hash(MODELPATH + MODELNAME)
 
 @main_routes.route('/')
 @login_required
@@ -44,7 +43,7 @@ def get_model_hash():
         return jsonify({'error': 'Invalid token'}), 401
     # Everything is well and we return the hash
     # TODO insert hash and add the respective functions and variables
-    return jsonify({'message': 'Access granted', 'model_hash': model_hash})
+    return jsonify({'message': 'Access granted', 'model_hash': mc.get_hash()})
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -79,8 +78,8 @@ def upload():
             sensor_hash = request.json["model_hash"]
             print("Sensorhash: " + sensor_hash)
             #global modelhash 
-            print("Serverhash: " + model_hash)
-            if model_hash != sensor_hash:
+            print("Serverhash: " + mc.get_hash())
+            if mc.get_hash() != sensor_hash:
                 return jsonify({"update_error": "Model is out of date!"}), 400
             # receive data and store it in elastic
             doc = request.json
@@ -111,8 +110,8 @@ def get_latest_model():
             reg_sensor_names = [sensor.name for sensor in registered_sensors]
             if sensor_name not in reg_sensor_names:
                 return jsonify({"error": "Sensor doesn't exists"}), 401
-        filename = MODELPATH + ZIPFILENAME
-        if Path(filename).is_file():
+        filename = MODELPATH + ZIPFILENAME  
+        if Path("flask_dash_app/app/" + filename).is_file():    # TODO this will be different in Dockercontainer
             return send_file(
                 filename,
                 as_attachment=True,
