@@ -5,6 +5,8 @@ from .utils import generate_env_file_for_sensors, get_secret_key
 from ..models import User, db, Sensor
 import dash_ag_grid as dag
 from flask import current_app
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 dash.register_page(__name__, path='/admin/')
 
@@ -70,10 +72,79 @@ def user_management_content():
 
 
 def model_management_content():
-    return html.Div([
-        html.H3("Model Management"),
-        # Add model management components here
-    ])
+    # return html.Div([
+    #     html.H3("Model Management"),
+    #     # Add model management components here
+    # ])
+    try:
+        # Rufe die Daten synchron auf, da Dash-Callbacks synchron sind
+        import asyncio
+        from ..elastic_connector import CustomElasticsearchConnector
+        cec = CustomElasticsearchConnector()
+        model_properties = asyncio.run(cec.get_all_model_properties(size=10)) 
+        # TODO only necessary for older models from early training stages...
+        model_properties['score'] = model_properties['score'].apply(lambda x: float(x) if isinstance(x, (int, float)) else float(x[0]))
+
+        model_list = model_properties.to_dict('records')  
+
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        fig.add_trace(
+            go.Scatter(
+                x=model_properties['timestamp'],
+                y=model_properties['score'],
+                mode='lines+markers',
+                name='Score',
+            ),
+            secondary_y=False,  # Linke y-Achse
+        )
+
+        # Füge die Linie für 'own_flow_count' hinzu
+        fig.add_trace(
+            go.Scatter(
+                x=model_properties['timestamp'],
+                y=model_properties['own_flow_count'],
+                mode='lines+markers',
+                name='Own Flow Count',
+            ),
+            secondary_y=True,  # Rechte y-Achse
+        )
+
+        # Beschriftungen und Titel
+        fig.update_layout(
+            title='Score and Own Flow Count Over Time',
+            xaxis_title='Timestamp',
+            yaxis_title='Score',  # Linke y-Achse Beschriftung
+            yaxis2_title='Own Flow Count',  # Rechte y-Achse Beschriftung
+        )
+
+        return html.Div([
+            html.H3("Model Management"),
+            dag.AgGrid(
+                id="models-grid",
+                rowData=model_list,
+                columnDefs=[
+                    {"field": "model_hash", "headerName": "Model Hash", "sortable": True, "filter": True},
+                    {"field": "score", "headerName": "Score", "sortable": True, "filter": True},
+                    {"field": "timestamp", "headerName": "Timestamp", "sortable": True, "filter": True},
+                    {"field": "own_flow_count", "headerName": "Own Flow Count", "sortable": True, "filter": True}
+                ],
+                defaultColDef={
+                    "resizable": True,
+                    "sortable": True,
+                    "filter": True
+                },
+                dashGridOptions={
+                    "pagination": True,
+                    "paginationAutoPageSize": True,
+                    "rowSelection": "single"
+                },
+                style={"height": 400}
+            ),
+            dcc.Graph(figure=fig),
+            html.Div(id="model-management-status")
+        ])
+    except Exception as e:
+        return html.Div(f"Error fetching model data: {str(e)}", style={"color": "red"})
 
 def sensor_management_content():
     with current_app.app_context():

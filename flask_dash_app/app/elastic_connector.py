@@ -330,7 +330,7 @@ if __name__ == '__main__':
     # cec = CustomElasticsearchConnector()
     # uuid = asyncio.run(cec.save_model_properties(hash_value="123456890", timestamp=datetime.now(), own_flow_count=10, score=0.99))
     # print(asyncio.run(cec.get_model_properties(uuid)))
-    # print(asyncio.run(cec.get_all_model_properties()))
-    x = asyncio.run(cec.get_all_flows(view="seen", size=10000))
-    print(len(x))
+    print(asyncio.run(cec.get_all_model_properties()))
+    # x = asyncio.run(cec.get_all_flows(view="seen", size=10000))
+    # print(len(x))
     
