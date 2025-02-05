@@ -40,23 +40,23 @@
 
 ## CIC-IDS-2017 Attack Summary
 
-| Attack Type | Successful | Attempted |
-|-------------|------------|-----------|
-| Botnet | 736 | 4,067 |
-| DDoS | 95,144 | - |
-| Portscan | 159,066 | - |
-| Infiltration | 36 | 45 |
-| Web Attack - Brute Force | 73 | 1,292 |
-| Web Attack - SQL Injection | 13 | 5 |
-| Web Attack - XSS | 18 | 655 |
-| FTP-Patator | 3,972 | 12 |
-| SSH-Patator | 2,961 | 27 |
-| DoS GoldenEye | 7,567 | 80 |
-| DoS Hulk | 158,468 | 581 |
-| DoS Slowhttptest | 1,740 | 3,368 |
-| DoS Slowloris | 3,859 | 1,847 |
-| Heartbleed | 11 | - |
-| **Total** | **433,664** | **11,979** |
+| Attack Type | Number of Attacks | % of Total |
+|-------------|------------------:|------------|
+| Botnet | 4,803 | 1.26% |
+| DDoS | 95,144 | 24.93% |
+| DoS GoldenEye | 7,647 | 2.00% |
+| DoS Hulk | 159,049 | 41.68% |
+| DoS Slowhttptest | 5,108 | 1.34% |
+| DoS Slowloris | 5,706 | 1.50% |
+| FTP-Patator | 3,984 | 1.04% |
+| Heartbleed | 11 | 0.00% |
+| Infiltration | 71,848 | 18.83% |
+| Portscan | 159,066 | 41.69% |
+| SSH-Patator | 2,988 | 0.78% |
+| Web Attack - Brute Force | 1,365 | 0.36% |
+| Web Attack - SQL Injection | 18 | 0.00% |
+| Web Attack - XSS | 673 | 0.18% |
+| **Total** | **381,410** | **100.00%** |
 
 # Network Traffic Analysis Summary (2018 Dataset)
 
