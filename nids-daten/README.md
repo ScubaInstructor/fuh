@@ -209,9 +209,11 @@ DATASET_engelen_improved/CSECICIDS2018_improved>..\combine_dataset.sh processed-
 | Web Angriff | Web Attack - SQL Injection | Web Attack - SQL Injection | Identisch |
 | Web Angriff | Web Attack - XSS | Web Attack - XSS | Identisch |
 | Web Angriff | Web Attack - Brute Force | Web Attack - Brute Force | Identisch |
-| Infiltration | Infiltration | Infiltration | Vermutlich ähnlich, Details fehlen für 2018 |
+| Infiltration | Infiltration | Infiltration - NMAP PortScan | Detaillierter in 2018 |
+| Infiltration | - | Infiltration - Dropbox Download | Nur in 2018 |
+| Infiltration | - | Infiltration - Communication Victim-Attacker | Nur in 2018 |
+| Portscan | PortScan | - | In 2018 Teil von Infiltration - NMAP PortScan |
 | Botnet | Bot | Botnet Ares | Spezifischer Botnet-Typ in 2018 |
-| Port Scan | PortScan | - | Nur in 2017, in 2018 Teil von Infiltration |
 
 Quellen:  
 [1] https://intrusion-detection.distrinet-research.be/CNS2022/CICIDS2017.html  
