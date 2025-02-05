@@ -3,11 +3,11 @@ from datetime import datetime
 from os import makedirs
 from shutil import copyfile
 from .elastic_connector import CustomElasticsearchConnector
-from pandas import DataFrame, concat
+from pandas import DataFrame, concat, json_normalize
 from sklearn.model_selection import cross_val_score, train_test_split
 from joblib import dump, load
 from numpy import ndarray
-from .pipelining_utilities import adapt_cicids2017_for_training
+from .pipelining_utilities import adapt_cicids2017_for_training, gemeinsame_columns
 import zipfile
 from sklearn.metrics import precision_recall_fscore_support as f_score
 from sklearn.metrics import accuracy_score as ascore
@@ -44,13 +44,14 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
     Returns:
         DataFrame: A DataFrame containing the merged training dataset. Class size is 5000.
     """
+    # TODO paths must be fixed someday
     trainingdata = load("flask_dash_app/app/datasources/DataFrame_with_balanced_dataset.pkl") # load("DataFrame_with_balanced_dataset.pkl")
     if len(own_data) == 0:
         df =  trainingdata
     else:
         added_classes = own_data['attack_type'].str.lower().value_counts()
         class_names = added_classes.index.str.lower()
-        selected = trainingdata[trainingdata['attack_type'].str.lower().isin(class_names.str.lower())] # unnecessary?
+        #selected = trainingdata[trainingdata['attack_type'].str.lower().isin(class_names.str.lower())] # unnecessary?
 
         dfs = []
 
@@ -58,15 +59,26 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
 
         for name in class_names:
             # Extrahiere Daten für jede Klasse
-            df = selected[selected['attack_type'].str.lower() == name]
+            df = trainingdata[trainingdata['attack_type'].str.lower() == name]
             # sample down to make space for own flow data
             n = 5000 - added_classes[name]
             df = df.sample(n=n, random_state=0)
             # add own flows of respective group
-            own_flows_of_same_class = own_data[own_data['attack_type']==name]
-            df.add(own_flows_of_same_class)
+            own_flows_of_same_class = own_data[own_data['attack_type'].str.lower()==name]
+            own_flows_of_same_class.reset_index(drop=True, inplace=True)
+            addition = concat([own_flows_of_same_class[['attack_type']], json_normalize(own_flows_of_same_class['flow_data'])], axis=1)
+            addition = addition[gemeinsame_columns + ['attack_type'] ]
+            df = df[gemeinsame_columns + ['attack_type'] ]
+            df = concat([df, addition], ignore_index=True)
             dfs.append(df)
         
+        all_classes = trainingdata['attack_type'].unique().tolist()
+        remaining_classes = [cls for cls in all_classes if cls.lower() not in class_names] 
+        for name in remaining_classes:
+            # Extrahiere Daten für jede Klasse
+            df = trainingdata[trainingdata['attack_type'].str.lower() == name.lower()]
+            df = df[gemeinsame_columns + ['attack_type'] ]
+            dfs.append(df)
         # Combine all classes
         df = concat(dfs, ignore_index = True)
     df.sample(frac=1)
@@ -182,7 +194,6 @@ def retrain() -> str:
     mergeddata = merge_own_flows_into_trainigdataset_for_multiclassifier(own_data=own_data)
     processed_data, scaler, ipca, ipca_size  = adapt_cicids2017_for_training(data=mergeddata, balance_the_data=False)
     model, X_train, y_train, X_test, y_test = train_random_forest(processed_data)
-    # score = get_f1_score(model, X_test, y_test) # TODO change to accuracy
     predicted = model.predict(X_test)
     score = ascore(y_test,predicted)
     own_flow_count = own_data.shape[0]
