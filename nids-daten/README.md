@@ -1,12 +1,30 @@
 
 # Network Traffic Analysis Summary
 
-## CIC-IDS-2017 data files
-Total number of records:
+Die CNS2022 Daten wurden von hier heruntergeladen:
+https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/
+
+Die unzipped-Datensets wurden im ersten Schritt separat verarbeitet:
+
+Verifizierung der Gesamtzahl der network flows im Datenset CIC-IDS-2017:
 ```console
-#count_data_records.sh
+DATASET_engelen_improved/CICIDS2017_improved# ../count_data_records.sh
 Total number of records (excluding headers): 2099976
 ```
+
+| Dataset | Size (MB) | Number of Records |
+|---------|----------:|-------------------|
+| CICIDS2017 | 327.55 | 2,099,976 |
+| CSECICIDS2018 | 9,939.50 | 10,426,851,729 |
+| **Total** | **10,267.05** | **** |
+
+Verifizierung der Gesamtzahl der network flows im Datenset CSE-CIC-IDS 2018:
+```console
+DATASET_engelen_improved/CICIDS2017_improved# ../count_data_records.sh
+Total number of records (excluding headers): 2099976
+```
+
+## CIC-IDS-2017 data files
 
 | Filename | Records | % of Total | Size (MB) |
 |----------|--------:|------------|----------:|
@@ -42,6 +60,11 @@ Total number of records (excluding headers): 2099976
 | friday_DDoS_95144.csv | 95,144 | 4.53% | 60.04 |
 | friday_Portscan_159066.csv | 159,066 | 7.57% | 59.02 |
 | **Total** | **2,099,926** | **100.00%** | **1,098.91** |
+
+Aufteilung der Datein:
+```console
+DATASET_engelen_improved\CICIDS2017_improved>..\split_dataset.sh . processed-dataset-split
+```
 
 ## CIC-IDS-2017 Attack Summary
 
