@@ -145,19 +145,32 @@ DATASET_engelen_improved\CICIDS2017_improved>..\split_dataset.sh . processed-dat
 
 ## CSE-CIC-IDS 2018 Attack Summary
 
-| Attack Type | Number of Attacks | % of Total |
-|-------------|------------------:|------------|
-| Botnet Ares | 143,183 | 3.81% |
-| DDoS-HOIC | 1,082,293 | 28.80% |
-| DDoS-LOIC-HTTP | 289,328 | 7.70% |
-| DDoS-LOIC-UDP | 2,778 | 0.07% |
-| DoS GoldenEye | 26,861 | 0.71% |
-| DoS Hulk | 1,803,246 | 47.98% |
-| DoS Slowloris | 10,770 | 0.29% |
-| FTP-BruteForce | 298,874 | 7.95% |
-| Infiltration | 89,691 | 2.39% |
-| SSH-BruteForce | 94,197 | 2.51% |
-| Web Attack - Brute Force | 268 | 0.01% |
-| Web Attack - SQL | 53 | 0.00% |
-| Web Attack - XSS | 117 | 0.00% |
-| **Total** | **3,757,659** | **100.00%** |
+| Attack Type | Records | % of Total Records | % of Total Attacks |
+|-------------|--------:|-------------------:|-------------------:|
+| BENIGN | 59,353,486 | 93.9194% | N/A |
+| Botnet Ares - Attempted | 262 | 0.0004% | 0.0068% |
+| Botnet Ares | 142,921 | 0.2261% | 3.7095% |
+| DDoS-HOIC | 1,082,293 | 1.7127% | 28.0885% |
+| DDoS-LOIC-HTTP | 289,328 | 0.4578% | 7.5087% |
+| DDoS-LOIC-UDP - Attempted | 251 | 0.0004% | 0.0065% |
+| DDoS-LOIC-UDP | 2,527 | 0.0040% | 0.0656% |
+| DoS GoldenEye - Attempted | 4,301 | 0.0068% | 0.1116% |
+| DoS GoldenEye | 22,560 | 0.0357% | 0.5855% |
+| DoS Hulk - Attempted | 86 | 0.0001% | 0.0022% |
+| DoS Hulk | 1,803,160 | 2.8532% | 46.7933% |
+| DoS Slowloris - Attempted | 2,280 | 0.0036% | 0.0592% |
+| DoS Slowloris | 8,490 | 0.0134% | 0.2204% |
+| FTP-BruteForce - Attempted | 298,874 | 0.4728% | 7.7572% |
+| Infiltration - Communication Victim Attacker | 204 | 0.0003% | 0.0053% |
+| Infiltration - Dropbox Download - Attempted | 28 | 0.0000% | 0.0007% |
+| Infiltration - Dropbox Download | 85 | 0.0001% | 0.0022% |
+| Infiltration - NMAP Portscan | 89,374 | 0.1414% | 2.3202% |
+| SSH-BruteForce | 94,197 | 0.1491% | 2.4449% |
+| Web Attack - Brute Force - Attempted | 137 | 0.0002% | 0.0036% |
+| Web Attack - Brute Force | 131 | 0.0002% | 0.0034% |
+| Web Attack - SQL - Attempted | 14 | 0.0000% | 0.0004% |
+| Web Attack - SQL | 39 | 0.0001% | 0.0010% |
+| Web Attack - XSS - Attempted | 4 | 0.0000% | 0.0001% |
+| Web Attack - XSS | 113 | 0.0002% | 0.0029% |
+| **Total Attacks** | **3,841,659** | **6.0806%** | **100.0000%** |
+| **Total (including BENIGN)** | **63,195,145** | **100.0000%** | **N/A** |
