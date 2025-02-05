@@ -2,45 +2,42 @@
 # Network Traffic Analysis Summary
 
 ## CIC-IDS-2017 data files
+You're absolutely right. Here's the correct sorting in day order:
 
-| File Name | Size (MB) |
-|-----------|-----------|
-| friday.csv | 285.19 |
-| friday_BENIGN_288544.csv | 158.23 |
-| friday_Botnet - Attempted_4067.csv | 1.68 |
-| friday_Botnet_736.csv | 0.44 |
-| friday_DDoS_95144.csv | 62.95 |
-| friday_Portscan_159066.csv | 61.88 |
-| monday.csv | 207.88 |
-| monday_BENIGN_371624.csv | 207.87 |
-| thursday.csv | 189.52 |
-| thursday_BENIGN_288172.csv | 158.91 |
-| thursday_Infiltration - Attempted_45.csv | 0.02 |
-| thursday_Infiltration - Portscan_71767.csv | 29.42 |
-| thursday_Infiltration_36.csv | 0.03 |
-| thursday_Web Attack - Brute Force - Attempted_1292.csv | 0.71 |
-| thursday_Web Attack - Brute Force_73.csv | 0.05 |
-| thursday_Web Attack - SQL Injection - Attempted_5.csv | 0.00 |
-| thursday_Web Attack - SQL Injection_13.csv | 0.01 |
-| thursday_Web Attack - XSS - Attempted_655.csv | 0.35 |
-| thursday_Web Attack - XSS_18.csv | 0.01 |
-| tuesday.csv | 178.40 |
-| tuesday_BENIGN_315106.csv | 173.60 |
-| tuesday_FTP-Patator - Attempted_12.csv | 0.01 |
-| tuesday_FTP-Patator_3972.csv | 2.72 |
-| tuesday_SSH-Patator - Attempted_27.csv | 0.01 |
-| tuesday_SSH-Patator_2961.csv | 2.05 |
-| wednesday.csv | 291.29 |
-| wednesday_BENIGN_319120.csv | 176.06 |
-| wednesday_DoS GoldenEye - Attempted_80.csv | 0.03 |
-| wednesday_DoS GoldenEye_7567.csv | 5.41 |
-| wednesday_DoS Hulk - Attempted_581.csv | 0.30 |
-| wednesday_DoS Hulk_158468.csv | 103.18 |
-| wednesday_DoS Slowhttptest - Attempted_3368.csv | 1.82 |
-| wednesday_DoS Slowhttptest_1740.csv | 1.17 |
-| wednesday_DoS Slowloris - Attempted_1847.csv | 0.88 |
-| wednesday_DoS Slowloris_3859.csv | 2.43 |
-| wednesday_Heartbleed_11.csv | 0.01 |
+| Filename | Records | % of Total | Size (MB) |
+|----------|--------:|------------|----------:|
+| monday_BENIGN_371624.csv | 371,624 | 17.70% | 198.25 |
+| tuesday_BENIGN_315106.csv | 315,106 | 15.01% | 165.56 |
+| tuesday_FTP-Patator - Attempted_12.csv | 12 | 0.00% | 0.01 |
+| tuesday_FTP-Patator_3972.csv | 3,972 | 0.19% | 2.59 |
+| tuesday_SSH-Patator - Attempted_27.csv | 27 | 0.00% | 0.01 |
+| tuesday_SSH-Patator_2961.csv | 2,961 | 0.14% | 1.96 |
+| wednesday_BENIGN_319120.csv | 319,120 | 15.20% | 167.91 |
+| wednesday_DoS GoldenEye - Attempted_80.csv | 80 | 0.00% | 0.03 |
+| wednesday_DoS GoldenEye_7567.csv | 7,567 | 0.36% | 5.16 |
+| wednesday_DoS Hulk - Attempted_581.csv | 581 | 0.03% | 0.28 |
+| wednesday_DoS Hulk_158468.csv | 158,468 | 7.55% | 98.40 |
+| wednesday_DoS Slowhttptest - Attempted_3368.csv | 3,368 | 0.16% | 1.74 |
+| wednesday_DoS Slowhttptest_1740.csv | 1,740 | 0.08% | 1.12 |
+| wednesday_DoS Slowloris - Attempted_1847.csv | 1,847 | 0.09% | 0.84 |
+| wednesday_DoS Slowloris_3859.csv | 3,859 | 0.18% | 2.32 |
+| wednesday_Heartbleed_11.csv | 11 | 0.00% | 0.01 |
+| thursday_BENIGN_288172.csv | 288,172 | 13.72% | 151.55 |
+| thursday_Infiltration - Attempted_45.csv | 45 | 0.00% | 0.02 |
+| thursday_Infiltration - Portscan_71767.csv | 71,767 | 3.42% | 28.06 |
+| thursday_Infiltration_36.csv | 36 | 0.00% | 0.03 |
+| thursday_Web Attack - Brute Force - Attempted_1292.csv | 1,292 | 0.06% | 0.68 |
+| thursday_Web Attack - Brute Force_73.csv | 73 | 0.00% | 0.05 |
+| thursday_Web Attack - SQL Injection - Attempted_5.csv | 5 | 0.00% | 0.00 |
+| thursday_Web Attack - SQL Injection_13.csv | 13 | 0.00% | 0.01 |
+| thursday_Web Attack - XSS - Attempted_655.csv | 655 | 0.03% | 0.34 |
+| thursday_Web Attack - XSS_18.csv | 18 | 0.00% | 0.01 |
+| friday_BENIGN_288544.csv | 288,544 | 13.74% | 150.90 |
+| friday_Botnet - Attempted_4067.csv | 4,067 | 0.19% | 1.60 |
+| friday_Botnet_736.csv | 736 | 0.04% | 0.42 |
+| friday_DDoS_95144.csv | 95,144 | 4.53% | 60.04 |
+| friday_Portscan_159066.csv | 159,066 | 7.57% | 59.02 |
+| **Total** | **2,099,926** | **100.00%** | **1,098.91** |
 
 ## CIC-IDS-2017 Attack Summary
 
