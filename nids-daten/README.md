@@ -192,6 +192,7 @@ Zusammenfassung der Dateien basierend auf Kategorie:
 DATASET_engelen_improved/CSECICIDS2018_improved>..\combine_dataset.sh processed-dataset-split processed-dataset-combined
 ```
 
+## Vergleich Angriffskategorien CIC-IDS-2017 und CSE-CIC-IDS 2018
 
 Angriffsgruppe | CICIDS2017 Kategorie | CSE-CIC-IDS2018 Kategorie | Beurteilung |
 |----------------|----------------------|---------------------------|-------------|
