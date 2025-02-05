@@ -62,65 +62,58 @@
 
 ## CSE-CIC-IDS 2018 File data files
 
-| File Name | Size (MB) |
-|-----------|-----------|
-| Friday-02-03-2018.csv | 3518.71 |
-| Friday-02-03-2018_BENIGN_6168188.csv | 3439.52 |
-| Friday-02-03-2018_Botnet Ares - Attempted_262.csv | 0.10 |
-| Friday-02-03-2018_Botnet Ares_142921.csv | 79.16 |
-| Friday-16-02-2018.csv | 4016.60 |
-| Friday-16-02-2018_BENIGN_5481500.csv | 2938.31 |
-| Friday-16-02-2018_DoS Hulk - Attempted_86.csv | 0.03 |
-| Friday-16-02-2018_DoS Hulk_1803160.csv | 1039.15 |
-| Friday-16-02-2018_FTP-BruteForce - Attempted_105520.csv | 39.00 |
-| Friday-23-02-2018.csv | 3251.37 |
-| Friday-23-02-2018_BENIGN_5976251.csv | 3251.21 |
-| Friday-23-02-2018_Web Attack - Brute Force - Attempted_61.csv | 0.04 |
-| Friday-23-02-2018_Web Attack - Brute Force_62.csv | 0.04 |
-| Friday-23-02-2018_Web Attack - SQL - Attempted_10.csv | 0.01 |
-| Friday-23-02-2018_Web Attack - SQL_23.csv | 0.01 |
-| Friday-23-02-2018_Web Attack - XSS - Attempted_1.csv | 0.00 |
-| Friday-23-02-2018_Web Attack - XSS_73.csv | 0.05 |
-| Thursday-01-03-2018.csv | 3631.82 |
-| Thursday-01-03-2018_BENIGN_6511554.csv | 3615.74 |
-| Thursday-01-03-2018_Infiltration - Communication Victim Attacker_161.csv | 0.11 |
-| Thursday-01-03-2018_Infiltration - Dropbox Download - Attempted_13.csv | 0.01 |
-| Thursday-01-03-2018_Infiltration - Dropbox Download_39.csv | 0.03 |
-| Thursday-01-03-2018_Infiltration - NMAP Portscan_39634.csv | 15.96 |
-| Thursday-15-02-2018.csv | 2853.91 |
-| Thursday-15-02-2018_BENIGN_5372471.csv | 2830.39 |
-| Thursday-15-02-2018_DoS GoldenEye - Attempted_4301.csv | 2.53 |
-| Thursday-15-02-2018_DoS GoldenEye_22560.csv | 14.60 |
-| Thursday-15-02-2018_DoS Slowloris - Attempted_2280.csv | 1.03 |
-| Thursday-15-02-2018_DoS Slowloris_8490.csv | 5.29 |
-| Thursday-22-02-2018.csv | 3312.77 |
-| Thursday-22-02-2018_BENIGN_6070945.csv | 3312.63 |
-| Thursday-22-02-2018_Web Attack - Brute Force - Attempted_76.csv | 0.05 |
-| Thursday-22-02-2018_Web Attack - Brute Force_69.csv | 0.05 |
-| Thursday-22-02-2018_Web Attack - SQL - Attempted_4.csv | 0.00 |
-| Thursday-22-02-2018_Web Attack - SQL_16.csv | 0.01 |
-| Thursday-22-02-2018_Web Attack - XSS - Attempted_3.csv | 0.00 |
-| Thursday-22-02-2018_Web Attack - XSS_40.csv | 0.03 |
-| Tuesday-20-02-2018.csv | 3271.39 |
-| Tuesday-20-02-2018_BENIGN_5764497.csv | 3096.63 |
-| Tuesday-20-02-2018_DDoS-LOIC-HTTP_289328.csv | 175.21 |
-| Tuesday-20-02-2018_DDoS-LOIC-UDP - Attempted_80.csv | 0.04 |
-| Tuesday-20-02-2018_DDoS-LOIC-UDP_797.csv | 0.39 |
-| Wednesday-14-02-2018.csv | 3111.50 |
-| Wednesday-14-02-2018_BENIGN_5610799.csv | 2979.44 |
-| Wednesday-14-02-2018_FTP-BruteForce - Attempted_193354.csv | 70.19 |
-| Wednesday-14-02-2018_SSH-BruteForce_94197.csv | 61.74 |
-| Wednesday-21-02-2018.csv | 3769.48 |
-| Wednesday-21-02-2018_BENIGN_5878399.csv | 3171.30 |
-| Wednesday-21-02-2018_DDoS-HOIC_1082293.csv | 597.28 |
-| Wednesday-21-02-2018_DDoS-LOIC-UDP - Attempted_171.csv | 0.08 |
-| Wednesday-21-02-2018_DDoS-LOIC-UDP_1730.csv | 0.85 |
-| Wednesday-28-02-2018.csv | 3635.55 |
-| Wednesday-28-02-2018_BENIGN_6518882.csv | 3615.09 |
-| Wednesday-28-02-2018_Infiltration - Communication Victim Attacker_43.csv | 0.03 |
-| Wednesday-28-02-2018_Infiltration - Dropbox Download - Attempted_15.csv | 0.01 |
-| Wednesday-28-02-2018_Infiltration - Dropbox Download_46.csv | 0.03 |
-| Wednesday-28-02-2018_Infiltration - NMAP Portscan_49740.csv | 20.32 |
+Here's the markdown table sorted by weekday and date, with the number of records, percentage of total records, and file size in MB:
+
+| Filename | Records | % of Total | Size (MB) |
+|----------|--------:|------------|----------:|
+| Tuesday-20-02-2018_BENIGN_5764497.csv | 5,764,497 | 14.99% | 3,096.43 |
+| Tuesday-20-02-2018_DDoS-LOIC-HTTP_289328.csv | 289,328 | 0.75% | 175.21 |
+| Tuesday-20-02-2018_DDoS-LOIC-UDP - Attempted_80.csv | 80 | 0.00% | 0.04 |
+| Tuesday-20-02-2018_DDoS-LOIC-UDP_797.csv | 797 | 0.00% | 0.39 |
+| Wednesday-14-02-2018_BENIGN_5610799.csv | 5,610,799 | 14.59% | 2,979.39 |
+| Wednesday-14-02-2018_FTP-BruteForce - Attempted_193354.csv | 193,354 | 0.50% | 70.19 |
+| Wednesday-14-02-2018_SSH-BruteForce_94197.csv | 94,197 | 0.24% | 61.74 |
+| Wednesday-21-02-2018_BENIGN_5878399.csv | 5,878,399 | 15.29% | 3,171.18 |
+| Wednesday-21-02-2018_DDoS-HOIC_1082293.csv | 1,082,293 | 2.81% | 597.27 |
+| Wednesday-21-02-2018_DDoS-LOIC-UDP - Attempted_171.csv | 171 | 0.00% | 0.08 |
+| Wednesday-21-02-2018_DDoS-LOIC-UDP_1730.csv | 1,730 | 0.00% | 0.85 |
+| Wednesday-28-02-2018_BENIGN_6518882.csv | 6,518,882 | 16.95% | 3,614.98 |
+| Wednesday-28-02-2018_Infiltration - Communication Victim Attacker_43.csv | 43 | 0.00% | 0.03 |
+| Wednesday-28-02-2018_Infiltration - Dropbox Download - Attempted_15.csv | 15 | 0.00% | 0.01 |
+| Wednesday-28-02-2018_Infiltration - Dropbox Download_46.csv | 46 | 0.00% | 0.03 |
+| Wednesday-28-02-2018_Infiltration - NMAP Portscan_49740.csv | 49,740 | 0.13% | 20.32 |
+| Thursday-15-02-2018_BENIGN_5372471.csv | 5,372,471 | 13.97% | 2,830.25 |
+| Thursday-15-02-2018_DoS GoldenEye - Attempted_4301.csv | 4,301 | 0.01% | 2.53 |
+| Thursday-15-02-2018_DoS GoldenEye_22560.csv | 22,560 | 0.06% | 14.60 |
+| Thursday-15-02-2018_DoS Slowloris - Attempted_2280.csv | 2,280 | 0.01% | 1.03 |
+| Thursday-15-02-2018_DoS Slowloris_8490.csv | 8,490 | 0.02% | 5.29 |
+| Thursday-22-02-2018_BENIGN_6070945.csv | 6,070,945 | 15.79% | 3,312.49 |
+| Thursday-22-02-2018_Web Attack - Brute Force - Attempted_76.csv | 76 | 0.00% | 0.05 |
+| Thursday-22-02-2018_Web Attack - Brute Force_69.csv | 69 | 0.00% | 0.05 |
+| Thursday-22-02-2018_Web Attack - SQL - Attempted_4.csv | 4 | 0.00% | 0.00 |
+| Thursday-22-02-2018_Web Attack - SQL_16.csv | 16 | 0.00% | 0.01 |
+| Thursday-22-02-2018_Web Attack - XSS - Attempted_3.csv | 3 | 0.00% | 0.00 |
+| Thursday-22-02-2018_Web Attack - XSS_40.csv | 40 | 0.00% | 0.03 |
+| Thursday-01-03-2018_BENIGN_6511554.csv | 6,511,554 | 16.93% | 3,615.65 |
+| Thursday-01-03-2018_Infiltration - Communication Victim Attacker_161.csv | 161 | 0.00% | 0.11 |
+| Thursday-01-03-2018_Infiltration - Dropbox Download - Attempted_13.csv | 13 | 0.00% | 0.01 |
+| Thursday-01-03-2018_Infiltration - Dropbox Download_39.csv | 39 | 0.00% | 0.03 |
+| Thursday-01-03-2018_Infiltration - NMAP Portscan_39634.csv | 39,634 | 0.10% | 15.96 |
+| Friday-16-02-2018_BENIGN_5481500.csv | 5,481,500 | 14.25% | 2,938.22 |
+| Friday-16-02-2018_DoS Hulk - Attempted_86.csv | 86 | 0.00% | 0.03 |
+| Friday-16-02-2018_DoS Hulk_1803160.csv | 1,803,160 | 4.69% | 1,039.12 |
+| Friday-16-02-2018_FTP-BruteForce - Attempted_105520.csv | 105,520 | 0.27% | 39.00 |
+| Friday-23-02-2018_BENIGN_5976251.csv | 5,976,251 | 15.54% | 3,251.15 |
+| Friday-23-02-2018_Web Attack - Brute Force - Attempted_61.csv | 61 | 0.00% | 0.04 |
+| Friday-23-02-2018_Web Attack - Brute Force_62.csv | 62 | 0.00% | 0.05 |
+| Friday-23-02-2018_Web Attack - SQL - Attempted_10.csv | 10 | 0.00% | 0.01 |
+| Friday-23-02-2018_Web Attack - SQL_23.csv | 23 | 0.00% | 0.02 |
+| Friday-23-02-2018_Web Attack - XSS - Attempted_1.csv | 1 | 0.00% | 0.00 |
+| Friday-23-02-2018_Web Attack - XSS_73.csv | 73 | 0.00% | 0.05 |
+| Friday-02-03-2018_BENIGN_6168188.csv | 6,168,188 | 16.04% | 3,439.36 |
+| Friday-02-03-2018_Botnet Ares - Attempted_262.csv | 262 | 0.00% | 0.11 |
+| Friday-02-03-2018_Botnet Ares_142921.csv | 142,921 | 0.37% | 79.16 |
+| **Total** | **38,454,876** | **100.00%** | **28,372.55** |
 
 ## CSE-CIC-IDS 2018 Attack Summary
 
