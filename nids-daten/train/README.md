@@ -124,7 +124,7 @@ Auswahl der features für das Modell:
 | Attempted Category | - |
 
 
-** Vergleich CNS2022 Features (CICFlowmeter V4 optimized) mit CICIDS2017 Features (CICFlowmeter V4)
+**Vergleich CNS2022 Features (CICFlowmeter V4 optimized) mit CICIDS2017 Features (CICFlowmeter V4)**
 
 | **CNS2022**                        | **CICIDS2017**                     |
 |-------------------------------------|-------------------------------------|
