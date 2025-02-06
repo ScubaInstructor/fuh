@@ -11,7 +11,7 @@ import plotly.express as px
 from ..models import User, db
 from ..retrainer import retrain
 from .. import mc
-from flask import current_app
+from .. import app
 
 
 from ..elastic_connector import CustomElasticsearchConnector
@@ -293,6 +293,7 @@ else:
     print("normal layout")    
     # Layout Components
     layout = html.Div([
+        dcc.Location(id="url", refresh=True),
         dbc.Row([
             html.Hr(),
         ], className="mt-3 mb-3"),

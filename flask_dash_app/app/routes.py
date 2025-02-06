@@ -13,7 +13,7 @@ main_routes = Blueprint('main', __name__)
 @main_routes.route('/')
 @login_required
 def home():
-    return render_template('home.html')
+    return redirect('/inbox/')
 
 @main_routes.route('/inbox')
 @login_required

@@ -56,15 +56,16 @@ def init_dash_app(flask_app):
                 dbc.NavItem(dbc.NavLink("Inbox", href="/inbox/")),
                 dbc.NavItem(dbc.NavLink("Classified", href="/classified/")),
                 html.Div([], id="navbar-items"),
-                dbc.DropdownMenu(
-                    children=[
-                        dbc.DropdownMenuItem("Settings", href="#"),
-                        dbc.DropdownMenuItem("Logout", href="/logout", external_link=True),
-                    ],
-                    nav=True,
-                    in_navbar=True,
-                    label="My Account",
-                ),
+                dbc.NavItem(dbc.NavLink("Logout", href="//logout", external_link=True)),
+                # dbc.DropdownMenu(
+                #     children=[
+                #         dbc.DropdownMenuItem("Settings", href="#"),
+                #         dbc.DropdownMenuItem("Logout", href="/logout", external_link=True),
+                #     ],
+                #     nav=True,
+                #     in_navbar=True,
+                #     label="My Account",
+                # ),
             ],
             brand="Network Anomaly Detection Demonstrator",
             brand_href="#",
