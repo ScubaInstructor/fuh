@@ -114,6 +114,7 @@ def model_management_content():
 
         # Beschriftungen und Titel
         fig.update_layout(
+            xaxis_rangeslider_visible=True,
             title='Score and Own Flow Count Over Time',
             xaxis_title='Timestamp',
             yaxis_title='Score',  # Linke y-Achse Beschriftung
