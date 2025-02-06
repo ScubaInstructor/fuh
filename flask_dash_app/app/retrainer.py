@@ -163,7 +163,7 @@ def create_transferrable_zipfile(elastic_id, model, scaler, ipca):
         zf.write(f"{f}.pkl")
     zf.close()
     # Copy the model to archive with the name of the ip of the elastic document
-    copyfile(zf.filename, f"{"flask_dash_app/" + APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip")
+    copyfile(zf.filename, f"flask_dash_app/{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip")
 
 def compute_model_hash(model) -> str:
         """Compute the hash of the model without writing it to disk using the sha265 algorithm.

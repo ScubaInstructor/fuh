@@ -75,7 +75,7 @@ def restore_model_to_previous_version(elastic_id:str, mc: Modelhash_Container) -
     
     """
     try:
-        copyfile(f"{"flask_dash_app/" + APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip", "flask_dash_app/" + APPPATH + MODELPATH + ZIPFILENAME)
+        copyfile(f"flask_dash_app/{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip", "flask_dash_app/" + APPPATH + MODELPATH + ZIPFILENAME)
         zf = zipfile.ZipFile("flask_dash_app/" + APPPATH + MODELPATH + ZIPFILENAME, "r")
         zf.extract(member=MODELNAME, path="flask_dash_app/" + APPPATH + MODELPATH)
         mc.set_hash(mc.compute_file_hash("flask_dash_app/" + APPPATH + MODELPATH + MODELNAME))

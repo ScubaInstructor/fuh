@@ -55,7 +55,6 @@ def init_dash_app(flask_app):
             children=[
                 dbc.NavItem(dbc.NavLink("Inbox", href="/inbox/")),
                 dbc.NavItem(dbc.NavLink("Classified", href="/classified/")),
-                dbc.NavItem(dbc.NavLink("Training", href="/training/")),
                 html.Div([], id="navbar-items"),
                 dbc.DropdownMenu(
                     children=[
