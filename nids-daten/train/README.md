@@ -77,7 +77,7 @@ Feature Mapping:
 |  73| Subflow Bwd Packets        | Subflow Bwd Packets        | Subflow Bwd Packets |subflow_bwd_pkts |
 |  74| Subflow Bwd Bytes          | Subflow Bwd Bytes          | Subflow Bwd Bytes |subflow_bwd_byts |
 |  75| FWD Init Win Bytes         | FWD Init Win Bytes         | Init_Win_bytes_forward  |init_fwd_win_byts |
-|  76| Bwd Init Win Bytes         | Bwd Init Win Bytes         | Init_Win_bytes_backwardinit_bwd_win_byts |
+|  76| Bwd Init Win Bytes         | Bwd Init Win Bytes         | Init_Win_bytes_backward |init_bwd_win_byts |
 |  77| Fwd Act Data Pkts          | Fwd Act Data Pkts          | act_data_pkt_fwd |fwd_act_data_pkts |
 |  78| Fwd Seg Size Min           | Fwd Seg Size Min           | min_seg_size_forward |fwd_seg_size_min |
 |  79| Active Mean                | Active Mean                | Active Mean |active_mean |
@@ -95,7 +95,6 @@ Feature Mapping:
 |  91| Attempted Category         | Attempted Category         | -|
 |	|	|	|	|	attack_type |
 |	|	|	|	|	attack_number |
-|	|	|	|	|	fwd_header_len |
 
 
 
