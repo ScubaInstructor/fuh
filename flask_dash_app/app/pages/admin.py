@@ -80,7 +80,6 @@ def model_management_content():
     #     # Add model management components here
     # ])
     try:
-        # Rufe die Daten synchron auf, da Dash-Callbacks synchron sind
         import asyncio
         from ..elastic_connector import CustomElasticsearchConnector
         cec = CustomElasticsearchConnector()
@@ -96,12 +95,12 @@ def model_management_content():
                 x=model_properties['timestamp'],
                 y=model_properties['score'],
                 mode='lines+markers',
-                name='Score',
+                name='Accuracy',
             ),
-            secondary_y=False,  # Linke y-Achse
+            secondary_y=False,  # left y-achsis
         )
 
-        # Füge die Linie für 'own_flow_count' hinzu
+        # adds the line "own_flow_count"
         fig.add_trace(
             go.Scatter(
                 x=model_properties['timestamp'],
@@ -112,13 +111,13 @@ def model_management_content():
             secondary_y=True,  # Rechte y-Achse
         )
 
-        # Beschriftungen und Titel
+        # title and labels
         fig.update_layout(
             xaxis_rangeslider_visible=True,
             title='Score and Own Flow Count Over Time',
             xaxis_title='Timestamp',
-            yaxis_title='Score',  # Linke y-Achse Beschriftung
-            yaxis2_title='Own Flow Count',  # Rechte y-Achse Beschriftung
+            yaxis_title='Accuracy',  # left achsis title
+            yaxis2_title='Own Flow Count',  # right achsis title
         )
 
         return html.Div([
@@ -148,13 +147,14 @@ def model_management_content():
             dcc.Graph(figure=fig),
             html.Div(id="model-management-status"),
             dcc.Store(id='selected-model-data'),  # Saves the selected model data
-            dbc.Modal(  # Füge den Modal-Dialog hinzu
+            dbc.Modal(  # Add the Modal-Dialog 
                 [
                     dbc.ModalHeader(dbc.ModalTitle("Restore Model?")),
                     dbc.ModalBody("Do you want to restore this model?"),
                     dbc.ModalFooter([
-                        dbc.Button("No", id="modal-close-button", className="ml-auto"),
-                        dbc.Button("Yes", id="restore-model-button", color="primary"),
+                        dbc.Button("Delete", id="delete-model-button", color="danger", className="me-auto"),  # Delete Button left
+                        dbc.Button("No", id="modal-close-button", color="secondary" ,className="ms-2"),
+                        dbc.Button("Yes", id="restore-model-button", color="success", className="ms-2"),
                     ]),
                 ],
                 id="restore-model-modal",
@@ -402,10 +402,11 @@ layout = html.Div([
     Output('restore-model-modal', 'is_open'),
     [Input('models-grid', 'cellClicked'),
      Input('modal-close-button', 'n_clicks'),
-     Input('restore-model-button', 'n_clicks')],
+     Input('restore-model-button', 'n_clicks'),
+     Input('delete-model-button', 'n_clicks')],
     [State('restore-model-modal', 'is_open')]
 )
-def toggle_retore_model_modal(cell_clicked, close_clicks, restore_clicks, is_open):
+def toggle_restore_model_modal(cell_clicked, close_clicks, restore_clicks, delete_clicks, is_open):
     ctx = dash.callback_context
 
     if not ctx.triggered:
@@ -415,29 +416,48 @@ def toggle_retore_model_modal(cell_clicked, close_clicks, restore_clicks, is_ope
 
     if button_id == "models-grid" and cell_clicked:
         return True
-    elif button_id == "modal-close-button" or button_id == "restore-model-button":
+    elif button_id == "modal-close-button" or button_id == "restore-model-button" or button_id == "delete-model-button":
         return False
     else:
         return is_open
 
 @dash.callback(
     Output('model-management-status', 'children'),
-    Input('restore-model-button', 'n_clicks'),
-    State('selected-model-data', 'data')
+    [Input('restore-model-button', 'n_clicks'),
+    Input('delete-model-button', 'n_clicks'),],
+    [State('selected-model-data', 'data'),
+    State('models-grid', 'selectedRows')]
 )
-def restore_model(n_clicks, selected_data):
-    if n_clicks is None:
+def manage_model(restore_clicks, delete_clicks, selected_model_data, selectedRows_data):
+    ctx = dash.callback_context
+    if not ctx.triggered:
         return dash.no_update
-    
-    if selected_data:
-        model_hash = selected_data['model_hash']
-        cec = CustomElasticsearchConnector()
-        elastic_id = asyncio.run(cec.get_model_uuid(hash=model_hash))
-        restore_model_to_previous_version(elastic_id=elastic_id, mc=mc) 
-        return f"Restored model with hash: {model_hash}"
-    else:
-        return "No model selected."
+    trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
+    if trigger_id == "restore-model-button":
+        if restore_clicks is None:
+            return dash.no_update
+        
+        if selected_model_data:
+            model_hash = selected_model_data['model_hash']
+            cec = CustomElasticsearchConnector()
+            elastic_id = asyncio.run(cec.get_model_uuid(hash=model_hash))
+            # restore_model_to_previous_version(elastic_id=elastic_id, mc=mc) 
+            return f"Restored model with hash: {model_hash}"
+        else:
+            return "No model selected."
+        
+    elif trigger_id == "delete-model-button":
+        if delete_clicks is None:
+            return dash.no_update
+        
+        if selectedRows_data:
+            model_hash = selectedRows_data[0]['model_hash']
+            # delete_model_function(model_hash)
+            return f"Deleting model with hash: {model_hash}"
+        else:
+            return "No model selected."
+    
 @dash.callback(
     Output('selected-model-data', 'data'),
     Input('models-grid', 'cellClicked'),
@@ -449,3 +469,4 @@ def store_selected_data(cell_clicked, row_data):
         selected_row = row_data[row_index]
         return selected_row
     return None
+
