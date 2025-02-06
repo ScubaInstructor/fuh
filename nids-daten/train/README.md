@@ -29,55 +29,65 @@ Die Datensets haben folgende features:
 
 Auswahl der features für das Modell:
 
-| #  | **CNS2022**                     | **Selected Features**            | #  | **CNS2022**                     | **Selected Features**            |
-|----|----------------------------------|----------------------------------|----|----------------------------------|----------------------------------|
-| 1  | id                               | -                                | 40 | Bwd IAT Min                     | bwd_iat_min                      |
-| 2  | Flow ID                          | -                                | 41 | Fwd PSH Flags                   | fwd_psh_flags                    |
-| 3  | Src IP                           | -                                | 42 | Bwd PSH Flags                   | -                                |
-| 4  | Src Port                         | -                                | 43 | Fwd URG Flags                   | fwd_urg_flags                    |
-| 5  | Dst IP                           | -                                | 44 | Bwd URG Flags                   | -                                |
-| 6  | Dst Port                         | dst_port                         | 45 | Fwd RST Flags                   | -                                |
-| 7  | Protocol                         | -                                | 46 | Bwd RST Flags                   | -                                |
-| 8  | Timestamp                        | -                                | 47 | Fwd Header Length               | fwd_header_len                   |
-| 9  | Flow Duration                    | flow_duration                    | 48 | Bwd Header Length               | bwd_header_len                   |
-| 10 | Total Fwd Packet                 | tot_fwd_pkts                     | 49 | Fwd Packets/s                   | fwd_pkts_s                       |
-| 11 | Total Bwd packets                | tot_bwd_pkts                     | 50 | Bwd Packets/s                   | bwd_pkts_s                       |
-| 12 | Total Length of Fwd Packet       | totlen_fwd_pkts                  | 51 | Packet Length Min               | pkt_len_min                      |
-| 13 | Total Length of Bwd Packet       | totlen_bwd_pkts                  | 52 | Packet Length Max               | pkt_len_max                      |
-| 14 | Fwd Packet Length Max            | fwd_pkt_len_max                  | 53 | Packet Length Mean              | pkt_len_mean                     |
-| 15 | Fwd Packet Length Min            | fwd_pkt_len_min                  | 54 | Packet Length Std               | pkt_len_std                      |
-| 16 | Fwd Packet Length Mean           | fwd_pkt_len_mean                 | 55 | Packet Length Variance          | pkt_len_var                      |
-| 17 | Fwd Packet Length Std            | fwd_pkt_len_std                  | 56 | FIN Flag Count                  | fin_flag_cnt                     |
-| 18 | Bwd Packet Length Max            | bwd_pkt_len_max                  | 57 | SYN Flag Count                  | syn_flag_cnt                     |
-| 19 | Bwd Packet Length Min            | bwd_pkt_len_min                  | 58 | RST Flag Count                  | rst_flag_cnt                     |
-| 20 | Bwd Packet Length Mean           | bwd_pkt_len_mean                 | 59 | PSH Flag Count                  | psh_flag_cnt                     |
-| 21 | Bwd Packet Length Std            | bwd_pkt_len_std                  | 60 | ACK Flag Count                  | ack_flag_cnt                     |
-| 22 | Flow Bytes/s                     | flow_byts_s                      | 61 | URG Flag Count                  | urg_flag_cnt                     |
-| 23 | Flow Packets/s                   | flow_pkts_s                      | 62 | CWR Flag Count                  | cwr_flag_count                   |
-| 24 | Flow IAT Mean                    | flow_iat_mean                    | 63 | ECE Flag Count                  | ece_flag_cnt                     |
-| 25 | Flow IAT Std                     | flow_iat_std                     | 64 | Down/Up Ratio                   | down_up_ratio                    |
-| 26 | Flow IAT Max                     | flow_iat_max                     | 65 | Average Packet Size             | pkt_size_avg                     |
-| 27 | Flow IAT Min                     | flow_iat_min                     | 66 | Fwd Segment Size Avg            | fwd_seg_size_avg                 |
-| 28 | Fwd IAT Total                    | fwd_iat_tot                      | 67 | Bwd Segment Size Avg            | bwd_seg_size_avg                 |
-| 29 | Fwd IAT Mean                     | fwd_iat_mean                     | 68 | Fwd Bytes/Bulk Avg              | -                                |
-| 30 | Fwd IAT Std                      | fwd_iat_std                      | 69 | Fwd Packet/Bulk Avg             | -                                |
-| 31 | Fwd IAT Max                      | fwd_iat_max                      | 70 | Fwd Bulk Rate Avg               | -                                |
-| 32 | Fwd IAT Min                      | fwd_iat_min                      | 71 | Bwd Bytes/Bulk Avg              | -                                |
-| 33 | Bwd IAT Total                    | bwd_iat_tot                      | 72 | Bwd Packet/Bulk Avg             | -                                |
-| 34 | Bwd IAT Mean                     | bwd_iat_mean                      | 73 | Bwd Bulk Rate Avg               | -                                |
-| 35 | Bwd IAT Std                      | bwd_iat_std                      | 74 | Subflow Fwd Packets             | subflow_fwd_pkts                 |
-| 36 | Bwd IAT Max                      | bwd_iat_max                      | 75 | Subflow Fwd Bytes               | subflow_fwd_byts                 |
-| 37 | Bwd IAT Min                      | bwd_iat_min                      | 76 | Subflow Bwd Packets             | subflow_bwd_pkts                 |
-| 38 | Active Mean                      | active_mean                      | 77 | Subflow Bwd Bytes               | subflow_bwd_byts                 |
-| 39 | Active Std                       | active_std                       | 78 | FWD Init Win Bytes              | init_fwd_win_byts                |
-| 79 | Bwd Init Win Bytes               | init_bwd_win_byts                | 80 | Fwd Act Data Pkts               | fwd_act_data_pkts                |
-| 81 | Fwd Seg Size Min                 | fwd_seg_size_min                 | 82 | Active Mean                     | active_mean                      |
-| 83 | Active Std                       | active_std                       | 84 | Active Max                      | active_max                      |
-| 85 | Active Min                       | active_min                        | 86 | Idle Mean                       | idle_mean                        |
-| 87 | Idle Std                         | idle_std                         | 88 | Idle Max                        | idle_max                         |
-| 89 | Idle Min                         | idle_min                         | 90 | ICMP Code                       | -                                |
-| 91 | ICMP Type                        | -                                | 92 | Total TCP Flow Time             | -                                |
-| 93 | Label                            | -                                | 94 | Attempted Category              | -                                |
+| #  | **CNS2022 - CICIDS2017**        | **CNS2022 - CSECICIDS2018**       | **CICIDS2017 (Original)**        | **Renamed Dataset**              |
+|----|---------------------------------|----------------------------------|----------------------------------|----------------------------------|
+| 1  | id                              | id                               | Flow ID                          | unnamed:_0                      |
+| 2  | Flow ID                         | Flow ID                         | Source IP                        | dst_port                        |
+| 3  | Src IP                          | Src IP                          | Source Port                      | flow_duration                   |
+| 4  | Src Port                        | Src Port                        | Destination IP                   | tot_fwd_pkts                    |
+| 5  | Dst IP                          | Dst IP                          | Destination Port                  | tot_bwd_pkts                    |
+| 6  | Dst Port                        | Dst Port                        | Protocol                          | totlen_fwd_pkts                 |
+| 7  | Protocol                        | Protocol                        | Timestamp                         | totlen_bwd_pkts                 |
+| 8  | Timestamp                       | Timestamp                       | Flow Duration                     | fwd_pkt_len_max                 |
+| 9  | Flow Duration                   | Flow Duration                   | Total Fwd Packets                 | fwd_pkt_len_min                 |
+| 10 | Total Fwd Packet                | Total Fwd Packet                | Total Backward Packets            | fwd_pkt_len_mean                |
+| 11 | Total Bwd Packets               | Total Bwd Packets               | Total Length of Fwd Packets       | fwd_pkt_len_std                 |
+| 12 | Total Length of Fwd Packet      | Total Length of Fwd Packet      | Total Length of Bwd Packets       | bwd_pkt_len_max                 |
+| 13 | Total Length of Bwd Packet      | Total Length of Bwd Packet      | Fwd Packet Length Max             | bwd_pkt_len_min                 |
+| 14 | Fwd Packet Length Max           | Fwd Packet Length Max           | Fwd Packet Length Min             | bwd_pkt_len_mean                |
+| 15 | Fwd Packet Length Min           | Fwd Packet Length Min           | Fwd Packet Length Mean            | bwd_pkt_len_std                 |
+| 16 | Fwd Packet Length Mean          | Fwd Packet Length Mean          | Fwd Packet Length Std             | flow_byts_s                     |
+| 17 | Fwd Packet Length Std           | Fwd Packet Length Std           | Bwd Packet Length Max             | flow_pkts_s                     |
+| 18 | Bwd Packet Length Max           | Bwd Packet Length Max           | Bwd Packet Length Min             | flow_iat_mean                   |
+| 19 | Bwd Packet Length Min           | Bwd Packet Length Min           | Bwd Packet Length Mean            | flow_iat_std                    |
+| 20 | Bwd Packet Length Mean          | Bwd Packet Length Mean          | Bwd Packet Length Std             | flow_iat_max                    |
+| 21 | Bwd Packet Length Std           | Bwd Packet Length Std           | Flow Bytes/s                      | flow_iat_min                    |
+| 22 | Flow Bytes/s                    | Flow Bytes/s                    | Flow Packets/s                    | fwd_iat_tot                     |
+| 23 | Flow Packets/s                  | Flow Packets/s                  | Flow IAT Mean                     | fwd_iat_mean                    |
+| 24 | Flow IAT Mean                   | Flow IAT Mean                   | Flow IAT Std                      | fwd_iat_std                     |
+| 25 | Flow IAT Std                    | Flow IAT Std                    | Flow IAT Max                      | fwd_iat_max                     |
+| 26 | Flow IAT Max                    | Flow IAT Max                    | Flow IAT Min                      | fwd_iat_min                     |
+| 27 | Flow IAT Min                    | Flow IAT Min                    | Fwd IAT Total                     | bwd_iat_tot                     |
+| 28 | Fwd IAT Total                   | Fwd IAT Total                   | Fwd IAT Mean                      | bwd_iat_mean                    |
+| 29 | Fwd IAT Mean                    | Fwd IAT Mean                    | Fwd IAT Std                       | bwd_iat_std                     |
+| 30 | Fwd IAT Std                     | Fwd IAT Std                     | Fwd IAT Max                       | bwd_iat_max                     |
+| 31 | Fwd IAT Max                     | Fwd IAT Max                     | Fwd IAT Min                       | bwd_iat_min                     |
+| 32 | Fwd IAT Min                     | Fwd IAT Min                     | Bwd IAT Total                     | fwd_psh_flags                   |
+| 33 | Bwd IAT Total                   | Bwd IAT Total                   | Bwd IAT Mean                      | fwd_urg_flags                   |
+| 34 | Bwd IAT Mean                    | Bwd IAT Mean                    | Bwd IAT Std                       | fwd_header_len                  |
+| 35 | Bwd IAT Std                     | Bwd IAT Std                     | Bwd IAT Max                       | bwd_header_len                  |
+| 36 | Bwd IAT Max                     | Bwd IAT Max                     | Bwd IAT Min                       | fwd_pkts_s                      |
+| 37 | Bwd IAT Min                     | Bwd IAT Min                     | Fwd PSH Flags                     | bwd_pkts_s                      |
+| 38 | Fwd PSH Flags                   | Fwd PSH Flags                   | Bwd PSH Flags                     | pkt_len_min                     |
+| 39 | Bwd PSH Flags                   | Bwd PSH Flags                   | Fwd URG Flags                     | pkt_len_max                     |
+| 40 | Fwd URG Flags                   | Fwd URG Flags                   | Bwd URG Flags                     | pkt_len_mean                    |
+| 41 | Bwd URG Flags                   | Bwd URG Flags                   | Fwd Header Length                 | pkt_len_std                     |
+| 42 | Fwd RST Flags                   | Fwd RST Flags                   | Bwd Header Length                 | pkt_len_var                     |
+| 43 | Bwd RST Flags                   | Bwd RST Flags                   | Fwd Packets/s                     | fin_flag_cnt                    |
+| 44 | Fwd Header Length               | Fwd Header Length               | Bwd Packets/s                     | syn_flag_cnt                    |
+| 45 | Bwd Header Length               | Bwd Header Length               | Min Packet Length                 | rst_flag_cnt                    |
+| 46 | Fwd Packets/s                   | Fwd Packets/s                   | Max Packet Length                 | psh_flag_cnt                    |
+| 47 | Bwd Packets/s                   | Bwd Packets/s                   | Packet Length Mean                | ack_flag_cnt                    |
+| 48 | Min Packet Length               | Min Packet Length               | Packet Length Std                 | urg_flag_cnt                    |
+| 49 | Max Packet Length               | Max Packet Length               | Packet Length Variance            | cwr_flag_count                  |
+| 50 | Packet Length Mean              | Packet Length Mean              | FIN Flag Count                    | ece_flag_cnt                    |
+| 51 | Packet Length Std               | Packet Length Std               | SYN Flag Count                    | down_up_ratio                   |
+| 52 | Packet Length Variance          | Packet Length Variance          | RST Flag Count                    | pkt_size_avg                    |
+| 53 | FIN Flag Count                  | FIN Flag Count                  | PSH Flag Count                    | fwd_seg_size_avg                |
+| 54 | SYN Flag Count                  | SYN Flag Count                  | ACK Flag Count                    | bwd_seg_size_avg                |
+| 55 | RST Flag Count                  | RST Flag Count                  | URG Flag Count                    | attack_type                     |
+| 56 | Label                           | Label                           | Label                             | attack_number                    |
+
 
 
 
