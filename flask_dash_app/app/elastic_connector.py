@@ -14,7 +14,7 @@ INDEX_NAME = "network_flows" # TODO extract from docker-compose
 MODEL_INDEX_NAME = "model_properties"
 # Load from "shared_secrets" docker volume
 dotenv.load_dotenv(dotenv_path="/shared_secrets/server-api-key.env")
-API_KEY = "ZlNxdjBwUUJCVVdKMnVFbFljcng6ZzdYQzA1anNRa21Ubjh5bmtnVktTdw=="
+API_KEY = "ZlNxdjBwUUJCVVdKMnVFbFljcng6ZzdYQzA1anNRa21Ubjh5bmtnVktTdw=="    # TODO extract from docker compose
 
 class CustomElasticsearchConnector:
     """
@@ -301,6 +301,30 @@ class CustomElasticsearchConnector:
             return resulting_df
         return await _get_all_model_properties(self, size=size)
 
+    async def get_model_uuid(self, hash:str) -> str:
+        """get the uuid for a model by providing the hash
+
+        Args:
+            hash (str): the hash of the model to look for
+
+        Returns:
+            str: the elastic_id of the model
+        """
+        async with AsyncElasticsearch(
+            self.hosts,
+            api_key=self.api_key,  # Authentication via API-key
+            verify_certs=False,
+            ssl_show_warn=False,
+            request_timeout=30,
+            retry_on_timeout=True
+        ) as client:
+            # get from Elasticsearch
+            s = AsyncSearch(using=client, index=MODEL_INDEX_NAME) \
+                        .query("match", model_hash=hash)
+            async for hit in s:
+                return hit.meta.id
+            
+        
 if __name__ == '__main__':
     # TODO remove as this for testing only
     # FLOWID = "56e58dfb-e260-44f5-9603-d7c22ed4f364"
@@ -330,7 +354,9 @@ if __name__ == '__main__':
     # cec = CustomElasticsearchConnector()
     # uuid = asyncio.run(cec.save_model_properties(hash_value="123456890", timestamp=datetime.now(), own_flow_count=10, score=0.99))
     # print(asyncio.run(cec.get_model_properties(uuid)))
-    print(asyncio.run(cec.get_all_model_properties()))
+    # print(asyncio.run(cec.get_all_model_properties()))
     # x = asyncio.run(cec.get_all_flows(view="seen", size=10000))
     # print(len(x))
+    # print(asyncio.run(cec.get_model_uuid("06cb86eed8cc5e0e5725ebfe3ef9d4fe36258e97f38f18f514e52293c3ae8e29")))
+
     

@@ -1,12 +1,15 @@
+import asyncio
 import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html, callback, State
 from .utils import generate_env_file_for_sensors, get_secret_key
 from ..models import User, db, Sensor
+from ..elastic_connector import CustomElasticsearchConnector
 import dash_ag_grid as dag
 from flask import current_app
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from .. import mc, restore_model_to_previous_version
 
 dash.register_page(__name__, path='/admin/')
 
@@ -136,12 +139,26 @@ def model_management_content():
                 dashGridOptions={
                     "pagination": True,
                     "paginationAutoPageSize": True,
-                    "rowSelection": "single"
+                    "rowSelection": "single",
+                    "onRowClicked": {"function": "onRowClicked"}    # Function to open dialog
                 },
                 style={"height": 400}
             ),
             dcc.Graph(figure=fig),
-            html.Div(id="model-management-status")
+            html.Div(id="model-management-status"),
+            dcc.Store(id='selected-model-data'),  # Saves the selected model data
+            dbc.Modal(  # Füge den Modal-Dialog hinzu
+                [
+                    dbc.ModalHeader(dbc.ModalTitle("Restore Model?")),
+                    dbc.ModalBody("Do you want to restore this model?"),
+                    dbc.ModalFooter([
+                        dbc.Button("No", id="modal-close-button", className="ml-auto"),
+                        dbc.Button("Yes", id="restore-model-button", color="primary"),
+                    ]),
+                ],
+                id="restore-model-modal",
+                is_open=False,
+            ),
         ])
     except Exception as e:
         return html.Div(f"Error fetching model data: {str(e)}", style={"color": "red"})
@@ -379,3 +396,55 @@ layout = html.Div([
         ], width=9),
     ]),
 ])
+
+@dash.callback(
+    Output('restore-model-modal', 'is_open'),
+    [Input('models-grid', 'cellClicked'),
+     Input('modal-close-button', 'n_clicks'),
+     Input('restore-model-button', 'n_clicks')],
+    [State('restore-model-modal', 'is_open')]
+)
+def toggle_retore_model_modal(cell_clicked, close_clicks, restore_clicks, is_open):
+    ctx = dash.callback_context
+
+    if not ctx.triggered:
+        return False
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if button_id == "models-grid" and cell_clicked:
+        return True
+    elif button_id == "modal-close-button" or button_id == "restore-model-button":
+        return False
+    else:
+        return is_open
+
+@dash.callback(
+    Output('model-management-status', 'children'),
+    Input('restore-model-button', 'n_clicks'),
+    State('selected-model-data', 'data')
+)
+def restore_model(n_clicks, selected_data):
+    if n_clicks is None:
+        return dash.no_update
+    
+    if selected_data:
+        model_hash = selected_data['model_hash']
+        cec = CustomElasticsearchConnector()
+        elastic_id = asyncio.run(cec.get_model_uuid(hash=model_hash))
+        restore_model_to_previous_version(elastic_id=elastic_id, mc=mc) 
+        return f"Restored model with hash: {model_hash}"
+    else:
+        return "No model selected."
+
+@dash.callback(
+    Output('selected-model-data', 'data'),
+    Input('models-grid', 'cellClicked'),
+    State('models-grid', 'rowData')
+)
+def store_selected_data(cell_clicked, row_data):
+    if cell_clicked:
+        row_index = cell_clicked['rowIndex']
+        selected_row = row_data[row_index]
+        return selected_row
+    return None
