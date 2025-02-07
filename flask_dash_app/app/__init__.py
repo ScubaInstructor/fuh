@@ -1,5 +1,6 @@
 import hashlib
 from os import getenv
+import os
 from shutil import copyfile
 import zipfile
 from dotenv import load_dotenv
@@ -84,3 +85,17 @@ def restore_model_to_previous_version(elastic_id:str, mc: Modelhash_Container) -
         raise FileNotFoundError
 
          
+def remove_model_zip_file_from_disk(elastic_id:str) -> bool:
+    """remove the zipfile to this elastic uuid from filesystem.
+
+    Args:
+        elastic_id (str): the filename of the model to remove zipfile from
+    Returns:
+        bool: Success or no success
+    """
+    try:
+        os.remove(f"flask_dash_app/{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip")
+        return True
+    except FileNotFoundError as fne:
+        print(fne)
+        return False
