@@ -1,7 +1,8 @@
 ```markdown
 # Data Preprocessing for Machine Learning
 
-This document outlines the standard steps for preparing data for machine learning (ML) tasks. Proper preprocessing is crucial for building effective and reliable ML models.
+This document outlines the standard steps for preparing data for machine learning (ML) tasks.
+Proper preprocessing is crucial for building effective and reliable ML models.
 
 ## 1. Data Understanding
 
@@ -19,13 +20,16 @@ The following steps detail the standard procedure for cleaning and preparing you
 
 ### 2.1 Drop Manually Specified Columns
 
-*   **Purpose:** Remove irrelevant or redundant columns that are not useful for the model. These are columns you *know* should be excluded.
-*   **Example:** Removing ID columns, columns with personally identifiable information (PII), or features that are known to be irrelevant to the target variable.
+*   **Purpose:** Remove irrelevant or redundant columns that are not useful for the model.
+These are columns you *know* should be excluded.
+*   **Example:** Removing ID columns, columns with personally identifiable information (PII),
+or features that are known to be irrelevant to the target variable.
 *   **Implementation:** Using a pre-defined list of column names, drop them from the DataFrame.
 
 ### 2.2 Remove Leading/Trailing Spaces from Feature Names
 
-*   **Purpose:** Standardize column names by removing any leading or trailing spaces. This prevents errors caused by inconsistent naming.
+*   **Purpose:** Standardize column names by removing any leading or trailing spaces. This prevents
+                 errors caused by inconsistent naming.
 *   **Implementation:** Strip spaces from the beginning and end of each column name.
 
 ### 2.3 Identify and Handle Categorical Columns
@@ -37,7 +41,8 @@ The following steps detail the standard procedure for cleaning and preparing you
     *   **Dropping:** Remove categorical columns if they are not useful or difficult to encode properly.
 *   **Considerations:**
     *   The number of unique categories in each column.  Too many categories can lead to high dimensionality.
-    *   Whether the categorical data is ordinal (has a meaningful order) or nominal (no meaningful order).  Different encoding techniques are appropriate for different types of categorical data.
+    *   Whether the categorical data is ordinal (has a meaningful order) or nominal (no meaningful order).
+        Different encoding techniques are appropriate for different types of categorical data.
 
 ### 2.4 Handle Zero Variance Columns
 
