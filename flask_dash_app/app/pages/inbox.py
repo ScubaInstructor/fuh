@@ -267,8 +267,10 @@ def download_pcap(n_clicks, selected_row_data):
         type="application/vnd.tcpdump.pcap"
     )
 
+
 @callback(
     Output("unseen_grid", "rowData"),
+    Output("world-map-inbox", "figure"),
     Input("time-scatter", "clickData"),
     Input("submit-classification", "n_clicks"),
     Input("reset-grid", "n_clicks"),
@@ -281,26 +283,29 @@ def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map):
     
     if trigger == "reset-grid" and n_clicks_reset:
         df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
-        return df_update[df_update["has_been_seen"] == False].to_dict("records")
+        unseen_data = df_update[df_update["has_been_seen"] == False].to_dict("records")
+        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
     
     if trigger == "submit-classification" and n_clicks_submit:
         print("Updating grid after classification...")
         df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
-        return df_update[df_update["has_been_seen"] == False].to_dict("records")
+        unseen_data = df_update[df_update["has_been_seen"] == False].to_dict("records")
+        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
         
     if trigger == "time-scatter" and clickData:
         print("Updating grid based on time-scatter click...")
-        return df[df["time_bin"]==clickData["points"][0]['x']].to_dict("records")
+        unseen_data = df[df["time_bin"]==clickData["points"][0]['x']].to_dict("records")
+        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
     
     if trigger == "world-map-inbox" and clickData_map:
         print("Updating grid based on world-map-inbox click...")
         df_lat = df[df["source_lat"]==clickData_map["points"][0]["lat"]]
-        return df_lat[df_lat["source_lon"]==clickData_map["points"][0]["lon"]].to_dict("records")
+        unseen_data = df_lat[df_lat["source_lon"]==clickData_map["points"][0]["lon"]].to_dict("records")
+        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
     
     # Default return for initial load
     print("Default grid load...")
-    return dash.no_update
-
+    return dash.no_update, dash.no_update
 
 # Check for failed elastic connection
 print(trigger)

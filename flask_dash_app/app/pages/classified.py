@@ -211,10 +211,11 @@ def download_pcap(n_clicks, selected_row_data):
     Output("seen_grid", "rowData"),
     Input("classified-submit-classification", "n_clicks"),
     Input("classified-reset-grid", "n_clicks"),
+    Input("world-map-classified", "clickData"),
     State('classified-attack-type-dropdown', 'value'),
     State('classified-selected-row-store', 'data')
 )
-def update_grid(n_clicks_submit, n_clicks_reset, selected_type, selected_row_data):
+def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, selected_type, selected_row_data):
     print( n_clicks_reset)
     trigger = dash.callback_context.triggered_id
     print(f"Triggered by: {trigger}")
@@ -238,6 +239,14 @@ def update_grid(n_clicks_submit, n_clicks_reset, selected_type, selected_row_dat
             print(f'Flow {flow_id} could not be classified. Elastic Database Error.')
         
         return df_update[df_update["has_been_seen"] == True].to_dict("records")
+    # Updating based on selection on the map
+    if trigger == "world-map-classified" and clickData_map:
+        print("Updating grid based on world-map-classified click...")
+        df_lat = df[df["source_lat"] == clickData_map["points"][0]["lat"]]
+        df_lon = df_lat[df_lat["source_lon"] == clickData_map["points"][0]["lon"]]
+        clickData_map = None
+        return df_lon[df_lon["has_been_seen"] == True].to_dict("records")
+    
 
     # Default return for initial load
     print("Default grid load...")

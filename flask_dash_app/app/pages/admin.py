@@ -527,7 +527,7 @@ def manage_model(restore_clicks, delete_clicks, selected_model_data, selectedRow
         if selected_model_data:
             model_hash = selected_model_data['model_hash']
             elastic_id = asyncio.run(cec.get_model_uuid(hash=model_hash))
-            # restore_model_to_previous_version(elastic_id=elastic_id, mc=mc) 
+            restore_model_to_previous_version(elastic_id=elastic_id, mc=mc) 
             return f"Restored model with hash: {model_hash}"
         else:
             return "No model selected."
