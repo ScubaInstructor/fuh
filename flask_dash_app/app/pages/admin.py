@@ -9,7 +9,7 @@ import dash_ag_grid as dag
 from flask import current_app
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from .. import mc, restore_model_to_previous_version
+from .. import mc, restore_model_to_previous_version, cec
 
 dash.register_page(__name__, path='/admin/')
 
@@ -440,7 +440,6 @@ def manage_model(restore_clicks, delete_clicks, selected_model_data, selectedRow
         
         if selected_model_data:
             model_hash = selected_model_data['model_hash']
-            cec = CustomElasticsearchConnector()
             elastic_id = asyncio.run(cec.get_model_uuid(hash=model_hash))
             # restore_model_to_previous_version(elastic_id=elastic_id, mc=mc) 
             return f"Restored model with hash: {model_hash}"
@@ -453,8 +452,10 @@ def manage_model(restore_clicks, delete_clicks, selected_model_data, selectedRow
         
         if selectedRows_data:
             model_hash = selectedRows_data[0]['model_hash']
-            # delete_model_function(model_hash)
-            return f"Deleting model with hash: {model_hash}"
+            if asyncio.run(cec.delete_model_by_hash(model_hash)):
+                return f"Deleted model with hash: {model_hash}"
+            else: 
+                return f"Error deleting model with hash: {model_hash}"
         else:
             return "No model selected."
     

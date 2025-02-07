@@ -323,7 +323,23 @@ class CustomElasticsearchConnector:
                         .query("match", model_hash=hash)
             async for hit in s:
                 return hit.meta.id
-            
+
+    async def delete_model_by_hash(self, hash:str):
+        """Delete a models based on its hash from elastic and from disk.
+
+        Args:
+            hash (str): the hash of the model to delete.
+        """
+        async with AsyncElasticsearch(hosts=self.hosts, api_key=self.api_key, verify_certs=self.verify_certs, ssl_show_warn=False) as client:
+            s = AsyncSearch(using=client, index=MODEL_INDEX_NAME) \
+                .query("match", model_hash=hash)
+            async for hit in s:
+                uuid = hit.meta.id
+                from . import remove_model_zip_file_from_disk
+                file_resp = remove_model_zip_file_from_disk(uuid)
+                resp = await client.delete(index=MODEL_INDEX_NAME, id=hit.meta.id)
+                return resp['result'] == "deleted" and file_resp
+            return False
         
 if __name__ == '__main__':
     # TODO remove as this for testing only
@@ -357,6 +373,7 @@ if __name__ == '__main__':
     # print(asyncio.run(cec.get_all_model_properties()))
     # x = asyncio.run(cec.get_all_flows(view="seen", size=10000))
     # print(len(x))
-    # print(asyncio.run(cec.get_model_uuid("06cb86eed8cc5e0e5725ebfe3ef9d4fe36258e97f38f18f514e52293c3ae8e29")))
+    x = asyncio.run(cec.delete_model_by_hash("06cb86eed8cc5e0e5725ebfe3ef9d4fe36258e97f38f18f514e52293c3ae8e29"))
+    print(x)
 
     
