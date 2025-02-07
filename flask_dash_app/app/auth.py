@@ -19,18 +19,18 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             login_user(user)
-            flash('Logged in successfully!')
+            flash('Logged in successfully!', 'success')
             session['username'] = username
             return redirect(url_for('main.dashboard'))
         else:
-            flash('Invalid username or password.')
+            flash('Invalid username or password.', 'error')
     return render_template('login.html')  # Render the login template
 
 @auth_routes.route('/logout')
 def logout():
     session.pop('username', None)
     logout_user()
-    flash('Logged out successfully!')
+    flash('Logged out successfully!', 'success')
     return redirect(url_for('main.home'))
 
 @auth_routes.route('/register', methods=['GET', 'POST'])
@@ -38,14 +38,14 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user_role = request.form.get('role', 'admin')   # e.g., from a dropdown
+        user_role = request.form.get('role', 'user')   # e.g., from a dropdown
         if User.query.filter_by(username=username).first():
-            flash('Username already exists!')
+            flash('Username already exists!', 'error')
         else:
             new_user = User(username=username, role=user_role)
             new_user.set_password(password)
             db.session.add(new_user)
             db.session.commit()
-            flash('Registration successful! Please log in.')
+            flash('Registration successful! Please log in.', 'success')
             return redirect(url_for('auth.login'))
     return render_template('register.html', roles=['admin','user'])  # Render the register template
