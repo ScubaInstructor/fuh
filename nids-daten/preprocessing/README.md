@@ -22,20 +22,11 @@ The following steps detail the standard procedure for cleaning and preparing you
 *   **Purpose:** Remove irrelevant or redundant columns that are not useful for the model. These are columns you *know* should be excluded.
 *   **Example:** Removing ID columns, columns with personally identifiable information (PII), or features that are known to be irrelevant to the target variable.
 *   **Implementation:** Using a pre-defined list of column names, drop them from the DataFrame.
-*   **Code snippet:**
-    ```
-    columns_to_drop = ['column1', 'column2', 'column3']  # Replace with your column names
-    df = df.drop(columns=columns_to_drop)
-    ```
 
 ### 2.2 Remove Leading/Trailing Spaces from Feature Names
 
 *   **Purpose:** Standardize column names by removing any leading or trailing spaces. This prevents errors caused by inconsistent naming.
 *   **Implementation:** Strip spaces from the beginning and end of each column name.
-*   **Code snippet:**
-    ```
-    df.columns = df.columns.str.strip()
-    ```
 
 ### 2.3 Identify and Handle Categorical Columns
 
@@ -47,21 +38,11 @@ The following steps detail the standard procedure for cleaning and preparing you
 *   **Considerations:**
     *   The number of unique categories in each column.  Too many categories can lead to high dimensionality.
     *   Whether the categorical data is ordinal (has a meaningful order) or nominal (no meaningful order).  Different encoding techniques are appropriate for different types of categorical data.
-*   **Code snippet:**
-    ```
-    categorical_cols = df.select_dtypes(include=['object']).columns
-    df = pd.get_dummies(df, columns=categorical_cols, drop_first=True) # Example: One-Hot Encoding
-    ```
 
 ### 2.4 Handle Zero Variance Columns
 
 *   **Purpose:** Identify and remove columns that have zero variance (i.e., all values are the same). These columns provide no information to the model.
 *   **Implementation:** Calculate the number of unique values in each column and remove those with only one unique value.
-*   **Code snippet:**
-    ```
-    cols_to_drop = [col for col in df.columns if df[col].nunique() == 1]
-    df = df.drop(columns=cols_to_drop)
-    ```
 
 ### 2.5 Handle Negative and Infinite Values
 
@@ -69,11 +50,6 @@ The following steps detail the standard procedure for cleaning and preparing you
 *   **Implementation:**
     *   **Negative Values:** Replace negative values with 0 or a suitable minimum value if negative values are not semantically meaningful.
     *   **Infinite Values:** Replace infinite values (`inf`, `-inf`) with NaN (Not a Number).
-*   **Code snippet:**
-    ```
-    df[df < 0] = 0  # Replace negative values with 0
-    df.replace([np.inf, -np.inf], np.nan, inplace=True) # Replace infinite values with NaN
-    ```
 
 ### 2.6 Handle Missing Values
 
@@ -88,12 +64,6 @@ The following steps detail the standard procedure for cleaning and preparing you
 *   **Considerations:**
     *   The amount of missing data in each column.
     *   The potential bias introduced by different imputation methods.
-*   **Code snippet:**
-    ```
-    from sklearn.impute import SimpleImputer
-    imputer = SimpleImputer(strategy='mean')  # Replace 'mean' with your imputation strategy
-    df = pd.DataFrame(imputer.fit_transform(df), columns=df.columns)
-    ```
 
 ### 2.7 Remove Highly Correlated Features
 
@@ -102,13 +72,6 @@ The following steps detail the standard procedure for cleaning and preparing you
     1.  Calculate the correlation matrix of the numerical features.
     2.  Identify pairs of features with a correlation coefficient above a certain threshold (e.g., 0.9).
     3.  Remove one feature from each highly correlated pair.  Consider removing the feature with less variance, fewer real-world implications, or more missing values.
-*   **Code snippet:**
-    ```
-    correlation_matrix = df.corr().abs()
-    upper_triangle = correlation_matrix.where(np.triu(np.ones(correlation_matrix.shape), k=1).astype(bool))
-    cols_to_drop = [col for col in upper_triangle.columns if any(upper_triangle[col] > 0.9)] # Threshold = 0.9
-    df = df.drop(columns=cols_to_drop)
-    ```
 
 ### 2.8 Perform Feature Scaling
 
@@ -117,12 +80,6 @@ The following steps detail the standard procedure for cleaning and preparing you
     *   **StandardScaler:** Standardize features by removing the mean and scaling to unit variance.
     *   **MinMaxScaler:** Scale features to a range between 0 and 1.
     *   **RobustScaler:** Scale features using statistics that are robust to outliers.
-*   **Code snippet:**
-    ```
-    from sklearn.preprocessing import StandardScaler
-    scaler = StandardScaler()
-    df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
-    ```
 
 ### 2.9 Apply Feature Selection (if specified)
 
@@ -141,13 +98,6 @@ The following steps detail the standard procedure for cleaning and preparing you
     *   **Oversampling:** Increase the number of instances in the minority class.
     *   **Undersampling:** Decrease the number of instances in the majority class.
     *   **SMOTE (Synthetic Minority Oversampling Technique):** Create synthetic instances for the minority class based on existing instances.
-*   **Code snippet:**
-    ```
-    from imblearn.over_sampling import SMOTE
-    smote = SMOTE(random_state=42)
-    X_resampled, y_resampled = smote.fit_resample(X, y)
-    df = pd.concat([X_resampled, y_resampled], axis=1)
-    ```
 
 ## 3. Conclusion
 
