@@ -14,7 +14,9 @@
 df.drop(columns=['id', 'Attempted Category', 'Src Port'], inplace=True)
 ```
 - **Leading Spaces in Feature Names**: No issues found
+  
 - **Categorical Columns**: ⚠️ Found 5 categorical columns: `['Flow ID', 'Src IP', 'Dst IP', 'Timestamp', 'Label']`
+
 - **Zero Variance Columns**: ⚠️ Found 3 zero variance columns: `['Fwd URG Flags', 'Bwd URG Flags', 'URG Flag Count']`
 💡 To drop these columns, use:
 ```python
@@ -24,18 +26,23 @@ df_numeric.drop(columns=['Fwd URG Flags', 'Bwd URG Flags', 'URG Flag Count'], in
 ```python
 df_numeric.loc[:, df_numeric.columns] = np.where(df_numeric < 0, 0, df_numeric)
 ```
+
 - **Infinite Values**: ⚠️ Found 2 infinite values in columns `['Flow Bytes/s', 'Flow Packets/s']`.
 💡 To replace with NaN, use:
 ```python
 df_numeric.replace([np.inf, -np.inf], np.nan, inplace=True)
 ```
+
 - **Missing Values**: No issues found
+- 
 - **Highly Correlated Features**: ⚠️ Found 21 highly correlated features (threshold: 0.95).
 💡 To drop these features, use:
 ```python
 df_numeric.drop(columns=['Bwd Packet/Bulk Avg', 'Bwd Segment Size Avg', 'Subflow Bwd Bytes', 'Idle Max', 'Idle Min', 'Fwd Packet/Bulk Avg', 'Average Packet Size', 'Fwd Segment Size Avg', 'ACK Flag Count', 'Total Length of Bwd Packet', 'Idle Mean', 'Bwd Packet Length Std', 'Subflow Fwd Bytes', 'Packet Length Min', 'Fwd IAT Total', 'Fwd Packets/s', 'Active Min', 'Bwd IAT Total', 'Fwd Packet Length Std', 'Bwd IAT Max', 'Bwd Packets/s'], inplace=True)
 ```
+
 - **Feature Scaling**: ⚠️ Scaling recommended but no method specified
+- 
 - **Feature Selection**: ⚠️ PCA analysis results:
   - 95% variance retained with 1 components (reduced from 62 to 1)
   - 99% variance retained with 2 components (reduced from 62 to 2)
@@ -47,7 +54,9 @@ df_numeric_finite = df_numeric[~np.isinf(df_numeric).any(axis=1)]
 pca = PCA(n_components=1)
 df_numeric_pca = pd.DataFrame(pca.fit_transform(df_numeric_finite))
 ```
-**Available Columns**: After cleaning, the following columns are available: `['Dst Port', 'Protocol', 'Flow Duration', 'Total Fwd Packet', 'Total Bwd packets', 'Total Length of Fwd Packet', 'Fwd Packet Length Max', 'Fwd Packet Length Min', 'Fwd Packet Length Mean', 'Bwd Packet Length Max', 'Bwd Packet Length Min', 'Bwd Packet Length Mean', 'Flow Bytes/s', 'Flow Packets/s', 'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max', 'Flow IAT Min', 'Fwd IAT Mean', 'Fwd IAT Std', 'Fwd IAT Max', 'Fwd IAT Min', 'Bwd IAT Mean', 'Bwd IAT Std', 'Bwd IAT Min', 'Fwd PSH Flags', 'Bwd PSH Flags', 'Fwd URG Flags', 'Bwd URG Flags', 'Fwd RST Flags', 'Bwd RST Flags', 'Fwd Header Length', 'Bwd Header Length', 'Packet Length Max', 'Packet Length Mean', 'Packet Length Std', 'Packet Length Variance', 'FIN Flag Count', 'SYN Flag Count', 'RST Flag Count', 'PSH Flag Count', 'URG Flag Count', 'CWR Flag Count', 'ECE Flag Count', 'Down/Up Ratio', 'Fwd Bytes/Bulk Avg', 'Fwd Bulk Rate Avg', 'Bwd Bytes/Bulk Avg', 'Bwd Bulk Rate Avg', 'Subflow Fwd Packets', 'Subflow Bwd Packets', 'FWD Init Win Bytes', 'Bwd Init Win Bytes', 'Fwd Act Data Pkts', 'Fwd Seg Size Min', 'Active Mean', 'Active Std', 'Active Max', 'Idle Std', 'ICMP Code', 'ICMP Type', 'Total TCP Flow Time']`
+
+**Available Columns**: 
+After cleaning, the following columns are available: `['Dst Port', 'Protocol', 'Flow Duration', 'Total Fwd Packet', 'Total Bwd packets', 'Total Length of Fwd Packet', 'Fwd Packet Length Max', 'Fwd Packet Length Min', 'Fwd Packet Length Mean', 'Bwd Packet Length Max', 'Bwd Packet Length Min', 'Bwd Packet Length Mean', 'Flow Bytes/s', 'Flow Packets/s', 'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max', 'Flow IAT Min', 'Fwd IAT Mean', 'Fwd IAT Std', 'Fwd IAT Max', 'Fwd IAT Min', 'Bwd IAT Mean', 'Bwd IAT Std', 'Bwd IAT Min', 'Fwd PSH Flags', 'Bwd PSH Flags', 'Fwd URG Flags', 'Bwd URG Flags', 'Fwd RST Flags', 'Bwd RST Flags', 'Fwd Header Length', 'Bwd Header Length', 'Packet Length Max', 'Packet Length Mean', 'Packet Length Std', 'Packet Length Variance', 'FIN Flag Count', 'SYN Flag Count', 'RST Flag Count', 'PSH Flag Count', 'URG Flag Count', 'CWR Flag Count', 'ECE Flag Count', 'Down/Up Ratio', 'Fwd Bytes/Bulk Avg', 'Fwd Bulk Rate Avg', 'Bwd Bytes/Bulk Avg', 'Bwd Bulk Rate Avg', 'Subflow Fwd Packets', 'Subflow Bwd Packets', 'FWD Init Win Bytes', 'Bwd Init Win Bytes', 'Fwd Act Data Pkts', 'Fwd Seg Size Min', 'Active Mean', 'Active Std', 'Active Max', 'Idle Std', 'ICMP Code', 'ICMP Type', 'Total TCP Flow Time']`
 
 ## **Available Columns and Recommended Mapping**: The following columns are available after cleaning. Recommended mapping:
   
@@ -118,4 +127,5 @@ df_numeric_pca = pd.DataFrame(pca.fit_transform(df_numeric_finite))
 
 - **Recommendation**: Based on the assessment, it is recommended to continue working with the available columns. You may consider the following:
 - Performing further analysis using the available columns: `['Dst Port', 'Protocol', 'Flow Duration', 'Total Fwd Packet', 'Total Bwd packets', 'Total Length of Fwd Packet', 'Fwd Packet Length Max', 'Fwd Packet Length Min', 'Fwd Packet Length Mean', 'Bwd Packet Length Max', 'Bwd Packet Length Min', 'Bwd Packet Length Mean', 'Flow Bytes/s', 'Flow Packets/s', 'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max', 'Flow IAT Min', 'Fwd IAT Mean', 'Fwd IAT Std', 'Fwd IAT Max', 'Fwd IAT Min', 'Bwd IAT Mean', 'Bwd IAT Std', 'Bwd IAT Min', 'Fwd PSH Flags', 'Bwd PSH Flags', 'Fwd URG Flags', 'Bwd URG Flags', 'Fwd RST Flags', 'Bwd RST Flags', 'Fwd Header Length', 'Bwd Header Length', 'Packet Length Max', 'Packet Length Mean', 'Packet Length Std', 'Packet Length Variance', 'FIN Flag Count', 'SYN Flag Count', 'RST Flag Count', 'PSH Flag Count', 'URG Flag Count', 'CWR Flag Count', 'ECE Flag Count', 'Down/Up Ratio', 'Fwd Bytes/Bulk Avg', 'Fwd Bulk Rate Avg', 'Bwd Bytes/Bulk Avg', 'Bwd Bulk Rate Avg', 'Subflow Fwd Packets', 'Subflow Bwd Packets', 'FWD Init Win Bytes', 'Bwd Init Win Bytes', 'Fwd Act Data Pkts', 'Fwd Seg Size Min', 'Active Mean', 'Active Std', 'Active Max', 'Idle Std', 'ICMP Code', 'ICMP Type', 'Total TCP Flow Time']`
+
 - Training machine learning models with the reduced feature set.
