@@ -184,49 +184,135 @@ def sensor_management_content():
             id="sensors-grid",
             rowData=sensors_list,
             columnDefs=[
+                {
+                    "field": "select",
+                    "headerName": "",
+                    "checkboxSelection": True,
+                    "headerCheckboxSelection": True,
+                    "width": 50
+                },
+                {"field": "id", "hide": True},
                 {"field": "name", "sortable": True, "filter": True},
                 {"field": "created_at", "sortable": True, "filter": True}
             ],
-            defaultColDef={"resizable": True},
-            dashGridOptions={"pagination": True},
+            defaultColDef={"resizable": True, "sortable": True, "filter": True},
+            dashGridOptions={"pagination": True,
+                "paginationAutoPageSize": True,
+                "rowSelection": "multiple",
+                "deltaRowDataMode": True
+            },
+            getRowId="params.data.id",
             style={"height": 400}
-        )
+        ), 
+        dbc.Button("Delete Selected", id="delete-selected-sensor-btn", color="danger", className="mt-3"),
+        html.Div(id="sensor-update-status")
     ])
 
 @callback(
     [Output("sensor-name-input", "invalid"),
      Output("sensor-submit-output", "children"),
      Output("download-sensor", "data"),
-     Output("sensors-grid", "rowData")],
-    Input("submit-sensor", "n_clicks"),
-    State("sensor-name-input", "value"),
+     Output("sensors-grid", "rowData"),
+     Output("sensor-update-status", "children")],
+    [Input("submit-sensor", "n_clicks"),
+     Input("delete-selected-sensor-btn", "n_clicks")],
+    [State("sensor-name-input", "value"),
+     State("sensors-grid", "selectedRows"),
+     State("sensors-grid", "rowData")],
     prevent_initial_call=True
 )
-def submit_sensor(n_clicks, sensor_name):
-    if not sensor_name:
-        return True, "Please enter a sensor name", None, dash.no_update
-    if not sensor_name.replace('_', '').isalnum():
-        return True, "Invalid sensor name format", None, dash.no_update
+def manage_sensors(submit_clicks, delete_clicks, sensor_name, selected_rows, current_rows):
+    ctx = dash.callback_context
+
+    if not ctx.triggered:
+        return False, dash.no_update, None, dash.no_update, dash.no_update
+
+    trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    # Handle Sensor Creation
+    if trigger_id == "submit-sensor":
+        if not sensor_name:
+            return True, "Please enter a sensor name", None, dash.no_update, dash.no_update
+        if not sensor_name.replace('_', '').isalnum():
+            return True, "Invalid sensor name format", None, dash.no_update, dash.no_update
+
+        try:
+            with current_app.app_context():
+                new_sensor = Sensor(name=sensor_name)
+                db.session.add(new_sensor)
+                db.session.commit()
+
+                # Get updated sensor list
+                sensors = Sensor.query.all()
+                sensors_list = [{"id": s.id, "name": s.name, "created_at": s.created_at.strftime("%Y-%m-%d %H:%M:%S")} for s in sensors]
+
+            sensor_env = generate_env_file_for_sensors(sensor_name)
+            dl_content = dict(
+                content=sensor_env,
+                filename=f"{sensor_name}.env",
+                type=".env"
+            )
+            return False, f"Sensor {sensor_name} created successfully", dl_content, sensors_list, dash.no_update
+
+        except Exception as e:
+            return True, f"Error creating sensor: {str(e)}", None, dash.no_update, f"Error: {str(e)}"
+
+    # Handle Sensor Deletion
+    elif trigger_id == "delete-selected-sensor-btn" and selected_rows:
+        try:
+            with current_app.app_context():
+                for row in selected_rows:
+                    sensor_id = row['id']
+                    sensor = Sensor.query.get(sensor_id)
+                    if sensor:
+                        db.session.delete(sensor)
+                db.session.commit()
+
+                sensors = Sensor.query.all()
+                sensors_list = [{"id": s.id, "name": s.name, "created_at": s.created_at.strftime("%Y-%m-%d %H:%M:%S")} for s in sensors]
+            return False, dash.no_update, None, sensors_list, "Sensors deleted successfully"
+
+        except Exception as e:
+            return False, dash.no_update, None, dash.no_update, f"Error: {str(e)}"
+
+    # No action
+    return False, dash.no_update, None, dash.no_update, dash.no_update
+
+
+# @callback(
+#     [Output("sensor-name-input", "invalid"),
+#      Output("sensor-submit-output", "children"),
+#      Output("download-sensor", "data"),
+#      Output("sensors-grid", "rowData")],
+#     Input("submit-sensor", "n_clicks"),
+#     State("sensor-name-input", "value"),
+#     prevent_initial_call=True
+# )
+# def submit_sensor(n_clicks, sensor_name):
+#     if not sensor_name:
+#         return True, "Please enter a sensor name", None, dash.no_update
+#     if not sensor_name.replace('_', '').isalnum():
+#         return True, "Invalid sensor name format", None, dash.no_update
         
-    try:
-        with current_app.app_context():
-            new_sensor = Sensor(name=sensor_name)
-            db.session.add(new_sensor)
-            db.session.commit()
+#     try:
+#         with current_app.app_context():
+#             new_sensor = Sensor(name=sensor_name)
+#             db.session.add(new_sensor)
+#             db.session.commit()
             
-            # Get updated sensor list
-            sensors = Sensor.query.all()
-            sensors_list = [{"name": s.name, "created_at": s.created_at.strftime("%Y-%m-%d %H:%M:%S")} for s in sensors]
+#             # Get updated sensor list
+#             sensors = Sensor.query.all()
+#             sensors_list = [{"name": s.name, "created_at": s.created_at.strftime("%Y-%m-%d %H:%M:%S")} for s in sensors]
             
-        sensor_env = generate_env_file_for_sensors(sensor_name)
-        dl_content = dict(
-            content=sensor_env,
-            filename=f"{sensor_name}.env",
-            type=".env"
-        )
-        return False, f"Sensor {sensor_name} created successfully", dl_content, sensors_list
-    except Exception as e:
-        return True, f"Error creating sensor: {str(e)}", None, dash.no_update
+#         sensor_env = generate_env_file_for_sensors(sensor_name)
+#         dl_content = dict(
+#             content=sensor_env,
+#             filename=f"{sensor_name}.env",
+#             type=".env"
+#         )
+#         return False, f"Sensor {sensor_name} created successfully", dl_content, sensors_list
+#     except Exception as e:
+#         return True, f"Error creating sensor: {str(e)}", None, dash.no_update
 
 # @callback(
 #     [Output("users-grid", "rowData"),
