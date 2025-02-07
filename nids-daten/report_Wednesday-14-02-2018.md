@@ -1,6 +1,7 @@
 # Data Cleaning Report: `Wednesday-14-02-2018.csv`
 
 - **Options Used**: ```{'file_path': 'CSECICIDS2018_improved/Wednesday-14-02-2018.csv', 'output_path': '.', 'correlation_threshold': 0.95, 'missing_threshold': 0.1, 'impute_strategy': 'mean', 'drop_categorical_columns': True, 'drop_highly_correlated': True, 'drop_columns': 'id,Attempted Category,Src Port', 'scale_method': None, 'feature_selection': 'pca', 'balance_method': None, 'assess_only': True}```
+
 - **Dataset Loaded**: 
 ✅ Dataset Loaded Successfully: `/Volumes/DATA/63184/DATASET_engelen_improved/CSECICIDS2018_improved/Wednesday-14-02-2018.csv`
 - File Size: 3111.44 MB
@@ -48,7 +49,7 @@ df_numeric_pca = pd.DataFrame(pca.fit_transform(df_numeric_finite))
 ```
 **Available Columns**: After cleaning, the following columns are available: `['Dst Port', 'Protocol', 'Flow Duration', 'Total Fwd Packet', 'Total Bwd packets', 'Total Length of Fwd Packet', 'Fwd Packet Length Max', 'Fwd Packet Length Min', 'Fwd Packet Length Mean', 'Bwd Packet Length Max', 'Bwd Packet Length Min', 'Bwd Packet Length Mean', 'Flow Bytes/s', 'Flow Packets/s', 'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max', 'Flow IAT Min', 'Fwd IAT Mean', 'Fwd IAT Std', 'Fwd IAT Max', 'Fwd IAT Min', 'Bwd IAT Mean', 'Bwd IAT Std', 'Bwd IAT Min', 'Fwd PSH Flags', 'Bwd PSH Flags', 'Fwd URG Flags', 'Bwd URG Flags', 'Fwd RST Flags', 'Bwd RST Flags', 'Fwd Header Length', 'Bwd Header Length', 'Packet Length Max', 'Packet Length Mean', 'Packet Length Std', 'Packet Length Variance', 'FIN Flag Count', 'SYN Flag Count', 'RST Flag Count', 'PSH Flag Count', 'URG Flag Count', 'CWR Flag Count', 'ECE Flag Count', 'Down/Up Ratio', 'Fwd Bytes/Bulk Avg', 'Fwd Bulk Rate Avg', 'Bwd Bytes/Bulk Avg', 'Bwd Bulk Rate Avg', 'Subflow Fwd Packets', 'Subflow Bwd Packets', 'FWD Init Win Bytes', 'Bwd Init Win Bytes', 'Fwd Act Data Pkts', 'Fwd Seg Size Min', 'Active Mean', 'Active Std', 'Active Max', 'Idle Std', 'ICMP Code', 'ICMP Type', 'Total TCP Flow Time']`
 
-##Available Columns and Recommended Mapping**: The following columns are available after cleaning. Recommended mapping:
+## Available Columns and Recommended Mapping**: The following columns are available after cleaning. Recommended mapping:
   
 | # | Column Name | Mapping |
 |---|---|---|
