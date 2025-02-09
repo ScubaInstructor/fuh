@@ -222,8 +222,6 @@ DATASET_engelen_improved/CSECICIDS2018_improved>..\combine_dataset.sh processed-
 |                     | -                        | -                | Botnet Ares                  | 142,921          | **Nur in 2018 (Spezifischer Botnet-Typ: Ares)**  |
 | **Gesamtanzahl Angriffe** |                     | **517,410**      |                              | **3,834,296**    |  |
 
----
-
 
 Quellen:  
 [1] https://intrusion-detection.distrinet-research.be/CNS2022/CICIDS2017.html  
