@@ -192,34 +192,37 @@ Zusammenfassung der Dateien basierend auf Kategorie:
 DATASET_engelen_improved/CSECICIDS2018_improved>..\combine_dataset.sh processed-dataset-split processed-dataset-combined
 ```
 
-## Vergleich Angriffskategorien CIC-IDS-2017 und CSE-CIC-IDS 2018
+### **Vergleich Angriffskategorien CIC-IDS-2017 und CSE-CIC-IDS-2018**
 
-| Angriffsgruppe | CICIDS2017 Kategorie | Anzahl 2017 | CSE-CIC-IDS2018 Kategorie | Anzahl 2018 | Beurteilung |
-|----------------|----------------------|-------------|---------------------------|-------------|-------------|
-| Brute Force | FTP-Patator | 3,984 | FTP-BruteForce | 298,874 | Gleich, nur andere Bezeichnung |
-| Brute Force | SSH-Patator | 2,988 | SSH-BruteForce | 94,197 | Gleich, nur andere Bezeichnung |
-| Brute Force Gesamt | | 6,972 | | 393,071 | |
-| DoS | DoS Hulk | 159,049 | DoS Hulk | 1,803,160 | Identisch |
-| DoS | DoS GoldenEye | 7,647 | DoS GoldenEye | 22,560 | Identisch |
-| DoS | DoS Slowloris | 5,706 | DoS Slowloris | 8,490 | Identisch |
-| DoS | DoS Slowhttptest | 5,108 | DoS Slowhttptest | 0 | Gleicher Angriff, in 2018 fehlgeschlagen |
-| DoS Gesamt | | 177,510 | | 1,834,210 | |
-| DDoS | - | 95,144 | DDoS HOIC | 1,082,293 | Nur in 2018 |
-| DDoS | - | - | DDoS LOIC-HTTP | 289,328 | Nur in 2018 |
-| DDoS | - | - | DDoS LOIC-UDP | 2,527 | Nur in 2018 |
-| DDoS Gesamt | | 95,144 | | 1,374,148 | |
-| Heartbleed | Heartbleed | 11 | - | 0 | Nur in 2017 |
-| Web Angriff | Web Attack - SQL Injection | 18 | Web Attack - SQL Injection | 39 | Identisch |
-| Web Angriff | Web Attack - XSS | 673 | Web Attack - XSS | 113 | Identisch |
-| Web Angriff | Web Attack - Brute Force | 1,365 | Web Attack - Brute Force | 131 | Identisch |
-| Web Angriff Gesamt | | 2,056 | | 283 | |
-| Infiltration | Infiltration | 71,848 | Infiltration - NMAP PortScan | 89,374 | Detaillierter in 2018 |
-| Infiltration | - | - | Infiltration - Dropbox Download | 85 | Nur in 2018 |
-| Infiltration | - | - | Infiltration - Communication Victim-Attacker | 204 | Nur in 2018 |
-| Infiltration Gesamt | | 71,848 | | 89,663 | |
-| Portscan | PortScan | 159,066 | - | 0 | In 2018 Teil von Infiltration - NMAP PortScan |
-| Botnet | Bot | 4,803 | Botnet Ares | 142,921 | Spezifischer Botnet-Typ in 2018 |
-| Gesamtanzahl Angriffe | | 517,410 | | 3,834,296 | |
+| **Angriffsgruppe**  | **CICIDS2017 Kategorie**  | **Anzahl 2017**  | **CSE-CIC-IDS2018 Kategorie**  | **Anzahl 2018**  | **Beurteilung**  |
+|---------------------|-------------------------|------------------|-----------------------------|------------------|----------------|
+| **Brute Force**     | FTP-Patator              | 3,984            | FTP-BruteForce               | 298,874          | **Gleich, nur andere Bezeichnung**  |
+|                     | SSH-Patator              | 2,988            | SSH-BruteForce               | 94,197           | **Gleich, nur andere Bezeichnung**  |
+| **Brute Force Gesamt**  |                        | **6,972**        |                              | **393,071**      |  |
+| **DoS**             | DoS Hulk                 | 159,049          | DoS Hulk                     | 1,803,160        | **Identisch**  |
+|                     | DoS GoldenEye            | 7,647            | DoS GoldenEye                | 22,560           | **Identisch**  |
+|                     | DoS Slowloris            | 5,706            | DoS Slowloris                | 8,490            | **Identisch**  |
+|                     | DoS Slowhttptest         | 5,108            | -                            | 0                | **Nur in 2017, in 2018 fehlgeschlagen**  |
+| **DoS Gesamt**      |                          | **177,510**      |                              | **1,834,210**    |  |
+| **DDoS**            | -                        | 95,144           | DDoS HOIC                    | 1,082,293        | **Nur in 2018**  |
+|                     | -                        | -                | DDoS LOIC-HTTP               | 289,328          | **Nur in 2018**  |
+|                     | -                        | -                | DDoS LOIC-UDP                | 2,527            | **Nur in 2018**  |
+| **DDoS Gesamt**     |                          | **95,144**       |                              | **1,374,148**    |  |
+| **Heartbleed**      | Heartbleed               | 11               | -                            | 0                | **Nur in 2017**  |
+| **Web Angriff**     | Web Attack - SQL Injection | 18            | Web Attack - SQL Injection   | 39               | **Identisch**  |
+|                     | Web Attack - XSS         | 673              | Web Attack - XSS             | 113              | **Identisch**  |
+|                     | Web Attack - Brute Force | 1,365            | Web Attack - Brute Force     | 131              | **Identisch**  |
+| **Web Angriff Gesamt** |                        | **2,056**        |                              | **283**          |  |
+| **Infiltration**    | Infiltration             | 71,848           | Infiltration - NMAP PortScan | 89,374           | **Detaillierter in 2018**  |
+|                     | -                        | -                | Infiltration - Dropbox Download | 85           | **Nur in 2018**  |
+|                     | -                        | -                | Infiltration - Communication Victim-Attacker | 204 | **Nur in 2018**  |
+| **Infiltration Gesamt** |                      | **71,848**       |                              | **89,663**       |  |
+| **Portscan**        | PortScan                 | 159,066          | -                            | 0                | **In 2018 Teil von Infiltration - NMAP PortScan**  |
+| **Botnet**          | Bot                      | 4,803            | -                            | 0                | **Nur in 2017 (Unbekannter Bot-Typ, keine Details)**  |
+|                     | -                        | -                | Botnet Ares                  | 142,921          | **Nur in 2018 (Spezifischer Botnet-Typ: Ares)**  |
+| **Gesamtanzahl Angriffe** |                     | **517,410**      |                              | **3,834,296**    |  |
+
+---
 
 
 Quellen:  
