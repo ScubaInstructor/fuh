@@ -11,7 +11,7 @@ Wenn diese Option aktiviert ist wird der tcpdump dissection Mechanismus umgangen
 # tcpdump-sensor
 
  ```console
-./tcpdump -h
+./tcpdump-sensor -h
 tcpdump version 4.99.5
 libpcap version 1.10.1
 OpenSSL 3.4.0 22 Oct 2024
@@ -42,6 +42,5 @@ Usage: tcpdump [-AbdDefhHIJKlLnNOpqStuUvxX#] [ -B size ] [ -c count ] [--count]
 tcpdump-sensor uses libpcap, a system-independent interface for user-level packet capture. If your operating system does not provide libpcap, or if it provides a libpcap that does not support the APIs from libpcap 1.0 or later, you must first retrieve and build libpcap before building tcpdump.
 
 ### Other dependencies
-* libfyaml
 * liblz4
 * librdkafka
