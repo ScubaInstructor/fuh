@@ -30,6 +30,9 @@
             "predicted": { "type": "keyword" },
             "value": { "type": "integer" }
           }
+        },
+        "class_metric_data" : {
+          "type": "float" 
         }
       }
     }

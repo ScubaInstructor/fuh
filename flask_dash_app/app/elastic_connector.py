@@ -11,10 +11,10 @@ from os import getenv
 # Load from .env File
 dotenv.load_dotenv()
 INDEX_NAME = "network_flows" # TODO extract from docker-compose
-MODEL_INDEX_NAME = "new_model_properties"
+MODEL_INDEX_NAME = "new_new_model_properties"
 # Load from "shared_secrets" docker volume
 dotenv.load_dotenv(dotenv_path="/shared_secrets/server-api-key.env")
-API_KEY = "SzE0YzU1UUJOYmhCaEQ5bFRjRFA6bDN0LWtTVnlScnE2MldaTkFsQWpvQQ=="    # TODO extract from docker compose
+API_KEY = "TVY0LTdKUUJOYmhCaEQ5bGpjRFU6UGtqemNYbUpSNmFsUzlkRl96REMtZw=="    # TODO extract from docker compose
 
 class CustomElasticsearchConnector:
     """
@@ -238,7 +238,7 @@ class CustomElasticsearchConnector:
                 resp =  await client.get(index=INDEX_NAME,id=hit.meta.id)
                 return resp.body['_source']['pcap_data']
 
-    async def save_model_properties(self, hash_value: str, timestamp, own_flow_count:int, score:float, confusion_matrix_data:dict=None) -> str:
+    async def save_model_properties(self, hash_value: str, timestamp, own_flow_count:int, score:float, confusion_matrix_data:dict=None, class_metric_data:list[list]=None) -> str:
         # Initialize Elasticsearch client
         async with AsyncElasticsearch(
             self.hosts,
@@ -254,7 +254,8 @@ class CustomElasticsearchConnector:
                 "score": score,
                 "timestamp": timestamp,
                 "own_flow_count": own_flow_count,
-                "confusion_matrix": confusion_matrix_data
+                "confusion_matrix": confusion_matrix_data,
+                "class_metric_data": class_metric_data
             }
             resp =  await client.index(index=MODEL_INDEX_NAME, body=data)
             return resp["_id"]
@@ -382,10 +383,10 @@ if __name__ == '__main__':
     #print(x)
     
     cf_data = [{'actual': 'BENIGN', 'predicted': 'BENIGN', 'value': 1211}, {'actual': 'BENIGN', 'predicted': 'Bot', 'value': 22}, {'actual': 'BENIGN', 'predicted': 'Brute Force', 'value': 2}, {'actual': 'BENIGN', 'predicted': 'DDoS', 'value': 3}, {'actual': 'BENIGN', 'predicted': 'DoS', 'value': 15}, {'actual': 'BENIGN', 'predicted': 'Port Scan', 'value': 4}, {'actual': 'BENIGN', 'predicted': 'Web Attack', 'value': 2}, {'actual': 'Bot', 'predicted': 'BENIGN', 'value': 7}, {'actual': 'Bot', 'predicted': 'Bot', 'value': 1265}, {'actual': 'Bot', 'predicted': 'Brute Force', 'value': 0}, {'actual': 'Bot', 'predicted': 'DDoS', 'value': 0}, {'actual': 'Bot', 'predicted': 'DoS', 'value': 0}, {'actual': 'Bot', 'predicted': 'Port Scan', 'value': 1}, {'actual': 'Bot', 'predicted': 'Web Attack', 'value': 0}, {'actual': 'Brute Force', 'predicted': 'BENIGN', 'value': 8}, {'actual': 'Brute Force', 'predicted': 'Bot', 'value': 0}, {'actual': 'Brute Force', 'predicted': 'Brute Force', 'value': 1211}, {'actual': 'Brute Force', 'predicted': 'DDoS', 'value': 0}, {'actual': 'Brute Force', 'predicted': 'DoS', 'value': 1}, {'actual': 'Brute Force', 'predicted': 'Port Scan', 'value': 1}, {'actual': 'Brute Force', 'predicted': 'Web Attack', 'value': 15}, {'actual': 'DDoS', 'predicted': 'BENIGN', 'value': 3}, {'actual': 'DDoS', 'predicted': 'Bot', 'value': 0}, {'actual': 'DDoS', 'predicted': 'Brute Force', 'value': 0}, {'actual': 'DDoS', 'predicted': 'DDoS', 'value': 1236}, {'actual': 'DDoS', 'predicted': 'DoS', 'value': 6}, {'actual': 'DDoS', 'predicted': 'Port Scan', 'value': 0}, {'actual': 'DDoS', 'predicted': 'Web Attack', 'value': 0}, {'actual': 'DoS', 'predicted': 'BENIGN', 'value': 8}, {'actual': 'DoS', 'predicted': 'Bot', 'value': 0}, {'actual': 'DoS', 'predicted': 'Brute Force', 'value': 2}, {'actual': 'DoS', 'predicted': 'DDoS', 'value': 7}, {'actual': 'DoS', 'predicted': 'DoS', 'value': 1241}, {'actual': 'DoS', 'predicted': 'Port Scan', 'value': 0}, {'actual': 'DoS', 'predicted': 'Web Attack', 'value': 0}, {'actual': 'Port Scan', 'predicted': 'BENIGN', 'value': 1}, {'actual': 'Port Scan', 'predicted': 'Bot', 'value': 0}, {'actual': 'Port Scan', 'predicted': 'Brute Force', 'value': 0}, {'actual': 'Port Scan', 'predicted': 'DDoS', 'value': 0}, {'actual': 'Port Scan', 'predicted': 'DoS', 'value': 1}, {'actual': 'Port Scan', 'predicted': 'Port Scan', 'value': 1214}, {'actual': 'Port Scan', 'predicted': 'Web Attack', 'value': 0}, {'actual': 'Web Attack', 'predicted': 'BENIGN', 'value': 13}, {'actual': 'Web Attack', 'predicted': 'Bot', 'value': 0}, {'actual': 'Web Attack', 'predicted': 'Brute Force', 'value': 3}, {'actual': 'Web Attack', 'predicted': 'DDoS', 'value': 0}, {'actual': 'Web Attack', 'predicted': 'DoS', 'value': 6}, {'actual': 'Web Attack', 'predicted': 'Port Scan', 'value': 1}, {'actual': 'Web Attack', 'predicted': 'Web Attack', 'value': 1240}]
-
-    result = asyncio.run(cec.save_model_properties(hash_value="123456890", timestamp=datetime.now(), own_flow_count=10, score=0.99, confusion_matrix_data = cf_data))
-    print(result)
+    model_metrics = [[0.9680255795363709, 0.9829059829059829, 0.9942528735632183, 0.9919743178170144, 0.9771653543307086, 0.9942669942669943, 0.9864757358790772], [0.9618745035742653, 0.9937156323644933, 0.9797734627831716, 0.9927710843373494, 0.9864864864864865, 0.9983552631578947, 0.9817893903404592], [0.9649402390438248, 0.98828125, 0.986960065199674, 0.9923725411481332, 0.9818037974683544, 0.9963069347558473, 0.9841269841269841]]
+    #result = asyncio.run(cec.save_model_properties(hash_value="123456890", timestamp=datetime.now(), own_flow_count=10, score=0.99, confusion_matrix_data = cf_data, class_metric_data=model_metrics))
+    #print(result)
     x = asyncio.run(cec.get_all_model_properties())
-    print(x)
+    print(x["class_metric_data"])
 
     
