@@ -10,7 +10,7 @@ Quelle: https://intrusion-detection.distrinet-research.be/CNS2022/Dataset_Downlo
 Erstellung der "combined" Dateien:
 
 ```
-% ./dataset_combine.sh -input=split_CICIDS2017_improved -output=combined_CICIDS2017_improved -exclude=Attempted 
+./dataset_combine.sh -input=split_CICIDS2017_improved -output=combined_CICIDS2017_improved -exclude=Attempted
 Skipping file: friday_Botnet_-_Attempted_4067.csv
 Skipping file: thursday_Infiltration_-_Attempted_45.csv
 Skipping file: thursday_Web_Attack_-_Brute_Force_-_Attempted_1292.csv
