@@ -1,4 +1,4 @@
-Die Dateien sind nach dem splitten immer noch zu gross um sie hier zur Verfügung zu stellen. Diese Übersicht zeit die aufgeteilten Daten.
+Die Dateien sind nach dem splitten immer noch zu gross um sie hier zur Verfügung zu stellen. Diese Übersicht zeigt die aufgeteilten Daten die mit dem script **dataset_split.sh** erstellt wurden.
 
 # CIC-IDS2017 Dataset Summary
 
