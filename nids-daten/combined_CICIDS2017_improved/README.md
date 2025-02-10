@@ -28,22 +28,22 @@ Combined CSV files have been created in combined_CICIDS2017_improved.
 
 # Dataset File Details
 
-| Filename                               | Size (MB) | Records  |
-|----------------------------------------|----------:|---------:|
-| BENIGN_1582566.csv                     |   833.95  | 1582566  |
-| Botnet_736.csv                          |     0.42  |     736  |
-| DDoS_95144.csv                          |    60.04  |   95144  |
-| DoS_GoldenEye_7567.csv                  |     5.16  |    7567  |
-| DoS_Hulk_158468.csv                     |    98.42  |  158468  |
-| DoS_Slowhttptest_1740.csv               |     1.12  |    1740  |
-| DoS_Slowloris_3859.csv                   |     2.32  |    3859  |
-| FTP-Patator_3972.csv                     |     2.59  |    3972  |
-| Heartbleed_11.csv                        |     0.01  |      11  |
-| Infiltration_-_Portscan_71767.csv        |    28.06  |   71767  |
-| Infiltration_36.csv                      |     0.03  |      36  |
-| Portscan_159066.csv                      |    58.99  |  159066  |
-| SSH-Patator_2961.csv                     |     1.96  |    2961  |
-| Web_Attack_-_Brute_Force_73.csv          |     0.05  |      73  |
-| Web_Attack_-_SQL_Injection_13.csv        |     0.01  |      13  |
-| Web_Attack_-_XSS_18.csv                  |     0.01  |      18  |
-
+| File Name                                      | Size (MB) | Record Count |
+|-----------------------------------------------|----------:|------------:|
+| BENIGN_1582566.csv                            |       834 |      1582566 |
+| Botnet_736.csv                                |         0 |          736 |
+| DDoS_95144.csv                                |        60 |        95144 |
+| DoS_GoldenEye_7567.csv                        |         5 |         7567 |
+| DoS_Hulk_158468.csv                           |        98 |       158468 |
+| DoS_Slowhttptest_1740.csv                     |         1 |         1740 |
+| DoS_Slowloris_3859.csv                        |         2 |         3859 |
+| FTP-Patator_3972.csv                          |         2 |         3972 |
+| Heartbleed_11.csv                             |         0 |           11 |
+| Infiltration_-_Portscan_71767.csv             |        28 |        71767 |
+| Infiltration_36.csv                           |         0 |           36 |
+| Portscan_159066.csv                           |        59 |       159066 |
+| SSH-Patator_2961.csv                          |         1 |         2961 |
+| Web_Attack_-_Brute_Force_73.csv               |         0 |           73 |
+| Web_Attack_-_SQL_Injection_13.csv             |         0 |           13 |
+| Web_Attack_-_XSS_18.csv                       |         0 |           18 |
+| **Total**                                      | **1090 MB** | **2087997** |
