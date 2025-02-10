@@ -157,3 +157,67 @@ def create_metrics_overview_from_elastic_data(class_metric_data:list[list], clas
 classes= extract_class_names(data_to_index)
 create_metrics_overview_from_elastic_data(list_for_elastic, classes).show()
 # %%
+from datetime import datetime
+import matplotlib.pyplot as plt
+import seaborn as sns
+from pandas import DataFrame
+from math import floor
+def create_boxplot_for_all_models(df:DataFrame) -> plt:
+    scores = df["score"].tolist()
+    labels = [datetime.strftime(d, "%Y-%m-%d %H:%M") for d in df["timestamp"].tolist()]
+    palette = sns.color_palette('Greens', n_colors = len(scores))
+    plt.figure(figsize = (9, 3))
+    plt.barh(labels, scores, color = palette)
+    floor_limit = floor(min(scores) * 10 ) / 10
+    plt.xlim([floor_limit, 1])
+    plt.xlabel('Accuracy Score')
+    plt.title('Model Comparison')
+create_boxplot_for_all_models(all_models).show()
+# %%
+from datetime import datetime
+from pandas import DataFrame
+from math import floor
+import plotly.graph_objects as go
+
+def create_boxplot_for_all_models(df:DataFrame) -> go.Figure:
+    """
+    Creates a horizontal bar plot using Plotly to compare model scores.
+
+    Args:
+        df (DataFrame): DataFrame containing 'score' and 'timestamp' columns.
+
+    Returns:
+        plotly.graph_objects.Figure: A Plotly figure of the model comparison.
+    """
+    scores = df["score"].tolist()
+    labels = [datetime.strftime(d, "%Y-%m-%d %H:%M") for d in df["timestamp"].tolist()]
+    
+    # Create a Plotly figure
+    fig = go.Figure(go.Bar(
+        x=scores,
+        y=labels,
+        orientation='h',
+        marker=dict(color=scores, colorscale='Greens'), # Color bars based on score
+        text=scores, # Display score values on the bars
+        texttemplate='%{text:.2f}', # Format the score values
+        textposition='inside' # Position the text inside the bars
+    ))
+
+    floor_limit = floor(min(scores) * 10) / 10
+    
+    # Update the layout
+    fig.update_layout(
+        title='Model Comparison',
+        xaxis_title='Accuracy Score',
+        yaxis_title='Timestamp',
+        xaxis=dict(range=[floor_limit, 1]),
+        yaxis=dict(type='category'),
+        margin=dict(l=120, r=20, t=60, b=60),
+        height=400 # Adjust height as needed
+    )
+    
+    return fig
+
+all_models_fig = create_boxplot_for_all_models(all_models)
+all_models_fig.show()
+

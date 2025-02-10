@@ -83,7 +83,7 @@ def model_management_content():
         import asyncio
         from ..elastic_connector import CustomElasticsearchConnector
         cec = CustomElasticsearchConnector()
-        model_properties = asyncio.run(cec.get_all_model_properties(size=10)) 
+        model_properties = asyncio.run(cec.get_all_model_properties(size=1000)) 
         # TODO only necessary for older models from early training stages...
         model_properties['score'] = model_properties['score'].apply(lambda x: float(x) if isinstance(x, (int, float)) else float(x[0]))
 
