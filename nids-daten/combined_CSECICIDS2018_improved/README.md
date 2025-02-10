@@ -28,7 +28,6 @@ Skipping file: Wednesday-28-02-2018_Infiltration_-_Dropbox_Download_-_Attempted_
 Combined CSV files have been created in combined_CSECICIDS2018_improved.
 ```
 
-root@RDD516:/RDD516VOLUME/DATA/63184/DATASET_engelen_improved# ./folder_to_table_generic.sh combined_CSECICIDS2018_improved/
 | File Name                                      | Size (MB) | Record Count |
 |-----------------------------------------------|----------:|------------:|
 | BENIGN_59353486.csv                           |     32251 |     59353486 |
