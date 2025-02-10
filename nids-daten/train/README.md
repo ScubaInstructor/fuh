@@ -1,3 +1,6 @@
+Auswahl der features für das Modell:
+
+**Vergleich CNS2022 Features (CICFlowmeter V4 optimized) mit CICIDS2017 Features (CICFlowmeter V4)**
 
 Feature Mapping:
 | #  | CNS2022 - CICIDS2017       | CNS2022 - CSECICIDS2018    | CICIDS2017 (Original)       | Renamed Dataset   |
@@ -126,6 +129,3 @@ Die Datensets haben folgende features:
 | | | | | | | 85 | Attempted Category |
 
 
-Auswahl der features für das Modell:
-
-**Vergleich CNS2022 Features (CICFlowmeter V4 optimized) mit CICIDS2017 Features (CICFlowmeter V4)**
