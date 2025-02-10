@@ -12,12 +12,13 @@ Wenn diese Option aktiviert ist wird der tcpdump dissection Mechanismus umgangen
 
  ```console
 ./tcpdump-sensor -h
-tcpdump version 4.99.5
+tcpdump-sensor version 0.6
+Extension of tcpdump version 4.99.5
 libpcap version 1.10.1
 OpenSSL 3.4.0 22 Oct 2024
 SMI-library: 0.5.0
 64-bit build, 64-bit time_t
-Usage: tcpdump [-AbdDefhHIJKlLnNOpqStuUvxX#] [ -B size ] [ -c count ] [--count]
+Usage: tcpdump-sensor [-AbdDefhHIJKlLnNOpqStuUvxX#] [ -B size ] [ -c count ] [--count]
 		[ -C file_size ] [ -E algo:secret ] [ -F file ] [ -G seconds ]
 		[ -i interface ] [ --immediate-mode ] [ -j tstamptype ]
 		[ -m module ] ...
@@ -26,7 +27,7 @@ Usage: tcpdump [-AbdDefhHIJKlLnNOpqStuUvxX#] [ -B size ] [ -c count ] [--count]
 		[ -V file ] [ -w file ] [ -W filecount ] [ -y datalinktype ]
 		[ --time-stamp-precision precision ] [ --micro ] [ --nano ]
 		[ -z postrotate-command ] [ -Z user ] [ expression ]
-		[ --ids-packet-provider <config.yml>] send dissected packets to ids tool using config
+		[ --ids-packet-provider <config.yml>]  send dissected packets to ids tool using config
 ```
 
 ### tcpdump-sensor compiles and works on at least the following platforms:
