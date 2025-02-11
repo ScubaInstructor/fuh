@@ -1,4 +1,4 @@
-Vorbereitung der Date für 10000 pro Kategorie
+Vorbereitung der Daten für 10000 pro Kategorie
 
 ```
 ./dataset_sample_rnd_records.sh -i combined_CSECICIDS2018_improved -o sampled_CSECICIDS2018_improved -t 10000
