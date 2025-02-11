@@ -8,19 +8,31 @@
         },
 
         "score": {
-            "type": "float"
+          "type": "float"
         },
 
         "timestamp": {
-        "type": "date"
+          "type": "date"
         }, 
 
         "own_flow_count": {
-            "type": "integer"
+          "type": "integer"
         },
 
         "uuid": {
           "type": "keyword"
+        },
+        
+        "confusion_matrix": { 
+          "type": "nested",
+          "properties": {
+            "actual": { "type": "keyword" },
+            "predicted": { "type": "keyword" },
+            "value": { "type": "integer" }
+          }
+        },
+        "class_metric_data" : {
+          "type": "float" 
         }
       }
     }

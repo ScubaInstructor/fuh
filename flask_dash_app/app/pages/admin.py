@@ -10,9 +10,10 @@ from flask import current_app
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from .. import mc, restore_model_to_previous_version, cec
+from ..model_visualisations import Model_Visualisator
 
 dash.register_page(__name__, path='/admin/')
-
+mv = Model_Visualisator()
 def user_management_content():
     with current_app.app_context():
         users = User.query.all()
@@ -83,10 +84,11 @@ def model_management_content():
         import asyncio
         from ..elastic_connector import CustomElasticsearchConnector
         cec = CustomElasticsearchConnector()
-        model_properties = asyncio.run(cec.get_all_model_properties(size=10)) 
+        model_properties = asyncio.run(cec.get_all_model_properties(size=1000)) 
         # TODO only necessary for older models from early training stages...
         model_properties['score'] = model_properties['score'].apply(lambda x: float(x) if isinstance(x, (int, float)) else float(x[0]))
-
+        box_plot_df = model_properties.sort_values(by='timestamp')
+        box_plot_df = box_plot_df.head(10)
         model_list = model_properties.to_dict('records')  
 
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -145,11 +147,14 @@ def model_management_content():
                 style={"height": 400}
             ),
             dcc.Graph(figure=fig),
+            dcc.Graph(figure=mv.create_boxplot_for_all_models(box_plot_df)),
             html.Div(id="model-management-status"),
             dcc.Store(id='selected-model-data'),  # Saves the selected model data
             dbc.Modal(  # Add the Modal-Dialog 
                 [
                     dbc.ModalHeader(dbc.ModalTitle("Restore Model?")),
+                    dcc.Graph(id="confusion-matrix-figure"),
+                    dcc.Graph(id="model-metrics"),
                     dbc.ModalBody("Do you want to restore this model?"),
                     dbc.ModalFooter([
                         dbc.Button("Delete", id="delete-model-button", color="danger", className="me-auto"),  # Delete Button left
@@ -547,13 +552,21 @@ def manage_model(restore_clicks, delete_clicks, selected_model_data, selectedRow
     
 @dash.callback(
     Output('selected-model-data', 'data'),
+    Output('confusion-matrix-figure', 'figure'),
+    Output('model-metrics', 'figure'),
     Input('models-grid', 'cellClicked'),
-    State('models-grid', 'rowData')
+    State('models-grid', 'rowData'),
+    State('models-grid', 'selectedRows')
 )
-def store_selected_data(cell_clicked, row_data):
+def store_selected_data(cell_clicked, row_data, selectedRows_data):
     if cell_clicked:
         row_index = cell_clicked['rowIndex']
         selected_row = row_data[row_index]
-        return selected_row
-    return None
+        confusion_matrix_data = selected_row['confusion_matrix']
+        confusion_matrix_figure = mv.create_confusion_matrix_figure_from_elastic_data(confusion_matrix_data)
+        model_classes = mv.extract_class_names(confusion_matrix_data)
+        class_metric_figure = mv.create_metrics_overview_from_elastic_data(selected_row['class_metric_data'], model_classes)
+        return selected_row, confusion_matrix_figure, class_metric_figure
+
+    return None, dash.no_update, dash.no_update
 

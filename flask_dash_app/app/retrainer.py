@@ -12,7 +12,7 @@ import zipfile
 from sklearn.metrics import precision_recall_fscore_support as f_score
 from sklearn.metrics import accuracy_score as ascore
 
-
+from .model_visualisations import Model_Visualisator
 from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
 from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
 
@@ -201,8 +201,16 @@ def retrain() -> str:
     print(own_flow_count)
     model_hash = compute_model_hash(model)
     dump(model, "flask_dash_app/" + APPPATH + MODELPATH + MODELNAME)
+    # prepare Model Propertis for elastic
+    mv = Model_Visualisator()
+    cm = mv.create_confusion_matrix(model, X_test, y_test)   
+    cm_data_as_list = mv.create_storeable_list_from_cunfusion_matrix(cm, classes=list(model.classes_))
+    metrics = mv.create_metrics_list_for_storing_in_elastic(model, X_test, y_test) 
+    # Save model and properties to elastic
     cec = CustomElasticsearchConnector()
-    elastic_id = asyncio.run(cec.save_model_properties(hash_value=model_hash, timestamp=datetime.now(), own_flow_count=own_flow_count, score=score))
+    elastic_id = asyncio.run(cec.save_model_properties(hash_value=model_hash, timestamp=datetime.now(), 
+                                                       own_flow_count=own_flow_count, score=score, 
+                                                       confusion_matrix_data=cm_data_as_list, class_metric_data=metrics))
     create_transferrable_zipfile(elastic_id, model, scaler, ipca)
     return model_hash
 
