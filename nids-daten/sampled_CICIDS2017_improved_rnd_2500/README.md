@@ -1,4 +1,6 @@
 
+
+```
 # ./dataset_sample_rnd_records.sh -i combined_CICIDS2017_improved -o sampled_CICIDS2017_improved -t 2500
 Randomly selected 2500 from BENIGN_1582566.csv (total: 1582566)
 Copied all 736 records from Botnet_736.csv
@@ -16,7 +18,7 @@ Randomly selected 2500 from SSH-Patator_2961.csv (total: 2961)
 Copied all 73 records from Web_Attack_-_Brute_Force_73.csv
 Copied all 13 records from Web_Attack_-_SQL_Injection_13.csv
 Copied all 18 records from Web_Attack_-_XSS_18.csv
-
+```
 
 | Filename | Records in File | Target Records | Missing Records | Fraction Available | Missing (%) | Ratio |
 |----------|-----------------|----------------|-----------------|------------------|-------------|-------|
