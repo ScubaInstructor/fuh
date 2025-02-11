@@ -1,56 +1,58 @@
-### **Common Sense in the Research Community for Imbalanced Datasets**  
+### **Umgang mit unausgeglichenen Datensätzen in maschinellem Lernen**
 
-Imbalanced datasets are a common challenge in machine learning, especially in fields like **cybersecurity, fraud detection, and medical diagnosis**. Below are well-supported guidelines based on research and best practices.
-
----
-
-### **1. Minimum Number of Records for Meaningful Training**  
-The required number of records depends on the **complexity of the problem**, **feature quality**, and **model type**.
-
-- **General Rule:** At least **1,000 samples per class** are needed for robust machine learning models.  
-- **Rare Events (e.g., Fraud Detection, Cybersecurity):** Even **100-500 samples** can be valuable if features are strong and well-engineered. [SRC2]  
-- **Deep Learning Models:** Require **thousands to millions** of samples per class due to high parameter complexity. 
-- **Classical ML Models (SVM, Decision Trees, Random Forest, etc.):** Can perform well with **hundreds to thousands** of samples per class, especially when features are well-structured.
-
-📌 **Key Takeaway:** There’s no strict minimum, but **at least a few hundred samples per class are needed for meaningful results**.
+Unausgeglichene Datensätze sind eine häufige Herausforderung in Bereichen wie **Cybersicherheit, Betrugserkennung und medizinischer Diagnose**. Im Folgenden finden Sie eine wissenschaftlich fundierte Einschätzung und Best Practices für den Umgang mit solchen Datensätzen.
 
 ---
 
-### **2. Maximum Ratio Between Imbalanced Classes**  
-Maintaining a reasonable class balance is essential to **prevent model bias**.
+### **1. Mindestanzahl an Datensätzen für sinnvolles Training**
+Die erforderliche Anzahl an Datensätzen hängt von der **Komplexität des Problems**, der **Qualität der Merkmale** und dem **Modelltyp** ab.
 
-- **Ideal Ratio:** **1:1** (fully balanced dataset).
-- **Commonly Accepted Ratio:** **1:10 to 1:100** – models can still generalize well within this range.
-- **Extreme Cases (e.g., Fraud Detection, Intrusion Detection, Medical Rare Diseases):**
-  - Ratios like **1:1000** can still work but require **oversampling, undersampling, or advanced handling** like class-weighted loss functions.
+- **Allgemeine Faustregel**: Mindestens **1.000 Beispiele pro Klasse** werden für robuste maschinelle Lernmodelle empfohlen.
+- **Seltene Ereignisse (z. B. Betrugserkennung, Cybersicherheit)**: Selbst **100–500 Beispiele** können ausreichen, wenn die Merkmale stark und gut konstruiert sind.
+- **Tiefe Lernmodelle (Deep Learning)**: Erfordern oft **Tausende bis Millionen von Beispielen pro Klasse**, da sie viele Parameter lernen müssen[8].
+- **Klassische ML-Modelle (z. B. SVM, Entscheidungsbäume, Random Forest)**: Können mit **Hunderten bis Tausenden von Beispielen pro Klasse** gut funktionieren, insbesondere bei gut strukturierten Merkmalen.
 
-📌 **Key Takeaway:** A **1:10 to 1:100** ratio is typically acceptable. Beyond that, the model may become biased toward the majority class.
-
----
-
-### **3. Is It Necessary to Have the Same Number of Records for All Classes?**  
-- **No, absolute balance is NOT necessary!**  
-- **Instead of forcing balance**, consider:
-  - **Class Weights:** Assign **higher loss penalties** to misclassified minority samples. 
-  - **Oversampling (SMOTE, ADASYN):** Generate synthetic samples for the minority class.
-  - **Undersampling:** Reduce the majority class size to avoid it dominating the learning process. 
-  - **Hybrid Approaches:** Combine **both oversampling & undersampling** for best results.  
-
-📌 **Key Takeaway:** **Forcing equal class sizes is not required**; using **sampling techniques and class weighting** is often better.
+📌 **Fazit**: Es gibt keine strikte Mindestanzahl, aber mindestens einige Hundert Beispiele pro Klasse sind notwendig, um sinnvolle Ergebnisse zu erzielen.
 
 ---
 
-### **4. Definition of a Balanced Dataset**  
-A dataset is considered **balanced** when the class distribution allows the model to **learn effectively** without being biased toward a majority class.
+### **2. Maximales Verhältnis zwischen unausgeglichenen Klassen**
+Ein ausgewogenes Verhältnis zwischen den Klassen ist entscheidend, um **Modellverzerrungen** zu vermeiden.
 
-🔹 **Types of Balance:**  
-- **Strict Balance:** Each class has the **exact same number** of samples (**not required**).  
-- **Practical Balance:** The ratio is kept at **1:10 or better**, allowing the model to learn **without biasing toward the majority class**.
-- **Effective Balance:** The dataset is adjusted with techniques like **SMOTE, class weighting, and data augmentation** to optimize performance.
+- **Ideales Verhältnis**: **1:1** (vollständig ausgeglichener Datensatz).
+- **Akzeptiertes Verhältnis**: **1:10 bis 1:100** – Modelle können in diesem Bereich noch gut generalisieren.
+- **Extreme Fälle (z. B. Betrugserkennung, Intrusion Detection)**:
+  - Verhältnisse wie **1:1000** können funktionieren, erfordern jedoch Techniken wie Oversampling, Undersampling oder klassengewichtete Verlustfunktionen.
 
-📌 **Key Takeaway:** Instead of rigidly balancing data, **use proper strategies** to ensure fair learning.
+📌 **Fazit**: Ein Verhältnis von **1:10 bis 1:100** ist akzeptabel. Darüber hinaus sind spezielle Maßnahmen erforderlich, um Verzerrungen zu vermeiden.
 
-### **Final Thoughts**
-- **You do NOT need perfect balance**, but **extreme imbalance (1:1000+) must be corrected**.  
-- **Cybersecurity, fraud detection, and anomaly detection models** often deal with imbalance and require **SMOTE, class weighting, or other handling methods**.  
-- **1:10 to 1:100 ratios are acceptable**, but anything beyond that requires intervention.  
+---
+
+### **3. Ist es notwendig, die gleiche Anzahl an Datensätzen für alle Klassen zu haben?**
+- **Nein, absolute Balance ist NICHT notwendig!**
+- Stattdessen sollten Sie:
+  - **Klassengewichte verwenden**: Weisen Sie Fehlklassifikationen der Minderheitsklasse höhere Verluststrafen zu.
+  - **Oversampling (z. B. SMOTE)**: Generieren Sie synthetische Beispiele für die Minderheitsklasse.
+  - **Undersampling**: Reduzieren Sie die Größe der Mehrheitsklasse.
+  - **Hybride Ansätze**: Kombinieren Sie Oversampling und Undersampling für optimale Ergebnisse.
+
+📌 **Fazit**: Es ist nicht erforderlich, gleiche Klassengrößen zu erzwingen; stattdessen sollten Sie Techniken wie Sampling und Klassengewichtung verwenden.
+
+---
+
+### **4. Definition eines ausgeglichenen Datensatzes**
+Ein Datensatz gilt als ausgeglichen, wenn die Klassendatenverteilung es dem Modell ermöglicht, effektiv zu lernen, ohne zugunsten der Mehrheitsklasse verzerrt zu sein.
+
+🔹 **Arten von Balance**:
+- **Strikte Balance**: Jede Klasse hat exakt die gleiche Anzahl an Beispielen (**nicht erforderlich**).
+- **Praktische Balance**: Das Verhältnis wird bei etwa **1:10 oder besser gehalten**, sodass das Modell ohne Verzerrung lernen kann.
+- **Effektive Balance**: Der Datensatz wird mit Techniken wie SMOTE oder klassengewichteten Verlustfunktionen angepasst.
+
+📌 **Fazit**: Anstatt starre Balance zu erzwingen, sollten Sie geeignete Strategien anwenden, um ein faires Lernen sicherzustellen.
+
+---
+
+### **Zusammenfassung**
+- Perfekte Balance ist nicht erforderlich, aber extreme Ungleichgewichte (z. B. 1:1000 oder mehr) müssen korrigiert werden.
+- In Bereichen wie Cybersicherheit oder Betrugserkennung sind Techniken wie SMOTE oder klassengewichtete Verlustfunktionen entscheidend.
+- Ein Verhältnis von 1:10 bis 1:100 ist akzeptabel; darüber hinaus sind spezifische Maßnahmen erforderlich.
