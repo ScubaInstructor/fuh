@@ -45,7 +45,7 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
         DataFrame: A DataFrame containing the merged training dataset. Class size is 5000.
     """
     # TODO paths must be fixed someday
-    trainingdata = load("flask_dash_app/app/datasources/DataFrame_with_balanced_dataset.pkl") # load("DataFrame_with_balanced_dataset.pkl")
+    trainingdata = load("app/datasources/DataFrame_with_balanced_dataset.pkl") # load("DataFrame_with_balanced_dataset.pkl")
     if len(own_data) == 0:
         df =  trainingdata
     else:
@@ -150,10 +150,10 @@ def create_transferrable_zipfile(elastic_id, model, scaler, ipca):
     files = {"model":model, "scaler":scaler, "ipca":ipca}
     
     # to store old models
-    makedirs("flask_dash_app/" + APPPATH +MODELARCHIVEPATH, exist_ok = True)
+    makedirs(APPPATH +MODELARCHIVEPATH, exist_ok = True)
 
     # create zipfile
-    zf = zipfile.ZipFile("flask_dash_app/" + APPPATH +MODELPATH + ZIPFILENAME, "w")
+    zf = zipfile.ZipFile(APPPATH +MODELPATH + ZIPFILENAME, "w")
 
     for f in files:
         # dump new file
@@ -162,7 +162,7 @@ def create_transferrable_zipfile(elastic_id, model, scaler, ipca):
         zf.write(f"{f}.pkl")
     zf.close()
     # Copy the model to archive with the name of the ip of the elastic document
-    copyfile(zf.filename, f"flask_dash_app/{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip")
+    copyfile(zf.filename, f"{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip")
 
 def compute_model_hash(model) -> str:
         """Compute the hash of the model without writing it to disk using the sha265 algorithm.
