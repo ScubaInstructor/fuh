@@ -26,7 +26,7 @@ class CustomElasticsearchConnector:
         verify_certs (bool): Whether to verify SSL certificates.
     """
 
-    def __init__(self, api_key:str=API_KEY, hosts:str=['https://localhost:9200'], verify_certs:bool=False):
+    def __init__(self, api_key:str=API_KEY, hosts:str=['https://localhost:9200'], verify_certs:bool=False): # TODO hosts!
         """
         Initializes the CustomElasticsearchConnector.
 

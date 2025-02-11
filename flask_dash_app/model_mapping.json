@@ -1,0 +1,39 @@
+{
+    "mappings": {
+      "dynamic": "false",
+      "properties": {
+        
+        "model_hash": {
+          "type": "keyword"
+        },
+
+        "score": {
+          "type": "float"
+        },
+
+        "timestamp": {
+          "type": "date"
+        }, 
+
+        "own_flow_count": {
+          "type": "integer"
+        },
+
+        "uuid": {
+          "type": "keyword"
+        },
+        
+        "confusion_matrix": { 
+          "type": "nested",
+          "properties": {
+            "actual": { "type": "keyword" },
+            "predicted": { "type": "keyword" },
+            "value": { "type": "integer" }
+          }
+        },
+        "class_metric_data" : {
+          "type": "float" 
+        }
+      }
+    }
+  }
