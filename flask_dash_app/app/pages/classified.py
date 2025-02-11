@@ -43,23 +43,24 @@ cec = CustomElasticsearchConnector()
 # Load maximum possible number of flows
 try:
     df = asyncio.run(cec.get_all_flows(view="seen", size=flow_nr, include_pcap=False))
-    flow_data = df["flow_data"].apply(pd.Series)
-    min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
-    max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
-    mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
-    q1_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.25])
-    q3_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.75])
-
-    min_flow_data = pd.DataFrame([min_flow_data], columns=mean_flow_data.index.to_list())
-    max_flow_data = pd.DataFrame([max_flow_data], columns=mean_flow_data.index.to_list())
-    mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
-    # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
-    # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
     if df.empty:
         trigger = "empty"
     else:
         # Normal behaviour trigger
         trigger = "normal"
+        flow_data = df["flow_data"].apply(pd.Series)
+        min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
+        max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
+        mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
+        q1_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.25])
+        q3_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.75])
+
+        min_flow_data = pd.DataFrame([min_flow_data], columns=mean_flow_data.index.to_list())
+        max_flow_data = pd.DataFrame([max_flow_data], columns=mean_flow_data.index.to_list())
+        mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
+        # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
+        # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
+    
 except Exception as e:
     trigger = "error"
     df = pd.DataFrame()
@@ -211,11 +212,10 @@ def download_pcap(n_clicks, selected_row_data):
     Output("seen_grid", "rowData"),
     Input("classified-submit-classification", "n_clicks"),
     Input("classified-reset-grid", "n_clicks"),
-    Input("world-map-classified", "clickData"),
     State('classified-attack-type-dropdown', 'value'),
     State('classified-selected-row-store', 'data')
 )
-def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, selected_type, selected_row_data):
+def update_grid(n_clicks_submit, n_clicks_reset, selected_type, selected_row_data):
     print( n_clicks_reset)
     trigger = dash.callback_context.triggered_id
     print(f"Triggered by: {trigger}")
@@ -239,14 +239,6 @@ def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, selected_type, s
             print(f'Flow {flow_id} could not be classified. Elastic Database Error.')
         
         return df_update[df_update["has_been_seen"] == True].to_dict("records")
-    # Updating based on selection on the map
-    if trigger == "world-map-classified" and clickData_map:
-        print("Updating grid based on world-map-classified click...")
-        df_lat = df[df["source_lat"] == clickData_map["points"][0]["lat"]]
-        df_lon = df_lat[df_lat["source_lon"] == clickData_map["points"][0]["lon"]]
-        clickData_map = None
-        return df_lon[df_lon["has_been_seen"] == True].to_dict("records")
-    
 
     # Default return for initial load
     print("Default grid load...")

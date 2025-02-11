@@ -29,23 +29,24 @@ cec = CustomElasticsearchConnector()
 # Load maximum possible number of flows
 try:
     df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
-    flow_data = df["flow_data"].apply(pd.Series)
-    min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
-    max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
-    mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
-    q1_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.25])
-    q3_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.75])
-
-    min_flow_data = pd.DataFrame([min_flow_data], columns=mean_flow_data.index.to_list())
-    max_flow_data = pd.DataFrame([max_flow_data], columns=mean_flow_data.index.to_list())
-    mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
-    # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
-    # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
     if df.empty:
         trigger = "empty"
     else:
         # Normal behaviour trigger
         trigger = "normal"
+        flow_data = df["flow_data"].apply(pd.Series)
+        min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
+        max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
+        mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
+        q1_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.25])
+        q3_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.75])
+
+        min_flow_data = pd.DataFrame([min_flow_data], columns=mean_flow_data.index.to_list())
+        max_flow_data = pd.DataFrame([max_flow_data], columns=mean_flow_data.index.to_list())
+        mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
+        # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
+        # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
+
 except Exception as e:
     trigger = "error"
     df = pd.DataFrame()
@@ -267,10 +268,8 @@ def download_pcap(n_clicks, selected_row_data):
         type="application/vnd.tcpdump.pcap"
     )
 
-
 @callback(
     Output("unseen_grid", "rowData"),
-    Output("world-map-inbox", "figure"),
     Input("time-scatter", "clickData"),
     Input("submit-classification", "n_clicks"),
     Input("reset-grid", "n_clicks"),
@@ -283,29 +282,26 @@ def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map):
     
     if trigger == "reset-grid" and n_clicks_reset:
         df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
-        unseen_data = df_update[df_update["has_been_seen"] == False].to_dict("records")
-        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
+        return df_update[df_update["has_been_seen"] == False].to_dict("records")
     
     if trigger == "submit-classification" and n_clicks_submit:
         print("Updating grid after classification...")
         df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
-        unseen_data = df_update[df_update["has_been_seen"] == False].to_dict("records")
-        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
+        return df_update[df_update["has_been_seen"] == False].to_dict("records")
         
     if trigger == "time-scatter" and clickData:
         print("Updating grid based on time-scatter click...")
-        unseen_data = df[df["time_bin"]==clickData["points"][0]['x']].to_dict("records")
-        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
+        return df[df["time_bin"]==clickData["points"][0]['x']].to_dict("records")
     
     if trigger == "world-map-inbox" and clickData_map:
         print("Updating grid based on world-map-inbox click...")
         df_lat = df[df["source_lat"]==clickData_map["points"][0]["lat"]]
-        unseen_data = df_lat[df_lat["source_lon"]==clickData_map["points"][0]["lon"]].to_dict("records")
-        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
+        return df_lat[df_lat["source_lon"]==clickData_map["points"][0]["lon"]].to_dict("records")
     
     # Default return for initial load
     print("Default grid load...")
-    return dash.no_update, dash.no_update
+    return dash.no_update
+
 
 # Check for failed elastic connection
 print(trigger)
