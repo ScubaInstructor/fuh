@@ -100,6 +100,58 @@ Feature Mapping:
 |	|	|	|	|	attack_number |
 
 
+**Training Dataset Size Recommendations** CIC-IDS-2017
+
+| Class Name                               | Current Records | Recommended Records |
+|------------------------------------------|-----------------|---------------------|
+| BENIGN                                   | 1,582,566       | 2,500–10,000       |
+| Botnet                                   | 736             | ~250               |
+| DDoS                                     | 95,144          | ~500               |
+| DoS_GoldenEye                            | 7,567           | ~500               |
+| DoS_Hulk                                 | 158,468         | ~500               |
+| DoS_Slowhttptest                         | 1,740           | ~250               |
+| DoS_Slowloris                            | 3,859           | ~250               |
+| FTP-Patator                              | 3,972           | ~250               |
+| Heartbleed                               | 11              | ~250 (SMOTE/ADASYN)|
+| Infiltration_-_Portscan                  | 71,767          | ~500               |
+| Infiltration                             | 36              | ~250 (SMOTE/ADASYN)|
+| Portscan                                 | 159,066         | ~500               |
+| SSH-Patator                              | 2,961           | ~250               |
+| Web_Attack_-_Brute_Force                 | 73              | ~250 (SMOTE/ADASYN)|
+| Web_Attack_-_SQL_Injection               | 13              | ~250 (SMOTE/ADASYN)|
+| Web_Attack_-_XSS                         | 18              | ~250 (SMOTE/ADASYN)|
+
+
+**Training Dataset Size Recommendations** CSE-CID-IDS-2017
+
+| **Class Name**                               | **Current Records** | **Recommended Records**      |
+|----------------------------------------------|----------------------|------------------------------|
+| **BENIGN**                                   | 59,353,486           | **2,500–10,000**            |
+| **Botnet Ares - Attempted**                  | 262                  | **~250 (SMOTE/ADASYN)**     |
+| **Botnet Ares**                              | 142,921              | **~500**                    |
+| **DDoS-HOIC**                                | 1,082,293            | **~500**                    |
+| **DDoS-LOIC-HTTP**                           | 289,328              | **~500**                    |
+| **DDoS-LOIC-UDP - Attempted**                | 251                  | **~250 (SMOTE/ADASYN)**     |
+| **DDoS-LOIC-UDP**                            | 2,527                | **~250 (SMOTE/ADASYN)**     |
+| **DoS GoldenEye - Attempted**                | 4,301                | **~250 (SMOTE/ADASYN)**     |
+| **DoS GoldenEye**                            | 22,560               | **~500**                    |
+| **DoS Hulk - Attempted**                     | 86                   | **~250 (SMOTE/ADASYN)**     |
+| **DoS Hulk**                                 | 1,803,160            | **~500**                    |
+| **DoS Slowloris - Attempted**                | 2,280                | **~250 (SMOTE/ADASYN)**     |
+| **DoS Slowloris**                            | 8,490                | **~250 (SMOTE/ADASYN)**     |
+| **FTP-BruteForce - Attempted**               | 298,874              | **~500**                    |
+| **Infiltration - Communication Victim Attacker**   | 204             | **~250 (SMOTE/ADASYN)**     |
+| **Infiltration - Dropbox Download - Attempted**    | 28              | **~250 (SMOTE/ADASYN)**     |
+| **Infiltration - Dropbox Download**          | 85                   | **~250 (SMOTE/ADASYN)**     |
+| **Infiltration - NMAP Portscan**             | 89,374               | **~500**                    |
+| **SSH-BruteForce**                           | 94,197               | **~500**                    |
+| **Web Attack - Brute Force - Attempted**     | 137                  | **~250 (SMOTE/ADASYN)**     |
+| **Web Attack - Brute Force**                 | 131                  | **~250 (SMOTE/ADASYN)**     |
+| **Web Attack - SQL - Attempted**             | 14                   | **~250 (SMOTE/ADASYN)**     |
+| **Web Attack - SQL**                         | 39                   | **~250 (SMOTE/ADASYN)**     |
+| **Web Attack - XSS - Attempted**             | 4                    | **~250 (SMOTE/ADASYN)**     |
+| **Web Attack - XSS**                         | 113                  | **~250 (SMOTE/ADASYN)**     |
+
 
 Die Datensets haben folgende features:
 
