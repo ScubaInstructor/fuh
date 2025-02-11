@@ -1,7 +1,7 @@
 from elasticsearch import AsyncElasticsearch, AuthenticationException
 from elasticsearch_dsl import AsyncSearch, connections
 import asyncio
-import pandas as pd #TODO not necessary
+import pandas as pd
 from datetime import datetime
 from elasticsearch.exceptions import AuthenticationException
 from pandas import DataFrame, concat, to_datetime
@@ -9,12 +9,12 @@ import dotenv
 from os import getenv
 
 # Load from .env File
-dotenv.load_dotenv()
-INDEX_NAME = "network_flows" # TODO extract from docker-compose
-MODEL_INDEX_NAME = "model_properties" 
+dotenv.load_dotenv(dotenv_path="/dash/.env") 
+INDEX_NAME = getenv("NETWORK_FLOW_INDEX_NAME") 
+MODEL_INDEX_NAME = getenv("MODEL_DATA_INDEX_NAME")
 # Load from "shared_secrets" docker volume
 dotenv.load_dotenv(dotenv_path="/shared_secrets/server-api-key.env")
-API_KEY = getenv("ELASTIC_SERVER_KEY") # "T3MxcDhKUUI1djJRZ05acWNUQnY6YzlVX29WOUVRTUtYQ1BFdjFVZDNKdw=="   
+API_KEY = getenv("ELASTIC_SERVER_KEY") 
 
 class CustomElasticsearchConnector:
     """
@@ -26,7 +26,7 @@ class CustomElasticsearchConnector:
         verify_certs (bool): Whether to verify SSL certificates.
     """
 
-    def __init__(self, api_key:str=API_KEY, hosts:str=['https://localhost:9200'], verify_certs:bool=False): # TODO hosts!
+    def __init__(self, api_key:str=API_KEY, hosts:str=['https://es01:9200'], verify_certs:bool=False): # TODO hosts!
         """
         Initializes the CustomElasticsearchConnector.
 

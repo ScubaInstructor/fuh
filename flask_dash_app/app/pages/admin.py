@@ -85,8 +85,6 @@ def model_management_content():
         from ..elastic_connector import CustomElasticsearchConnector
         cec = CustomElasticsearchConnector()
         model_properties = asyncio.run(cec.get_all_model_properties(size=1000)) 
-        # TODO only necessary for older models from early training stages...
-        model_properties['score'] = model_properties['score'].apply(lambda x: float(x) if isinstance(x, (int, float)) else float(x[0]))
         box_plot_df = model_properties.sort_values(by='timestamp')
         box_plot_df = box_plot_df.head(10)
         model_list = model_properties.to_dict('records')  

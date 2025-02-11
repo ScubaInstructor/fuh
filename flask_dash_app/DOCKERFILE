@@ -25,4 +25,5 @@ COPY app /dash/app
 
 WORKDIR /dash
 
-CMD ["/usr/local/bin/python3", "-u", "run.py"]
+CMD ["/usr/local/bin/python3", "-u", "run.py"] 
+#CMD ["gunicorn", "--bind", "0.0.0.0:5000", "run:app"]

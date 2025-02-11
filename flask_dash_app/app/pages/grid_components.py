@@ -18,7 +18,7 @@ def create_world_map(fig_id, df):
         dash.dcc.Graph: A Dash graph component containing the world map
     """
     # Get Map
-    reader = geoip2.database.Reader('flask_dash_app/app/GeoLite2-City.mmdb')
+    reader = geoip2.database.Reader('app/GeoLite2-City.mmdb')
 
 
     def ip_to_lat_lon(ip):
