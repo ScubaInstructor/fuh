@@ -2,19 +2,19 @@ import asyncio
 from datetime import datetime
 from os import makedirs
 from shutil import copyfile
-from .elastic_connector import CustomElasticsearchConnector
+from elastic_connector import CustomElasticsearchConnector
 from pandas import DataFrame, concat, json_normalize
 from sklearn.model_selection import cross_val_score, train_test_split
 from joblib import dump, load
 from numpy import ndarray
-from .pipelining_utilities import adapt_cicids2017_for_training, gemeinsame_columns
+from pipelining_utilities import adapt_cicids2017_for_training, gemeinsame_columns
 import zipfile
 from sklearn.metrics import precision_recall_fscore_support as f_score
 from sklearn.metrics import accuracy_score as ascore
 
-from .model_visualisations import Model_Visualisator
-from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
-from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
+from model_visualisations import Model_Visualisator
+from __init__ import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
+#from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
 
 DEBUGGING = True
 
@@ -183,7 +183,50 @@ def compute_model_hash(model) -> str:
             m.update(memf.getvalue())
         return m.hexdigest()
 
-   
+def create_boxplot_data_for_elastic(mergeddata):
+    """
+    Transform Boxplot Data to elasticsearch storeable format.
+    """
+
+    def _create_metrics_list(data):
+        """
+        Creates a list of mertic objects
+        """
+        metrics = []
+        
+        # Hilfsfunktion, um eine Liste von Dictionaries für eine Metrik zu erstellen
+        def create_metric_data(metric_name, data_series):
+            metric_data = {}
+            for c in data_series.columns:
+                metric_data[c] = data_series[c]
+            return metric_data
+
+        # Berechne die verschiedenen Metriken
+        metrics.append({"metric_name": "mean", **create_metric_data("mean", data.mean(numeric_only=True).to_frame().T)})
+        metrics.append({"metric_name": "min", **create_metric_data("min", data.min(numeric_only=True).to_frame().T)})
+        metrics.append({"metric_name": "max", **create_metric_data("max", data.max(numeric_only=True).to_frame().T)})
+        metrics.append({"metric_name": "q1", **create_metric_data("q1", data.quantile(0.25, numeric_only=True).to_frame().T)})
+        metrics.append({"metric_name": "median", **create_metric_data("median", data.median(numeric_only=True).to_frame().T)})
+        metrics.append({"metric_name": "q3", **create_metric_data("q3", data.quantile(0.75, numeric_only=True).to_frame().T)})
+        
+        return metrics
+
+    result = []
+    
+    # For complete Dataset
+    analysis_data_complete = mergeddata.drop(["attack_type","dst_port"], axis=1)
+    metrics_complete = _create_metrics_list(analysis_data_complete)
+    result.append({"class": "complete", "metrics": metrics_complete})
+    
+    # By class
+    classes = list(mergeddata["attack_type"].unique())
+    for c in classes:
+        class_data = mergeddata[mergeddata["attack_type"]==c].drop(["attack_type","dst_port"], axis=1)
+        metrics_class = _create_metrics_list(class_data)
+        result.append({"class": c, "metrics": metrics_class})
+    
+    return result
+
 def retrain() -> str:
     """
     Retrains the model using self-created flow data. Stores the model as {elastic_id}.zip in the modelarchive, and sets the new model hash.
@@ -198,10 +241,11 @@ def retrain() -> str:
     predicted = model.predict(X_test)
     score = ascore(y_test,predicted)
     own_flow_count = own_data.shape[0]
-    print(own_flow_count)
     model_hash = compute_model_hash(model)
     dump(model, "flask_dash_app/" + APPPATH + MODELPATH + MODELNAME)
-    # prepare Model Propertis for elastic
+    # prepare Model Properties for elastic
+    boxplotdata = create_boxplot_data_for_elastic(mergeddata)
+    print(boxplotdata)
     mv = Model_Visualisator()
     cm = mv.create_confusion_matrix(model, X_test, y_test)   
     cm_data_as_list = mv.create_storeable_list_from_cunfusion_matrix(cm, classes=list(model.classes_))
@@ -210,7 +254,7 @@ def retrain() -> str:
     cec = CustomElasticsearchConnector()
     elastic_id = asyncio.run(cec.save_model_properties(hash_value=model_hash, timestamp=datetime.now(), 
                                                        own_flow_count=own_flow_count, score=score, 
-                                                       confusion_matrix_data=cm_data_as_list, class_metric_data=metrics))
+                                                       confusion_matrix_data=cm_data_as_list, class_metric_data=metrics, boxplotdata=boxplotdata))
     create_transferrable_zipfile(elastic_id, model, scaler, ipca)
     return model_hash
 
@@ -218,5 +262,6 @@ def retrain() -> str:
 
 if __name__ == '__main__':
     #retrain()
-    x = get_self_created_flow_data()
-    print(x)
+    #x = get_self_created_flow_data()
+    #print(x)
+    retrain()

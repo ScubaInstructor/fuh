@@ -33,7 +33,92 @@
         },
         "class_metric_data" : {
           "type": "float" 
+        },
+        "boxplotdata": {
+          "type": "nested",
+          "properties": {
+            "class": {
+              "type": "keyword"
+            },
+            "metrics": {
+              "type": "nested",
+              "properties": {
+                "metric_name": {
+                  "type": "keyword"
+                },
+                "flow_duration": { "type": "float" },
+                "tot_fwd_pkts": { "type": "float" },
+                "tot_bwd_pkts": { "type": "float" },
+                "totlen_fwd_pkts": { "type": "float" },
+                "totlen_bwd_pkts": { "type": "float" },
+                "fwd_pkt_len_max": { "type": "float" },
+                "fwd_pkt_len_min": { "type": "float" },
+                "fwd_pkt_len_mean": { "type": "float" },
+                "fwd_pkt_len_std": { "type": "float" },
+                "bwd_pkt_len_max": { "type": "float" },
+                "bwd_pkt_len_min": { "type": "float" },
+                "bwd_pkt_len_mean": { "type": "float" },
+                "bwd_pkt_len_std": { "type": "float" },
+                "flow_byts_s": { "type": "float" },
+                "flow_pkts_s": { "type": "float" },
+                "flow_iat_mean": { "type": "float" },
+                "flow_iat_std": { "type": "float" },
+                "flow_iat_max": { "type": "float" },
+                "flow_iat_min": { "type": "float" },
+                "fwd_iat_tot": { "type": "float" },
+                "fwd_iat_mean": { "type": "float" },
+                "fwd_iat_std": { "type": "float" },
+                "fwd_iat_max": { "type": "float" },
+                "fwd_iat_min": { "type": "float" },
+                "bwd_iat_tot": { "type": "float" },
+                "bwd_iat_mean": { "type": "float" },
+                "bwd_iat_std": { "type": "float" },
+                "bwd_iat_max": { "type": "float" },
+                "bwd_iat_min": { "type": "float" },
+                "fwd_psh_flags": { "type": "float" },
+                "fwd_urg_flags": { "type": "float" },
+                "fwd_header_len": { "type": "float" },
+                "bwd_header_len": { "type": "float" },
+                "fwd_pkts_s": { "type": "float" },
+                "bwd_pkts_s": { "type": "float" },
+                "pkt_len_min": { "type": "float" },
+                "pkt_len_max": { "type": "float" },
+                "pkt_len_mean": { "type": "float" },
+                "pkt_len_std": { "type": "float" },
+                "pkt_len_var": { "type": "float" },
+                "fin_flag_cnt": { "type": "float" },
+                "syn_flag_cnt": { "type": "float" },
+                "rst_flag_cnt": { "type": "float" },
+                "psh_flag_cnt": { "type": "float" },
+                "ack_flag_cnt": { "type": "float" },
+                "urg_flag_cnt": { "type": "float" },
+                "cwr_flag_count": { "type": "float" },
+                "ece_flag_cnt": { "type": "float" },
+                "down_up_ratio": { "type": "float" },
+                "pkt_size_avg": { "type": "float" },
+                "fwd_seg_size_avg": { "type": "float" },
+                "bwd_seg_size_avg": { "type": "float" },
+                "subflow_fwd_pkts": { "type": "float" },
+                "subflow_fwd_byts": { "type": "float" },
+                "subflow_bwd_pkts": { "type": "float" },
+                "subflow_bwd_byts": { "type": "float" },
+                "init_fwd_win_byts": { "type": "float" },
+                "init_bwd_win_byts": { "type": "float" },
+                "fwd_act_data_pkts": { "type": "float" },
+                "fwd_seg_size_min": { "type": "float" },
+                "active_mean": { "type": "float" },
+                "active_std": { "type": "float" },
+                "active_max": { "type": "float" },
+                "active_min": { "type": "float" },
+                "idle_mean": { "type": "float" },
+                "idle_std": { "type": "float" },
+                "idle_max": { "type": "float" },
+                "idle_min": { "type": "float" }
+              }
+            }
+          }
         }
+        
       }
     }
   }
