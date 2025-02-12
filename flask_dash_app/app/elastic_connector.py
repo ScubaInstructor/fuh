@@ -11,7 +11,7 @@ from os import getenv
 # Load from .env File
 dotenv.load_dotenv()
 INDEX_NAME = "network_flows" # TODO extract from docker-compose
-MODEL_INDEX_NAME = "new_new_new_model_properties"
+MODEL_INDEX_NAME = "model_properties"
 # Load from "shared_secrets" docker volume
 dotenv.load_dotenv(dotenv_path="/shared_secrets/server-api-key.env")
 API_KEY = "bGVSYS01UUJOSTJXWnVZYmktWTY6MUUxVTJ2clRTemlBc0MzNldOcDNpZw=="    # TODO extract from docker compose

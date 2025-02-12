@@ -2,19 +2,18 @@ import asyncio
 from datetime import datetime
 from os import makedirs
 from shutil import copyfile
-from elastic_connector import CustomElasticsearchConnector
+from .elastic_connector import CustomElasticsearchConnector
 from pandas import DataFrame, concat, json_normalize
 from sklearn.model_selection import cross_val_score, train_test_split
 from joblib import dump, load
 from numpy import ndarray
-from pipelining_utilities import adapt_cicids2017_for_training, gemeinsame_columns
+from .pipelining_utilities import adapt_cicids2017_for_training, gemeinsame_columns
 import zipfile
 from sklearn.metrics import precision_recall_fscore_support as f_score
 from sklearn.metrics import accuracy_score as ascore
 
-from model_visualisations import Model_Visualisator
-from __init__ import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
-#from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
+from .model_visualisations import Model_Visualisator
+from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
 
 DEBUGGING = True
 
