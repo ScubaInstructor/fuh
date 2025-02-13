@@ -54,15 +54,15 @@ services:
         find . -type d -exec chmod 750 \{\} \;;
         find . -type f -exec chmod 640 \{\} \;;
         echo "Waiting for Elasticsearch availability";
-        until curl -s --cacert config/certs/ca/ca.crt https://es01:9200 | grep -q "missing authentication credentials"; do sleep 15; done;
+        until curl -s --cacert config/certs/ca/ca.crt https://es01:9200 | grep -q "missing authentication credentials"; do sleep 5; done;
         if [ ! -e /usr/share/elasticsearch/shared_secrets/not_first_start ]; then
             touch /usr/share/elasticsearch/shared_secrets/not_first_start
           echo "-- First container startup --"
           # JUST_ONCE_LOGIC_HERE
           echo "Importing network_flow mapping";
-          until curl -u elastic:${ELASTIC_PASSWORD} -X PUT "https://es01:9200/${NETWORK_FLOW_INDEX_NAME}" -H "Content-Type: application/json" -d @/usr/share/elasticsearch/mapping.json --insecure; do sleep 10; done;
+          until curl -u elastic:${ELASTIC_PASSWORD} -X PUT "https://es01:9200/${NETWORK_FLOW_INDEX_NAME}" -H "Content-Type: application/json" -d @/usr/share/elasticsearch/mapping.json --insecure; do sleep 5; done;
           echo "Importing model mapping";
-          until curl -u elastic:${ELASTIC_PASSWORD} -X PUT "https://es01:9200/${MODEL_DATA_INDEX_NAME}" -H "Content-Type: application/json" -d @/usr/share/elasticsearch/model_mapping.json --insecure; do sleep 10; done;
+          until curl -u elastic:${ELASTIC_PASSWORD} -X PUT "https://es01:9200/${MODEL_DATA_INDEX_NAME}" -H "Content-Type: application/json" -d @/usr/share/elasticsearch/model_mapping.json --insecure; do sleep 5; done;
           echo "Writing api-token for ${NETWORK_FLOW_INDEX_NAME}" into file server-api-key.txt;
           until curl -X POST "https://es01:9200/_security/api_key" -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" --insecure -d "{
             \"name\": \"server_key_generated_from_setup\",  
@@ -76,7 +76,7 @@ services:
                 ]
               }
             }
-          }" | sed -e "s/.*encoded\":/ELASTIC_SERVER_KEY=/" | sed -e "s/}//" > /usr/share/elasticsearch/shared_secrets/server-api-key.env; do sleep 10; done;
+          }" | sed -e "s/.*encoded\":/ELASTIC_SERVER_KEY=/" | sed -e "s/}//" > /usr/share/elasticsearch/shared_secrets/server-api-key.env; do sleep 5; done;
           echo "All done!";
           # chmod 666 /usr/share/elasticsearch/keys/elastic-sensor-token.txt;
           # echo "Use this api-key: $(cat /usr/share/elasticsearch/keys/elastic-sensor-token.txt) for your sensors! ";
