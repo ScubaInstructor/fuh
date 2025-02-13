@@ -7,4 +7,4 @@ if __name__ == '__main__':
         from app.models import User
         db.create_all()  # Create database tables
 
-    app.run(debug=True, host="0.0.0.0") # TODO remove debug
+    app.run(debug=False, host="0.0.0.0") # TODO remove debug

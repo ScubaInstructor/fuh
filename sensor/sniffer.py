@@ -169,7 +169,8 @@ class My_Sniffer():
                 
                 # get ip and port numbers of flow
                 my_ip = get_if_addr(interfaces.conf.iface)
-                print(f"my_ip: {my_ip} {type(my_ip)}, dest_ip: {item.dest_ip} {type(item.dest_ip)}")
+                if DEBUGGING:
+                    print(f"my_ip: {my_ip} {type(my_ip)}, dest_ip: {item.dest_ip} {type(item.dest_ip)}")
                 if item.dest_ip == my_ip:
                     partner_ip = item.src_ip
                     sensor_port = item.dest_port
