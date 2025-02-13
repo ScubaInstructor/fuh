@@ -43,23 +43,25 @@ cec = CustomElasticsearchConnector()
 # Load maximum possible number of flows
 try:
     df = asyncio.run(cec.get_all_flows(view="seen", size=flow_nr, include_pcap=False))
-    flow_data = df["flow_data"].apply(pd.Series)
-    min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
-    max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
-    mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
-    q1_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.25])
-    q3_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.75])
-
-    min_flow_data = pd.DataFrame([min_flow_data], columns=mean_flow_data.index.to_list())
-    max_flow_data = pd.DataFrame([max_flow_data], columns=mean_flow_data.index.to_list())
-    mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
-    # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
-    # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
+    print("Data loaded")
     if df.empty:
         trigger = "empty"
     else:
         # Normal behaviour trigger
         trigger = "normal"
+        flow_data = df["flow_data"].apply(pd.Series)
+        min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
+        max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
+        mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
+        q1_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.25])
+        q3_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.75])
+
+        min_flow_data = pd.DataFrame([min_flow_data], columns=mean_flow_data.index.to_list())
+        max_flow_data = pd.DataFrame([max_flow_data], columns=mean_flow_data.index.to_list())
+        mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
+        # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
+        # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
+    
 except Exception as e:
     trigger = "error"
     df = pd.DataFrame()
@@ -286,7 +288,7 @@ if trigger == "error":
             dismissable=False,
             is_open=True,
         ),
-        dbc.NavLink("Refresh", href="/classified/", style={"margin-top": "20px", "text-decoration": "underline"})
+        dbc.NavLink("Refresh", href="/classified/", style={"margin-top": "20px", "text-decoration": "underline"}, external_link=True)
     ])
 elif trigger == "empty":
     layout = html.Div([
@@ -296,7 +298,7 @@ elif trigger == "empty":
             dismissable=False,
             is_open=True,
         ),
-        dbc.NavLink("Refresh", href="/classified/", style={"margin-top": "20px", "text-decoration": "underline"})
+        dbc.NavLink("Refresh", href="/classified/", style={"margin-top": "20px", "text-decoration": "underline"}, external_link=True)
     ])
 else:
     print("normal layout")    
@@ -306,7 +308,7 @@ else:
         dbc.Row([
             html.Hr(),
         ], className="mt-3 mb-3"),
-        dbc.Row([make_prediction_pie_chart("prediction_pie", df, "attack_class")], className="mt-3 mb-3"),
+        dbc.Row([make_prediction_pie_chart("prediction_pie", df, "attack_class", "Classications")], className="mt-3 mb-3"),
         # Main content row
         dbc.Row([
             #make_grid(seen=False, grid_id="seen_grid")
