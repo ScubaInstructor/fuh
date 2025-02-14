@@ -111,7 +111,7 @@ def get_latest_model():
             if sensor_name not in reg_sensor_names:
                 return jsonify({"error": "Sensor doesn't exists"}), 401
         filename = MODELPATH + ZIPFILENAME  
-        if Path("app/" + filename).is_file():
+        if Path("flask_dash_app/app/" + filename).is_file():    # TODO this will be different in Dockercontainer
             return send_file(
                 filename,
                 as_attachment=True,

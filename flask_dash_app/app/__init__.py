@@ -24,7 +24,7 @@ MODELARCHIVEPATH = MODELPATH + "old_models"
 
 # Initialize Elasticsearch connector and get data
 cec = CustomElasticsearchConnector()
-mc = Modelhash_Container(APPPATH+MODELPATH+MODELNAME)
+mc = Modelhash_Container("flask_dash_app/"+APPPATH+MODELPATH+MODELNAME)
 
 def create_app():
     load_dotenv()
@@ -76,10 +76,10 @@ def restore_model_to_previous_version(elastic_id:str, mc: Modelhash_Container) -
     
     """
     try:
-        copyfile(f"{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip", APPPATH + MODELPATH + ZIPFILENAME)
-        zf = zipfile.ZipFile(APPPATH + MODELPATH + ZIPFILENAME, "r")
-        zf.extract(member=MODELNAME, path=APPPATH + MODELPATH)
-        mc.set_hash(mc.compute_file_hash( APPPATH + MODELPATH + MODELNAME))
+        copyfile(f"flask_dash_app/{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip", "flask_dash_app/" + APPPATH + MODELPATH + ZIPFILENAME)
+        zf = zipfile.ZipFile("flask_dash_app/" + APPPATH + MODELPATH + ZIPFILENAME, "r")
+        zf.extract(member=MODELNAME, path="flask_dash_app/" + APPPATH + MODELPATH)
+        mc.set_hash(mc.compute_file_hash("flask_dash_app/" + APPPATH + MODELPATH + MODELNAME))
     except FileNotFoundError:
         print("Requested File not found")
         raise FileNotFoundError
@@ -94,7 +94,7 @@ def remove_model_zip_file_from_disk(elastic_id:str) -> bool:
         bool: Success or no success
     """
     try:
-        os.remove(f"{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip")
+        os.remove(f"flask_dash_app/{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip")
         return True
     except FileNotFoundError as fne:
         print(fne)

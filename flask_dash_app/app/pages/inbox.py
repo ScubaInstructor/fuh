@@ -26,28 +26,28 @@ flow_nr = 5000
 
 # Initialize Elasticsearch connector and get data
 cec = CustomElasticsearchConnector()
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
 # Load maximum possible number of flows
 try:
-    df = loop.run_until_complete(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
-    flow_data = df["flow_data"].apply(pd.Series)
-    min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
-    max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
-    mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
-    q1_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.25])
-    q3_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.75])
-
-    min_flow_data = pd.DataFrame([min_flow_data], columns=mean_flow_data.index.to_list())
-    max_flow_data = pd.DataFrame([max_flow_data], columns=mean_flow_data.index.to_list())
-    mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
-    # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
-    # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
+    df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
     if df.empty:
         trigger = "empty"
     else:
         # Normal behaviour trigger
         trigger = "normal"
+        
+        flow_data = df["flow_data"].apply(pd.Series)
+        min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
+        max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
+        mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
+        q1_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.25])
+        q3_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.75])
+
+        min_flow_data = pd.DataFrame([min_flow_data], columns=mean_flow_data.index.to_list())
+        max_flow_data = pd.DataFrame([max_flow_data], columns=mean_flow_data.index.to_list())
+        mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
+        # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
+        # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
+    
 except Exception as e:
     trigger = "error"
     df = pd.DataFrame()
@@ -57,8 +57,7 @@ except Exception as e:
 # Get statistics of flow data
 
 def create_welcome_alert():
-    df = loop.run_until_complete(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
-    return dbc.Alert(        
+    return dbc.Alert(
         "Welcome! You have " + str(len(df[df["has_been_seen"] == False])) + " new flows.",
         id="welcome-alert",
         dismissable=True,
@@ -211,8 +210,8 @@ def handle_classification(n_clicks, selected_type, selected_row_data, current_al
     status = "success"
 
     try:
-        loop.run_until_complete(cec.set_attack_class(flow_id=flow_id, attack_class=selected_type))
-        loop.run_until_complete(cec.set_flow_as_seen(flow_id=flow_id))
+        asyncio.run(cec.set_attack_class(flow_id=flow_id, attack_class=selected_type))
+        asyncio.run(cec.set_flow_as_seen(flow_id=flow_id))
         # Create new alert
         new_alert = {
             'id': f'alert-{len(current_alerts)}',
@@ -257,7 +256,7 @@ def download_pcap(n_clicks, selected_row_data):
         return None
 
     # Request pcap data for flow id
-    item = loop.run_until_complete(cec.get_all_flows(view="all", size=1, include_pcap=True, flow_id=selected_row_data[0]["flow_id"]))
+    item = asyncio.run(cec.get_all_flows(view="all", size=1, include_pcap=True, flow_id=selected_row_data[0]["flow_id"]))
     detail_df = pd.DataFrame(item)
     pcap_data = (detail_df["pcap_data"].values[0])
     flow_id = detail_df["flow_id"].values[0]
@@ -277,24 +276,22 @@ def download_pcap(n_clicks, selected_row_data):
     Input("time-scatter", "clickData"),
     Input("submit-classification", "n_clicks"),
     Input("reset-grid", "n_clicks"),
-    Input("world-map-inbox", "clickData"),
-    Input('url', 'pathname')
+    Input("world-map-inbox", "clickData")
 )
-def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map, pathname):
-    global df
-    print(clickData, n_clicks_submit, n_clicks_reset, clickData_map, pathname)
+def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map):
+    print(clickData, n_clicks_submit, n_clicks_reset, clickData_map)
     trigger = dash.callback_context.triggered_id
+    print(f"Triggered by: {trigger}")
     
     if trigger == "reset-grid" and n_clicks_reset:
-        df_update = loop.run_until_complete(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
+        df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
         unseen_data = df_update[df_update["has_been_seen"] == False].to_dict("records")
         return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
     
     if trigger == "submit-classification" and n_clicks_submit:
         print("Updating grid after classification...")
-        df_update = loop.run_until_complete(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
-        df = df_update[df_update["has_been_seen"] == False]
-        unseen_data =  df.to_dict("records")
+        df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
+        unseen_data = df_update[df_update["has_been_seen"] == False].to_dict("records")
         return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
         
     if trigger == "time-scatter" and clickData:
@@ -308,19 +305,12 @@ def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map, pathn
         unseen_data = df_lat[df_lat["source_lon"]==clickData_map["points"][0]["lon"]].to_dict("records")
         return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
     
-    if trigger == None and pathname == "/inbox/":
-        print("Updating grid based on reload...")
-        df_update = loop.run_until_complete(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
-        df = df_update[df_update["has_been_seen"] == False]
-        unseen_data = df.to_dict("records")
-        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
-
     # Default return for initial load
     print("Default grid load...")
     return dash.no_update, dash.no_update
 
 # Check for failed elastic connection
-print("trigger is " + trigger)
+print(trigger)
 if trigger == "error":
     layout = html.Div([
         dbc.Alert(
@@ -329,7 +319,7 @@ if trigger == "error":
             dismissable=False,
             is_open=True,
         ),
-        dbc.NavLink("Refresh", href="/inbox/", style={"margin-top": "20px", "text-decoration": "underline"})
+        dbc.NavLink("Refresh", href="/inbox/", style={"margin-top": "20px", "text-decoration": "underline"}, external_link=True)
     ])
 elif trigger == "empty":
     layout = html.Div([
@@ -339,12 +329,11 @@ elif trigger == "empty":
             dismissable=False,
             is_open=True,
         ),
-        dbc.NavLink("Refresh", href="/inbox/", style={"margin-top": "20px", "text-decoration": "underline"})
+        dbc.NavLink("Refresh", href="/inbox/", style={"margin-top": "20px", "text-decoration": "underline"}, external_link=True)
     ])
 else:    
     # Layout Components
     layout = html.Div([
-        dcc.Location(id='url', refresh=True),
         dbc.Row([
             html.Div(create_welcome_alert()),
             dcc.Store(id='alert-store', data=[]),

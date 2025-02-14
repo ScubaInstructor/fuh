@@ -1,0 +1,22 @@
+FROM python:3.12-alpine
+
+# Create /app folder
+RUN mkdir /app
+
+# Copy requirements.txt
+COPY requirements.txt /app
+
+# Install Python packages from requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Symlink python3 to python
+RUN ln -sf /usr/local/bin/python3 /usr/bin/python
+
+# Copying the necessary files to working folder
+COPY minimal-login-app.py /app/
+
+
+WORKDIR /app
+
+# For debugging mostly
+CMD ["/usr/local/bin/python3", "-u", "minimal-login-app.py", "--host=0.0.0.0"]
