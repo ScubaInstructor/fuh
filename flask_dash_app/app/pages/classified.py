@@ -38,8 +38,6 @@ def is_admin():
 # Number of flows to display
 flow_nr = 10000
 
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
 # Initialize Elasticsearch connector and get data
 cec = CustomElasticsearchConnector()
 # Load maximum possible number of flows
@@ -197,7 +195,7 @@ def download_pcap(n_clicks, selected_row_data):
         return None
 
     # Request pcap data for flow id
-    item = loop.run_until_complete(cec.get_all_flows(view="all", size=1, include_pcap=True, flow_id=selected_row_data[0]["flow_id"]))
+    item = asyncio.run(cec.get_all_flows(view="all", size=1, include_pcap=True, flow_id=selected_row_data[0]["flow_id"]))
     detail_df = pd.DataFrame(item)
     pcap_data = (detail_df["pcap_data"].values[0])
     flow_id = detail_df["flow_id"].values[0]
@@ -216,29 +214,28 @@ def download_pcap(n_clicks, selected_row_data):
     Input("classified-submit-classification", "n_clicks"),
     Input("classified-reset-grid", "n_clicks"),
     Input("world-map-classified", "clickData"),
-    Input("url", "pathname"),
     State('classified-attack-type-dropdown', 'value'),
     State('classified-selected-row-store', 'data')
 )
-def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, pathname, selected_type, selected_row_data):
+def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, selected_type, selected_row_data):
     print( n_clicks_reset)
     trigger = dash.callback_context.triggered_id
     print(f"Triggered by: {trigger}")
     
     if trigger == "classified-reset-grid" and n_clicks_reset:
-        df_update = loop.run_until_complete(cec.get_all_flows(view="seen", size=flow_nr, include_pcap=False))
+        df_update = asyncio.run(cec.get_all_flows(view="seen", size=flow_nr, include_pcap=False))
         return df_update[df_update["has_been_seen"] == True].to_dict("records")
     
     if trigger == "classified-submit-classification" and n_clicks_submit:
         print("Updating grid after classification...")
-        df_update = loop.run_until_complete(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
+        df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
         
         # Reclassification
         detail_df = pd.DataFrame(selected_row_data)
         flow_id = detail_df["flow_id"].values[0]
 
         try:
-            loop.run_until_complete(cec.set_attack_class(flow_id=flow_id, attack_class=selected_type))
+            asyncio.run(cec.set_attack_class(flow_id=flow_id, attack_class=selected_type))
 
         except:
             print(f'Flow {flow_id} could not be classified. Elastic Database Error.')
@@ -252,12 +249,7 @@ def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, pathname, select
         clickData_map = None
         return df_lon[df_lon["has_been_seen"] == True].to_dict("records")
     
-    # Reload
-    if trigger == None and pathname == "/classified/":
-        print("Updating grid based on reload...")
-        df_update = loop.run_until_complete(cec.get_all_flows(view="seen", size=flow_nr, include_pcap=False))
-        return df_update[df_update["has_been_seen"] == True].to_dict("records")
-    
+
     # Default return for initial load
     print("Default grid load...")
     return dash.no_update
