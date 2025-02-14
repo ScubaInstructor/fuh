@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from .. import mc, restore_model_to_previous_version, cec
 from ..model_visualisations import Model_Visualisator
+from elasticsearch.exceptions import ConnectionError
 
 dash.register_page(__name__, path='/admin/')
 mv = Model_Visualisator()
@@ -164,6 +165,8 @@ def model_management_content():
                 is_open=False,
             ),
         ])
+    except ConnectionError as ce:
+        return html.Div(f"Could not connect to Elasticsearch. Please check your connection and try again.", style={"color": "red"})
     except Exception as e:
         return html.Div(f"Error fetching model data: {str(e)}", style={"color": "red"})
 
