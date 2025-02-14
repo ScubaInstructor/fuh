@@ -38,12 +38,15 @@ def is_admin():
 # Number of flows to display
 flow_nr = 10000
 
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 # Initialize Elasticsearch connector and get data
 cec = CustomElasticsearchConnector()
 # Load maximum possible number of flows
 try:
+    print("reloaded")
     df = asyncio.run(cec.get_all_flows(view="seen", size=flow_nr, include_pcap=False))
-    print("Data loaded")
+    print(df)
     if df.empty:
         trigger = "empty"
     else:
@@ -61,7 +64,7 @@ try:
         mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
         # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
         # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
-    
+        
 except Exception as e:
     trigger = "error"
     df = pd.DataFrame()
@@ -228,7 +231,7 @@ def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, selected_type, s
     
     if trigger == "classified-submit-classification" and n_clicks_submit:
         print("Updating grid after classification...")
-        df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
+        
         
         # Reclassification
         detail_df = pd.DataFrame(selected_row_data)
@@ -240,6 +243,7 @@ def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, selected_type, s
         except:
             print(f'Flow {flow_id} could not be classified. Elastic Database Error.')
         
+        df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
         return df_update[df_update["has_been_seen"] == True].to_dict("records")
     # Updating based on selection on the map
     if trigger == "world-map-classified" and clickData_map:
@@ -249,7 +253,6 @@ def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, selected_type, s
         clickData_map = None
         return df_lon[df_lon["has_been_seen"] == True].to_dict("records")
     
-
     # Default return for initial load
     print("Default grid load...")
     return dash.no_update
@@ -277,52 +280,145 @@ def retrain_model(n_clicks):
     except Exception as e:
         return html.Div(f"Error retraining model: {str(e)}", style={"color": "red"}), False
 
+# # Add new callback for refresh
+# @callback(
+#     [Output("url-refresh", "pathname"),
+#      Output("url-refresh", "refresh")],  # Add refresh output
+#     Input("refresh-button", "n_clicks"),
+#     prevent_initial_call=True
+# )
+# def refresh_page(n_clicks):
+#     if n_clicks:
+#         # Force reload data from Elasticsearch
+       
+#         try:
+            
+#             return "/classified/", True  # Force page refresh
+#         except Exception as e:
+#             print(f"Error refreshing data: {e}")
+#             return dash.no_update, dash.no_update
+#     return dash.no_update, dash.no_update
 
 
-# Check for failed elastic connection
-if trigger == "error":
-    layout = html.Div([
-        dbc.Alert(
-            "Could not connect to Elasticsearch. Please check your connection and try again.",
-            color="danger",
-            dismissable=False,
-            is_open=True,
-        ),
-        dbc.NavLink("Refresh", href="/classified/", style={"margin-top": "20px", "text-decoration": "underline"}, external_link=True)
-    ])
-elif trigger == "empty":
-    layout = html.Div([
-        dbc.Alert(
-            "No classified flows available yet.",
-            color="warning",
-            dismissable=False,
-            is_open=True,
-        ),
-        dbc.NavLink("Refresh", href="/classified/", style={"margin-top": "20px", "text-decoration": "underline"}, external_link=True)
-    ])
-else:
-    print("normal layout")    
-    # Layout Components
-    layout = html.Div([
-        dcc.Location(id="url", refresh=True),
-        dbc.Row([
-            html.Hr(),
-        ], className="mt-3 mb-3"),
-        dbc.Row([make_prediction_pie_chart("prediction_pie", df, "attack_class", "Classications")], className="mt-3 mb-3"),
-        # Main content row
-        dbc.Row([
-            #make_grid(seen=False, grid_id="seen_grid")
-            # Left side - Grid
-            dbc.Col([
-                make_grid(df, seen=True, grid_id="seen_grid", columns=[{"field": "timestamp"},{"field": "sensor_name"},{"field": "partner_ip"},{"field": "attack_class"},{"field": "flow_id"}]),
-                dbc.Button("Reset", id="classified-reset-grid", className="ms-auto", n_clicks=None, style={"margin-top": "2px"}),
-                html.Div(id="retrain-button"),
-                html.Div(id="retrain-status")
-            ], width=6, style={"border": "1px solid #ddd", "padding": "10px"}),  # Add border and padding for debugging
-            # Right side - Pie Chart
-            dbc.Col([
-                create_world_map("world-map-classified",df)
-            ], width=6, style={"border": "1px solid #ddd", "padding": "10px"})  # Add border and padding for debugging
-        ], style={'margin': '20px 0', 'display': 'flex', 'flex-direction': 'row'}),
-        make_modal(),
-    ])
+# @callback(
+#     [Output("url-refresh", "pathname"),
+#      Output("url-refresh", "refresh")],
+#     Input("refresh-button", "n_clicks"),
+#     prevent_initial_call=True,
+#     clientside=True  # Add this parameter
+# )
+# def refresh_page(n_clicks):
+#     return """
+#     function(n_clicks) {
+#         if (n_clicks) {
+#             window.location.reload(true);
+#             return ['/classified/', true];
+#         }
+#         return [window.dash_clientside.no_update, window.dash_clientside.no_update];
+#     }
+#     """
+
+# Replace the existing layout code with this basic layout
+layout = html.Div([
+    dcc.Location(id="url", refresh=False),
+    # dcc.Interval(id="interval-classified", interval=100, max_intervals=1),
+    html.Div(id="classified-page-content-container")
+])
+
+# Add new callback to serve the main content
+@callback(
+    Output("classified-page-content-container", "children"),
+    [#Input("interval-classified", "n_intervals"),
+    #  Input("refresh-button", "n_clicks"),
+     Input("url", "pathname")],  # Changed to use regular url instead of url-refresh
+    prevent_initial_call=False
+)
+def serve_layout(pathname):
+
+    print(f"pathname: {pathname}")
+    
+    
+    if pathname == "/classified/":
+        # Always reload data for any trigger
+        try:
+            print("Reloading data from Elasticsearch")
+            df = asyncio.run(cec.get_all_flows(view="seen", size=flow_nr, include_pcap=False))
+            if df.empty:
+                trigger = "empty"
+            else:
+                trigger = "normal"
+                # Recalculate flow statistics
+                flow_data = df["flow_data"].apply(pd.Series)
+                min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
+                max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
+                mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
+        except Exception as e:
+            print(f"Error loading data: {e}")
+            trigger = "error"
+            df = pd.DataFrame()
+
+        if trigger == "error":
+            return dbc.Container([
+                dbc.Alert(
+                    "Could not connect to Elasticsearch. Please check your connection and try again.",
+                    color="danger",
+                    dismissable=False,
+                    is_open=True,
+                ),
+                dbc.Button(
+                    "Refresh Data",
+                    id="refresh-button",
+                    color="primary",
+                    className="mt-3", 
+                    href="/classified/",
+                    external_link=True
+                )
+            ], fluid=True, className="px-0 mx-0")
+        
+        elif trigger == "empty":
+            return dbc.Container([
+                dbc.Alert(
+                    "No classified flows available yet.",
+                    color="warning",
+                    dismissable=False,
+                    is_open=True,
+                ),
+                dbc.Button(
+                    "Refresh Data",
+                    id="refresh-button",
+                    color="primary",
+                    className="mt-3", 
+                    href="/classified/",
+                    external_link=True
+                )
+            ], fluid=True, className="px-0 mx-0")
+        
+        else:
+            return dbc.Container([
+                dbc.Row([
+                    html.Hr(),
+                ], className="mt-3 mb-3"),
+                dbc.Row([make_prediction_pie_chart("prediction_pie", df, "attack_class")], 
+                    className="mt-3 mb-3"),
+                dbc.Row([
+                    dbc.Col([
+                        make_grid(df, seen=True, grid_id="seen_grid", 
+                                columns=[{"field": "timestamp"},
+                                    {"field": "sensor_name"},
+                                    {"field": "partner_ip"},
+                                    {"field": "attack_class"},
+                                    {"field": "flow_id"}]),
+                        dbc.Button("Reset", id="classified-reset-grid", 
+                                className="ms-auto", n_clicks=None, 
+                                style={"margin-top": "2px"}),
+                        html.Div(id="retrain-button"),
+                        html.Div(id="retrain-status")
+                    ], width=6, style={"border": "1px solid #ddd", "padding": "10px"}),
+                    dbc.Col([
+                        create_world_map("world-map-classified", df)
+                    ], width=6, style={"border": "1px solid #ddd", "padding": "10px"})
+                ], style={'margin': '20px 0', 'display': 'flex', 'flex-direction': 'row'}),
+                make_modal(),
+            ], fluid=True, className="px-0 mx-0")
+    else:
+        dash.no_update
