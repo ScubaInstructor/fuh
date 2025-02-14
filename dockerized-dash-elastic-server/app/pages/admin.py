@@ -85,7 +85,9 @@ def model_management_content():
         import asyncio
         from ..elastic_connector import CustomElasticsearchConnector
         cec = CustomElasticsearchConnector()
-        model_properties = asyncio.run(cec.get_all_model_properties(size=1000)) 
+        model_properties = asyncio.run(cec.get_all_model_properties(size=1000))
+        if len(model_properties) == 0:
+            return html.Div("No models found in Elasticsearch.", style={"color": "red"}) 
         box_plot_df = model_properties.sort_values(by='timestamp')
         box_plot_df = box_plot_df.head(10)
         model_list = model_properties.to_dict('records')  
