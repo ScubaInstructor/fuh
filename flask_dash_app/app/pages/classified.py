@@ -219,11 +219,11 @@ def download_pcap(n_clicks, selected_row_data):
     Input("classified-submit-classification", "n_clicks"),
     Input("classified-reset-grid", "n_clicks"),
     Input("world-map-classified", "clickData"),
-    Input('df_with_location_classified', 'data'),
-#    State('classified-attack-type-dropdown', 'value'),
-#    State('classified-selected-row-store', 'data')
+    State('df_with_location_classified', 'data'),
+    State('classified-attack-type-dropdown', 'value'),
+    State('classified-selected-row-store', 'data')
 )
-def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, df_with_location_classified_data):#, selected_type_value, selected_row_data):
+def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, df_with_location_classified_data, selected_type_value, selected_row_data):
     print( n_clicks_reset)
     trigger = dash.callback_context.triggered_id
     print(f"Triggered by: {trigger}")

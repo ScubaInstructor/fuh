@@ -279,7 +279,7 @@ def download_pcap(n_clicks, selected_row_data):
     Input("submit-classification", "n_clicks"),
     Input("reset-grid", "n_clicks"),
     Input("world-map-inbox", "clickData"),
-    Input('df_with_location', 'data')
+    State('df_with_location', 'data')
 )
 def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map, df_with_location_data):
     print(clickData, n_clicks_submit, n_clicks_reset, clickData_map, )
@@ -300,9 +300,10 @@ def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map, df_wi
         
     if trigger == "time-scatter" and clickData:
         print("Updating grid based on time-scatter click...")
-        
-        df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
-        df["time_bin"] = df["timestamp"].dt.floor("0.1min")
+        df = pd.DataFrame(df_with_location_data)
+        #df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
+        #df["time_bin"] = df["timestamp"].dt.floor("0.1min")
+        df["time_bin"] = pd.to_datetime(df["time_bin"])
         unseen_data = df[df["time_bin"]==clickData["points"][0]['x']].to_dict("records")
         return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
     
