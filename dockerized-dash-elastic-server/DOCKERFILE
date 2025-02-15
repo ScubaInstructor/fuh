@@ -19,9 +19,10 @@ RUN ln -sf /usr/local/bin/python3 /usr/bin/python
 # Copying the necessary files to working folder
 COPY .env /dash/.env
 COPY run.py /dash/run.py
-# COPY instance /dash/instance # from docker-compose
+COPY instance /dash/instance
+copy certs /dash/certs
 COPY app /dash/app
 
 WORKDIR /dash
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "1","--timeout", "0","--reload","--log-level=debug","--capture-output","--enable-stdio-inheritance","--access-logfile=-","--error-logfile=-","run:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "1","--timeout", "0","--reload","--log-level=debug","--capture-output","--enable-stdio-inheritance","--access-logfile=-","--error-logfile=-", "--keyfile", "/dash/certs/private_key.pem", "--certfile", "/dash/certs/certificate.pem", "run:app"]
