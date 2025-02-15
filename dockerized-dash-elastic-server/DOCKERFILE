@@ -1,4 +1,4 @@
-FROM python:3.11-alpine
+FROM python:3.12-alpine
 
 # # Install necessary dependencies 
 RUN apk --no-cache add procps  gcc g++ musl-dev python3-dev py3-scikit-learn openblas-dev
@@ -22,8 +22,6 @@ COPY run.py /dash/run.py
 # COPY instance /dash/instance # from docker-compose
 COPY app /dash/app
 
-
 WORKDIR /dash
 
-#CMD ["/usr/local/bin/python3", "-u", "run.py"] 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "run:app", "-w 4"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "1","--timeout", "0","--reload","--log-level=debug","--capture-output","--enable-stdio-inheritance","--access-logfile=-","--error-logfile=-","run:app"]

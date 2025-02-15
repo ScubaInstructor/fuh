@@ -27,8 +27,8 @@ cec = CustomElasticsearchConnector()
 mc = Modelhash_Container(APPPATH+MODELPATH+MODELNAME)
 
 def create_app():
-    load_dotenv()
-    app.secret_key = getenv('your_secret_key')
+    load_dotenv(dotenv_path="/dash/.env")
+    app.secret_key = getenv('YOUR_SECRET_KEY')
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 

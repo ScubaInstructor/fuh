@@ -3,38 +3,8 @@ import requests
 from cicflowmeter import flow
 from scapy.utils import PcapWriter
 from io import BytesIO
-import paramiko
 from scapy.all import rdpcap
 from subprocess import run
-
-
-def send_BytesIO_datei_over_scp(pcap_buffer: BytesIO, target_host: str, target_path: str, username: str, mySSHK: str = '/app/sshkey'):
-    """
-    Sends a pcap file via SCP to a target host.
-
-    Args: 
-        pcap_buffer (io.BytesIO): The BytesIO object containing the pcap data. 
-        target_host (str): The hostname or IP address of the target host. 
-        target_path (str): The path on the target host where the file should be sent
-    """
-    ssh = paramiko.SSHClient()
-    # Automatically accept hostkey maybe too insecure?
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()) 
-    try:
-        ssh.connect(target_host, username=username, key_filename=mySSHK, banner_timeout=30)
-        
-        # Use SCP to transfer the file
-        with ssh.open_sftp() as sftp:
-            with sftp.file(target_path, 'wb') as remote_file:
-                remote_file.write(pcap_buffer.getvalue())
-    except paramiko.ssh_exception.AuthenticationException as ae:
-        print("Authentication failed.")    
-        print(ae)
-    except paramiko.ssh_exception.SSHException as se:
-        print("Timeout Fehler!")    
-        print(se)
-
-    ssh.close()
 
 class HttpWriter():
     """

@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 from base64 import b64decode, b64encode
 from io import BytesIO
-import base64
+import geoip2.database
 import plotly.express as px
 
 from ..elastic_connector import CustomElasticsearchConnector
@@ -26,6 +26,8 @@ flow_nr = 5000
 
 # Initialize Elasticsearch connector and get data
 cec = CustomElasticsearchConnector()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 # Load maximum possible number of flows
 try:
     df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
@@ -34,7 +36,6 @@ try:
     else:
         # Normal behaviour trigger
         trigger = "normal"
-        
         flow_data = df["flow_data"].apply(pd.Series)
         min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
         max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
@@ -47,7 +48,7 @@ try:
         mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
         # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
         # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
-    
+        
 except Exception as e:
     trigger = "error"
     df = pd.DataFrame()
@@ -57,12 +58,13 @@ except Exception as e:
 # Get statistics of flow data
 
 def create_welcome_alert():
-    return dbc.Alert(
+    df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
+    return dbc.Alert(        
         "Welcome! You have " + str(len(df[df["has_been_seen"] == False])) + " new flows.",
         id="welcome-alert",
         dismissable=True,
         is_open=True,
-        duration=4000,
+        duration=6000,
     )
 
 def make_modal():
@@ -109,20 +111,20 @@ def create_grid_callback(grid_id, detail_grid_id):
 
 
 # Add callback for accordion
-@callback(
-    Output("boxplot-content", "children"),
-    [Input("accordion", "active_item")],
-    [State('selected-row-store', 'data')]
-)
-def update_boxplot(is_open, selected_row_data):
-    if not is_open or not selected_row_data:
-        return []
-    detail_df = pd.DataFrame(selected_row_data)
-    detail_flow_df = detail_df["flow_data"].apply(pd.Series).select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1)
-    detail_flow_df = pd.concat([detail_flow_df, min_flow_data, mean_flow_data, max_flow_data, q1_flow_data, q3_flow_data],ignore_index=True)
-    detail_flow_df = detail_flow_df.div(max_flow_data.iloc[0])
+# @callback(
+#     Output("boxplot-content", "children"),
+#     [Input("accordion", "active_item")],
+#     [State('selected-row-store', 'data')]
+# )
+# def update_boxplot(is_open, selected_row_data):
+#     if not is_open or not selected_row_data:
+#         return []
+#     detail_df = pd.DataFrame(selected_row_data)
+#     detail_flow_df = detail_df["flow_data"].apply(pd.Series).select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1)
+#     detail_flow_df = pd.concat([detail_flow_df, min_flow_data, mean_flow_data, max_flow_data, q1_flow_data, q3_flow_data],ignore_index=True)
+#     detail_flow_df = detail_flow_df.div(max_flow_data.iloc[0])
 
-    return create_boxplot(detail_flow_df)
+#     return create_boxplot(detail_flow_df)
 
 
 # First callback for modal visibility
@@ -201,6 +203,8 @@ def update_modal_content(selected_rows):
      State('alert-store', 'data')]
 )
 def handle_classification(n_clicks, selected_type, selected_row_data, current_alerts):
+    print ("handle classification")
+    print(n_clicks)
     if n_clicks is None:
         return current_alerts, []
     
@@ -210,8 +214,8 @@ def handle_classification(n_clicks, selected_type, selected_row_data, current_al
     status = "success"
 
     try:
-        asyncio.run(cec.set_attack_class(flow_id=flow_id, attack_class=selected_type))
-        asyncio.run(cec.set_flow_as_seen(flow_id=flow_id))
+        # asyncio.run(cec.set_attack_class(flow_id=flow_id, attack_class=selected_type))
+        # asyncio.run(cec.set_flow_as_seen(flow_id=flow_id))
         # Create new alert
         new_alert = {
             'id': f'alert-{len(current_alerts)}',
@@ -238,7 +242,7 @@ def handle_classification(n_clicks, selected_type, selected_row_data, current_al
             dismissable=True,
             is_open=True,
             color=status,
-            duration=4000,
+            duration=6000,
             className="mt-2"
         ) for alert in updated_alerts
     ]
@@ -276,86 +280,167 @@ def download_pcap(n_clicks, selected_row_data):
     Input("time-scatter", "clickData"),
     Input("submit-classification", "n_clicks"),
     Input("reset-grid", "n_clicks"),
-    Input("world-map-inbox", "clickData")
+    Input("world-map-inbox", "clickData"),
+    State('df_with_location', 'data'),
+    State('attack-type-dropdown', 'value'),
+    State('selected-row-store', 'data')
 )
-def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map):
-    print(clickData, n_clicks_submit, n_clicks_reset, clickData_map)
+def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map, df_with_location_data, selected_type, selected_row_data):
+    #print(clickData, n_clicks_submit, n_clicks_reset, clickData_map, )
     trigger = dash.callback_context.triggered_id
-    print(f"Triggered by: {trigger}")
     
+
     if trigger == "reset-grid" and n_clicks_reset:
         df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
         unseen_data = df_update[df_update["has_been_seen"] == False].to_dict("records")
         return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
     
     if trigger == "submit-classification" and n_clicks_submit:
+        detail_df = pd.DataFrame(selected_row_data)
+        flow_id = detail_df["flow_id"].values[0]
+        asyncio.run(cec.set_attack_class(flow_id=flow_id, attack_class=selected_type))
+        asyncio.run(cec.set_flow_as_seen(flow_id=flow_id))
         print("Updating grid after classification...")
-        df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
-        unseen_data = df_update[df_update["has_been_seen"] == False].to_dict("records")
+        df_update = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
+        df = df_update[df_update["has_been_seen"] == False]
+        unseen_data =  df.to_dict("records")
         return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
         
     if trigger == "time-scatter" and clickData:
         print("Updating grid based on time-scatter click...")
+        df = pd.DataFrame(df_with_location_data)
+        #df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
+        #df["time_bin"] = df["timestamp"].dt.floor("0.1min")
+        df["time_bin"] = pd.to_datetime(df["time_bin"])
         unseen_data = df[df["time_bin"]==clickData["points"][0]['x']].to_dict("records")
         return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
     
     if trigger == "world-map-inbox" and clickData_map:
         print("Updating grid based on world-map-inbox click...")
+        df = pd.DataFrame(df_with_location_data)
         df_lat = df[df["source_lat"]==clickData_map["points"][0]["lat"]]
         unseen_data = df_lat[df_lat["source_lon"]==clickData_map["points"][0]["lon"]].to_dict("records")
+        clickData_map = None
         return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
     
+
     # Default return for initial load
     print("Default grid load...")
     return dash.no_update, dash.no_update
 
+# Replace the existing layout code with this basic layout
+layout = html.Div([
+    dcc.Location(id="url", refresh=False),
+    # dcc.Interval(id="interval-classified", interval=100, max_intervals=1),
+    html.Div(id="inbox-page-content-container"),
+    dcc.Store(id='df_with_location')
+])
+
+# Add new callback to serve the main content
+@callback(
+    Output("inbox-page-content-container", "children"),
+    Output("df_with_location", "data"),
+    [#Input("interval-classified", "n_intervals"),
+    #  Input("refresh-button", "n_clicks"),
+     Input("url", "pathname")],  # Changed to use regular url instead of url-refresh
+    prevent_initial_call=False
+)
+def serve_layout(pathname):
+    if pathname == "/inbox/":
+        # Always reload data for any trigger
+        try:
+            print("Reloading data from Elasticsearch")
+            df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
+            if df.empty:
+                trigger = "empty"
+            else:
+                trigger = "normal"
+                
+                # Get Map
+                reader = geoip2.database.Reader('flask_dash_app/app/GeoLite2-City.mmdb')
+                # add lat and long
+                def ip_to_lat_lon(ip):
+                    try:
+                        response = reader.city(ip)
+                        return response.location.latitude, response.location.longitude
+                    except:
+                        return None, None
+                df['source_lat'], df['source_lon'] = zip(*df['partner_ip'].apply(ip_to_lat_lon))
+                # Recalculate flow statistics
+                flow_data = df["flow_data"].apply(pd.Series)
+                min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
+                max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
+                mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
+        except Exception as e:
+            print(f"Error loading data: {e}")
+            trigger = "error"
+            df = pd.DataFrame()
+
 # Check for failed elastic connection
-print(trigger)
-if trigger == "error":
-    layout = html.Div([
-        dbc.Alert(
-            "Could not connect to Elasticsearch. Please check your connection and try again.",
-            color="danger",
-            dismissable=False,
-            is_open=True,
-        ),
-        dbc.NavLink("Refresh", href="/inbox/", style={"margin-top": "20px", "text-decoration": "underline"}, external_link=True)
-    ])
-elif trigger == "empty":
-    layout = html.Div([
-        dbc.Alert(
-            "No data available yet. Wait for incoming flows.",
-            color="warning",
-            dismissable=False,
-            is_open=True,
-        ),
-        dbc.NavLink("Refresh", href="/inbox/", style={"margin-top": "20px", "text-decoration": "underline"}, external_link=True)
-    ])
-else:    
-    # Layout Components
-    layout = html.Div([
-        dbc.Row([
-            html.Div(create_welcome_alert()),
-            dcc.Store(id='alert-store', data=[]),
-            html.Div(id='alert-container'),
-            html.Hr(),
-        ], className="mt-3 mb-3"),
-        dbc.Row([
-            dbc.Col([display_line('time-scatter', df, "0.1min"),], width=9),
-            dbc.Col([make_prediction_pie_chart("prediction_pie", df, "prediction")], width=3)
-            ], className="mt-3 mb-3"),
-        # Main content row
-        dbc.Row([
-            #make_grid(seen=False, grid_id="unseen_grid")
-            # Left side - Grid
-            dbc.Col([
-                make_grid(df, seen=False, grid_id="unseen_grid", columns=[{"field": "timestamp"},{"field": "sensor_name"},{"field": "partner_ip"},{"field": "prediction"},{"field": "flow_id"}]),
-                dbc.Button("Reset", id="reset-grid", className="ms-auto", n_clicks=None, style={"margin-top": "2px"})
-            ], width=6, style={"border": "1px solid #ddd", "padding": "10px"}),  # Add border and padding for debugging
-            # Right side - Pie Chart
-            dbc.Col([
-                create_world_map("world-map-inbox", df)
-            ], width=6, style={"border": "1px solid #ddd", "padding": "10px"})  # Add border and padding for debugging
-        ], style={'margin': '20px 0', 'display': 'flex', 'flex-direction': 'row'}),
-        make_modal(),
-    ])
+
+        if trigger == "error":
+            return dbc.Container([
+                dbc.Alert(
+                    "Could not connect to Elasticsearch. Please check your connection and try again.",
+                    color="danger",
+                    dismissable=False,
+                    is_open=True,
+                ),
+                dbc.Button(
+                    "Refresh Data",
+                    id="refresh-button",
+                    color="primary",
+                    className="mt-3", 
+                    href="/inbox/",
+                    external_link=True
+                )
+            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
+        elif trigger == "empty":
+            return dbc.Container([
+                dbc.Alert(
+                    "No data available yet. Wait for incoming flows.",
+                    color="warning",
+                    dismissable=False,
+                    is_open=True,
+                ),
+                dbc.Button(
+                    "Refresh Data",
+                    id="refresh-button",
+                    color="primary",
+                    className="mt-3", 
+                    href="/inbox/",
+                    external_link=True
+                )
+            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
+        else:    
+            # Layout Components
+            return dbc.Container([
+                #dcc.Location(id='url', refresh=True),
+                dbc.Row([
+                    html.Div(create_welcome_alert()),
+                    dcc.Store(id='alert-store', data=[]),
+                    html.Div(id='alert-container'),
+                    html.Hr(),
+                ], className="mt-3 mb-3"),
+                dbc.Row([
+                    dbc.Col([display_line('time-scatter', df, "0.1min"),], width=9),
+                    dbc.Col([make_prediction_pie_chart("prediction_pie", df, "prediction")], width=3)
+                    ], className="mt-3 mb-3"),
+                # Main content row
+                dbc.Row([
+                    #make_grid(seen=False, grid_id="unseen_grid")
+                    # Left side - Grid
+                    dbc.Col([
+                        make_grid(df, seen=False, grid_id="unseen_grid", columns=[{"field": "timestamp"},{"field": "sensor_name"},{"field": "partner_ip"},{"field": "prediction"},{"field": "flow_id"}]),
+                        dbc.Button("Reset", id="reset-grid", className="ms-auto", n_clicks=None, style={"margin-top": "2px"})
+                    ], width=6, style={"border": "1px solid #ddd", "padding": "10px"}),  # Add border and padding for debugging
+                    # Right side - Pie Chart
+                    dbc.Col([
+                        create_world_map("world-map-inbox", df)
+                    ], width=6, style={"border": "1px solid #ddd", "padding": "10px"})  # Add border and padding for debugging
+                ], style={'margin': '20px 0', 'display': 'flex', 'flex-direction': 'row'}),
+                make_modal(),
+            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
+    # is this missing
+    # else:
+    #     dash.no_update, dash.no_update
