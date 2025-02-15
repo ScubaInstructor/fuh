@@ -12,6 +12,7 @@ from ..models import User, db
 from ..retrainer import retrain
 from .. import mc
 from .. import app
+import geoip2.database
 
 
 from ..elastic_connector import CustomElasticsearchConnector
@@ -214,44 +215,49 @@ def download_pcap(n_clicks, selected_row_data):
 
 @callback(
     Output("seen_grid", "rowData"),
+    Output("world-map-classified", "figure"),
     Input("classified-submit-classification", "n_clicks"),
     Input("classified-reset-grid", "n_clicks"),
     Input("world-map-classified", "clickData"),
-    State('classified-attack-type-dropdown', 'value'),
-    State('classified-selected-row-store', 'data')
+    Input('df_with_location_classified', 'data'),
+#    State('classified-attack-type-dropdown', 'value'),
+#    State('classified-selected-row-store', 'data')
 )
-def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, selected_type, selected_row_data):
+def update_grid(n_clicks_submit, n_clicks_reset, clickData_map, df_with_location_classified_data):#, selected_type_value, selected_row_data):
     print( n_clicks_reset)
     trigger = dash.callback_context.triggered_id
     print(f"Triggered by: {trigger}")
     
     if trigger == "classified-reset-grid" and n_clicks_reset:
         df_update = asyncio.run(cec.get_all_flows(view="seen", size=flow_nr, include_pcap=False))
-        return df_update[df_update["has_been_seen"] == True].to_dict("records")
+        seen_data = df_update[df_update["has_been_seen"] == True].to_dict("records")
+        return seen_data, create_world_map("world-map-classified", pd.DataFrame(seen_data)).figure
     
     if trigger == "classified-submit-classification" and n_clicks_submit:
-        print("Updating grid after classification...")
-        
-        
+        print("Updating grid after classification...")   
         # Reclassification
         detail_df = pd.DataFrame(selected_row_data)
         flow_id = detail_df["flow_id"].values[0]
 
         try:
-            asyncio.run(cec.set_attack_class(flow_id=flow_id, attack_class=selected_type))
+            asyncio.run(cec.set_attack_class(flow_id=flow_id, attack_class=selected_type_value))
 
         except:
             print(f'Flow {flow_id} could not be classified. Elastic Database Error.')
         
         df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
-        return df_update[df_update["has_been_seen"] == True].to_dict("records")
+        seen_data = df_update[df_update["has_been_seen"] == True].to_dict("records")
+        return seen_data, create_world_map("world-map-classified", pd.DataFrame(seen_data)).figure
+    
     # Updating based on selection on the map
     if trigger == "world-map-classified" and clickData_map:
         print("Updating grid based on world-map-classified click...")
+        df = pd.DataFrame(df_with_location_classified_data)
         df_lat = df[df["source_lat"] == clickData_map["points"][0]["lat"]]
         df_lon = df_lat[df_lat["source_lon"] == clickData_map["points"][0]["lon"]]
         clickData_map = None
-        return df_lon[df_lon["has_been_seen"] == True].to_dict("records")
+        seen_data = df_lon[df_lon["has_been_seen"] == True].to_dict("records")
+        return seen_data, create_world_map("world-map-classified", pd.DataFrame(seen_data)).figure
     
     # Default return for initial load
     print("Default grid load...")
@@ -322,12 +328,14 @@ def retrain_model(n_clicks):
 layout = html.Div([
     dcc.Location(id="url", refresh=False),
     # dcc.Interval(id="interval-classified", interval=100, max_intervals=1),
-    html.Div(id="classified-page-content-container")
+    html.Div(id="classified-page-content-container"),
+    dcc.Store(id='df_with_location_classified')
 ])
 
 # Add new callback to serve the main content
 @callback(
     Output("classified-page-content-container", "children"),
+    Output("df_with_location_classified", "data"),
     [#Input("interval-classified", "n_intervals"),
     #  Input("refresh-button", "n_clicks"),
      Input("url", "pathname")],  # Changed to use regular url instead of url-refresh
@@ -347,6 +355,17 @@ def serve_layout(pathname):
                 trigger = "empty"
             else:
                 trigger = "normal"
+
+                # Get Map
+                reader = geoip2.database.Reader('flask_dash_app/app/GeoLite2-City.mmdb')
+                # add lat and long
+                def ip_to_lat_lon(ip):
+                    try:
+                        response = reader.city(ip)
+                        return response.location.latitude, response.location.longitude
+                    except:
+                        return None, None
+                df['source_lat'], df['source_lon'] = zip(*df['partner_ip'].apply(ip_to_lat_lon))
                 # Recalculate flow statistics
                 flow_data = df["flow_data"].apply(pd.Series)
                 min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
@@ -373,7 +392,7 @@ def serve_layout(pathname):
                     href="/classified/",
                     external_link=True
                 )
-            ], fluid=True, className="px-0 mx-0")
+            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
         
         elif trigger == "empty":
             return dbc.Container([
@@ -391,7 +410,7 @@ def serve_layout(pathname):
                     href="/classified/",
                     external_link=True
                 )
-            ], fluid=True, className="px-0 mx-0")
+            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
         
         else:
             return dbc.Container([
@@ -419,6 +438,6 @@ def serve_layout(pathname):
                     ], width=6, style={"border": "1px solid #ddd", "padding": "10px"})
                 ], style={'margin': '20px 0', 'display': 'flex', 'flex-direction': 'row'}),
                 make_modal(),
-            ], fluid=True, className="px-0 mx-0")
+            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
     else:
-        dash.no_update
+        dash.no_update, dash.no_update

@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 from base64 import b64decode, b64encode
 from io import BytesIO
-import base64
+import geoip2.database
 import plotly.express as px
 
 from ..elastic_connector import CustomElasticsearchConnector
@@ -279,8 +279,9 @@ def download_pcap(n_clicks, selected_row_data):
     Input("submit-classification", "n_clicks"),
     Input("reset-grid", "n_clicks"),
     Input("world-map-inbox", "clickData"),
+    Input('df_with_location', 'data')
 )
-def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map):
+def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map, df_with_location_data):
     print(clickData, n_clicks_submit, n_clicks_reset, clickData_map, )
     trigger = dash.callback_context.triggered_id
     
@@ -307,8 +308,10 @@ def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map):
     
     if trigger == "world-map-inbox" and clickData_map:
         print("Updating grid based on world-map-inbox click...")
+        df = pd.DataFrame(df_with_location_data)
         df_lat = df[df["source_lat"]==clickData_map["points"][0]["lat"]]
         unseen_data = df_lat[df_lat["source_lon"]==clickData_map["points"][0]["lon"]].to_dict("records")
+        clickData_map = None
         return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
     
 
@@ -320,12 +323,14 @@ def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map):
 layout = html.Div([
     dcc.Location(id="url", refresh=False),
     # dcc.Interval(id="interval-classified", interval=100, max_intervals=1),
-    html.Div(id="inbox-page-content-container")
+    html.Div(id="inbox-page-content-container"),
+    dcc.Store(id='df_with_location')
 ])
 
 # Add new callback to serve the main content
 @callback(
     Output("inbox-page-content-container", "children"),
+    Output("df_with_location", "data"),
     [#Input("interval-classified", "n_intervals"),
     #  Input("refresh-button", "n_clicks"),
      Input("url", "pathname")],  # Changed to use regular url instead of url-refresh
@@ -341,6 +346,17 @@ def serve_layout(pathname):
                 trigger = "empty"
             else:
                 trigger = "normal"
+                
+                # Get Map
+                reader = geoip2.database.Reader('flask_dash_app/app/GeoLite2-City.mmdb')
+                # add lat and long
+                def ip_to_lat_lon(ip):
+                    try:
+                        response = reader.city(ip)
+                        return response.location.latitude, response.location.longitude
+                    except:
+                        return None, None
+                df['source_lat'], df['source_lon'] = zip(*df['partner_ip'].apply(ip_to_lat_lon))
                 # Recalculate flow statistics
                 flow_data = df["flow_data"].apply(pd.Series)
                 min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
@@ -369,7 +385,7 @@ def serve_layout(pathname):
                     href="/inbox/",
                     external_link=True
                 )
-            ], fluid=True, className="px-0 mx-0")
+            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
         elif trigger == "empty":
             return dbc.Container([
                 dbc.Alert(
@@ -386,7 +402,7 @@ def serve_layout(pathname):
                     href="/inbox/",
                     external_link=True
                 )
-            ], fluid=True, className="px-0 mx-0")
+            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
         else:    
             # Layout Components
             return dbc.Container([
@@ -415,4 +431,7 @@ def serve_layout(pathname):
                     ], width=6, style={"border": "1px solid #ddd", "padding": "10px"})  # Add border and padding for debugging
                 ], style={'margin': '20px 0', 'display': 'flex', 'flex-direction': 'row'}),
                 make_modal(),
-            ], fluid=True, className="px-0 mx-0")
+            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
+    # is this missing
+    # else:
+    #     dash.no_update, dash.no_update
