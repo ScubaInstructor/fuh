@@ -22,8 +22,6 @@ COPY run.py /dash/run.py
 COPY instance /dash/instance
 COPY app /dash/app
 
-
 WORKDIR /dash
 
-#CMD ["/usr/local/bin/python3", "-u", "run.py"] 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "run:app", "-w 4", "--log-level=debug"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "1","--timeout", "0","--reload","--log-level=debug","--capture-output","--enable-stdio-inheritance","--access-logfile=-","--error-logfile=-","run:app"]
