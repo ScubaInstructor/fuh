@@ -21,7 +21,6 @@ from sklearn.ensemble import RandomForestClassifier
 from pipelining_utilities import adapt_for_prediction
 from pandas import DataFrame
 from time import sleep
-from elasticsearch import AuthenticationException, Elasticsearch
 import json
 from datetime import datetime
 
@@ -70,10 +69,9 @@ class My_Sniffer():
     
     def start(self):
         '''check for new model, start sniffer and worker-thread'''
-        Thread(target=self.check_for_model_update(), daemon=True, name="model_updater").start()
+        Thread(target=self.keep_model_updated(), daemon=True, name="model_updater").start()
         worker_thread = self.start_receiver_worker()  # Start worker to deal with items in the queue
-        if DEBUGGING:
-            print("Starting sniffer")
+        print("Starting sniffer")
         self.snif.start()  # Start the sniffer        
         try:
             while True:
@@ -101,6 +99,7 @@ class My_Sniffer():
     def keep_model_updated(self):
         self.check_for_model_update()
         sleep(60*60*MODEL_UPDATE_INTERVAL) # sleep for set hours
+        self.keep_model_updated() # call itself to check for new model
 
     def output_function(self, data: Flow):
         if DEBUGGING:
@@ -224,8 +223,6 @@ class My_Sniffer():
                             print("sent data to flask server")
                 except ConnectionError as ce:
                     print(f"Connection Error: {ce}")
-                except AuthenticationException as ae:
-                    print(f"Authentication error: {ae}")
                 except Exception as e:
                     print(f"Error sending data to Server: {e}")
                 if DEBUGGING:
@@ -299,8 +296,12 @@ class My_Sniffer():
 
     def get_model_hash(self):
         hw = HttpWriter(f"{SERVER_URL}/get_model_hash")
-        return hw.get_model_hash(token=SERVER_TOKEN)
-        
+        try: 
+            return hw.get_model_hash(token=SERVER_TOKEN)
+        except json.JSONDecodeError as jde:
+            print(f"Error getting the model hash: {jde}")
+            sleep(10)
+            return self.get_model_hash()
         
 if __name__ == "__main__":
     s = My_Sniffer() 
