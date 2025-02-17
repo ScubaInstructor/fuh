@@ -8,4 +8,6 @@ services:
       - NET_ADMIN
       - NET_RAW        
     restart: on-failure
-    privileged: true 
+    privileged: true
+    environment:
+      - TZ=Europe/Berlin 
