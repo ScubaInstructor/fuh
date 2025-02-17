@@ -20,6 +20,8 @@ APPPATH = "flask_dash_app/app/"
 MODELPATH = "models/"
 ZIPFILENAME = "model_scaler_ipca.zip"
 MODELNAME = "model.pkl"
+SCALERNAME = "scaler.pkl"
+IPCANAME = "ipca.pkl"
 MODELARCHIVEPATH = MODELPATH + "old_models"
 
 # Initialize Elasticsearch connector and get data
@@ -78,7 +80,7 @@ def restore_model_to_previous_version(elastic_id:str, mc: Modelhash_Container) -
     try:
         copyfile(f"{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip", APPPATH + MODELPATH + ZIPFILENAME)
         zf = zipfile.ZipFile(APPPATH + MODELPATH + ZIPFILENAME, "r")
-        zf.extract(member=MODELNAME, path=APPPATH + MODELPATH)
+        zf.extractall(member=MODELNAME, path=APPPATH + MODELPATH)
         mc.set_hash(mc.compute_file_hash( APPPATH + MODELPATH + MODELNAME))
     except FileNotFoundError:
         print("Requested File not found")
