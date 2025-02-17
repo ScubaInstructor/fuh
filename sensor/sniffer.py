@@ -146,7 +146,7 @@ class My_Sniffer():
 
             if DEBUGGING:
                 print(f"Prediction is: {prediction} with certainty of {proba.max()}")
-            if prediction != ['BENIGN'] or proba.max() < 0.8 or proba.max() - proba.mean() < 0.6 or DEBUGGING:
+            if prediction != ['BENIGN'] or proba.max() < 0.8 or DEBUGGING:
                 if DEBUGGING:
                     print("Flow will be sent")
                 # getting the attack data to the server 
