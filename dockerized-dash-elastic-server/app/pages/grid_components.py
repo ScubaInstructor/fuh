@@ -211,38 +211,162 @@ def display_line(fig_id, df, cluster_time):
     
     return dcc.Graph(id=fig_id, figure=fig)
 
-def create_boxplot(detail_flow_df):
+def create_boxplot(detail_flow_df, prediction):
     """
     Creates a boxplot showing the distribution of flow features.
     
     Args:
         detail_flow_df (pd.DataFrame): DataFrame containing flow feature data
+        prediction (str): The prediction type
     
     Returns:
         dash.dcc.Graph: A Dash graph component containing the boxplot
     """
-    fig = go.Figure()
-    
-    for idx, col in enumerate(detail_flow_df.columns):
-        fig.add_trace(go.Box(
-            x=detail_flow_df[col],
-            name=col,
-            orientation='h',
-            boxpoints='all',
-            jitter=0,
-            pointpos=0,
-            marker_color='blue',
-            showlegend=False,
-            showwhiskers=False,
-        ))
+    PREDICTION_MAP = {
+        'BENIGN': 1,
+        'Bot': 2,
+        'Brute Force': 3,
+        'DOS': 4,
+        'DDOS': 5,
+        'Port Scan': 6,
+        'Web Attack': 7
+    }
+    boxplot_index = PREDICTION_MAP.get(prediction, 0)
 
+    fig = go.Figure()
+    cec = CustomElasticsearchConnector()
+    x = asyncio.run(cec.get_all_model_properties())
+
+    model_df = pd.DataFrame(pd.DataFrame(x.iloc[1]["boxplotdata"][0]["metrics"])).drop(["metric_name"], axis=1)
+    model_df = model_df.apply(lambda x: x.str[0])
+
+    model_pred_df = pd.DataFrame(pd.DataFrame(x.iloc[1]["boxplotdata"][boxplot_index]["metrics"])).drop(["metric_name"], axis=1)
+    model_pred_df = model_pred_df.apply(lambda x: x.str[0])
+
+    norm_model_df = model_df.div(model_df.iloc[2], axis=1)
+    norm_pred_df = model_pred_df.div(model_df.iloc[2], axis=1)
+    norm_df = detail_flow_df.div(model_df.iloc[2], axis=1)
+
+    traces = []
+    
+    for column in norm_model_df.columns:
+
+        # Add scatter plot for individual data points
+        scatter_trace = go.Scatter(
+            x=norm_df[column],  # Data values on the x-axis
+            y=[column] * len(norm_df[column]),  # Categories on the y-axis
+            mode='markers',
+            name=f'{column} Points',
+            marker=dict(color='red', size=8, opacity=0.6, symbol="cross"),  # Customize scatter points
+            showlegend=False,  # Hide scatter plot from legend
+            hovertemplate="Flow Data: %{x:.3f}",
+            offsetgroup=column  # Match offsetgroup
+        )
+        traces.append(scatter_trace)
+
+        # Add scatter plot for individual data points
+        mean_trace = go.Scatter(
+            x=[norm_model_df[column].iloc[0]],  # Data values on the x-axis
+            y=[column] * len(norm_df[column]),  # Categories on the y-axis
+            mode='markers',
+            name=f'{column} Points',
+            marker=dict(
+                symbol='line-ns-open',  # Vertical line marker; other option is "line-ns-open"
+                color='black',
+                size=20  # Adjust size as needed
+            ),  # Customize scatter points
+            showlegend=False,  # Hide scatter plot from legend
+            hovertemplate="Global Mean Data: %{x:.3f}",
+            offsetgroup=column  # Match offsetgroup
+        )
+        traces.append(mean_trace)
+
+        max_trace = go.Scatter(
+            x=[norm_model_df[column].iloc[2]],  # Data values on the x-axis
+            y=[column] * len(norm_df[column]),  # Categories on the y-axis
+            mode='markers',
+            name=f'{column} Points',
+            marker=dict(
+                symbol='line-ns-open',  # Vertical line marker; other option is "line-ns-open"
+                color='black',
+                size=20  # Adjust size as needed
+            ),  # Customize scatter points
+            showlegend=False,  # Hide scatter plot from legend
+            hovertemplate="Global Max Data: %{x:.3f}",
+            offsetgroup=column  # Match offsetgroup
+        )
+        traces.append(max_trace)
+
+        pred_trace = go.Scatter(
+            x=[norm_pred_df[column].iloc[0]],  # Data values on the x-axis
+            y=[column] * len(norm_df[column]),  # Categories on the y-axis
+            mode='markers',
+            name=f'{column} Points',
+            marker=dict(
+                symbol='line-ns-open',  # Vertical line marker; other option is "line-ns-open"
+                color='blue',
+                size=20  # Adjust size as needed
+            ),  # Customize scatter points
+            showlegend=False,  # Hide scatter plot from legend
+            hovertemplate=f"{prediction} Mean Data: %{{x:.3f}}",
+            offsetgroup=column  # Match offsetgroup
+        )
+        traces.append(pred_trace)
+    
+    # Create figure with custom layout
+    fig = go.Figure(data=traces)
+    
     fig.update_layout(
-        title="Flow Features Distribution",
-        xaxis_title="Value",
-        yaxis_title="Features",
-        showlegend=True,
-        height=len(detail_flow_df.columns) * 40,
-        margin=dict(l=300),
+        title=dict(
+            text=f'Flow Features Distribution - {prediction}',
+            y=0.95,  # Reduce top space by moving title down
+            x=0.5,
+            xanchor='center',
+            yanchor='top'
+        ),
+        xaxis=dict(
+            title='Normalized Values',
+            gridcolor='lightgray',
+            showgrid=True
+        ),
+        yaxis=dict(
+            title='Columns', 
+            type='category',
+            # Add these parameters to control spacing
+            tickson="boundaries",
+            ticklen=20,
+            tickmode='linear',
+            dtick=1,  # Controls spacing between ticks
+        ),
+        showlegend=False,
+        boxmode='overlay',
+        # Add height to give more vertical space
+        height=len(norm_model_df.columns) * 40 + 200,  # Adjust this value to control overall height
+        # Add margin to ensure labels aren't cut off
+        margin=dict(l=200, r=50, t=50, b=10),
+        bargap=1.0  # Controls space between bars (0-1)
     )
+
+    # for idx, col in enumerate(detail_flow_df.columns):
+    #     fig.add_trace(go.Box(
+    #         x=detail_flow_df[col],
+    #         name=col,
+    #         orientation='h',
+    #         boxpoints='all',
+    #         jitter=0,
+    #         pointpos=0,
+    #         marker_color='blue',
+    #         showlegend=False,
+    #         showwhiskers=False,
+    #     ))
+
+    # fig.update_layout(
+    #     title="Flow Features Distribution",
+    #     xaxis_title="Value",
+    #     yaxis_title="Features",
+    #     showlegend=True,
+    #     height=len(detail_flow_df.columns) * 40,
+    #     margin=dict(l=300),
+    # )
     
     return dcc.Graph(figure=fig)
