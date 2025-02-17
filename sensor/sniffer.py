@@ -4,7 +4,7 @@ import base64
 
 from  threading import Lock, Thread
 from zipfile import ZipFile
-from requests import Response
+from requests import Response, exceptions
 from cicflowmeter import sniffer  
 from httpWriter import HttpWriter
 from cicflowmeter.flow import Flow
@@ -69,7 +69,7 @@ class My_Sniffer():
     
     def start(self):
         '''check for new model, start sniffer and worker-thread'''
-        Thread(target=self.keep_model_updated(), daemon=True, name="model_updater").start()
+        Thread(target=self.check_for_model_update(), daemon=True, name="model_updater").start()
         worker_thread = self.start_receiver_worker()  # Start worker to deal with items in the queue
         print("Starting sniffer")
         self.snif.start()  # Start the sniffer        
@@ -99,7 +99,6 @@ class My_Sniffer():
     def keep_model_updated(self):
         self.check_for_model_update()
         sleep(60*60*MODEL_UPDATE_INTERVAL) # sleep for set hours
-        self.keep_model_updated() # call itself to check for new model
 
     def output_function(self, data: Flow):
         if DEBUGGING:
@@ -296,13 +295,17 @@ class My_Sniffer():
 
     def get_model_hash(self):
         hw = HttpWriter(f"{SERVER_URL}/get_model_hash")
-        try: 
-            return hw.get_model_hash(token=SERVER_TOKEN)
-        except json.JSONDecodeError as jde:
-            print(f"Error getting the model hash: {jde}")
-            sleep(10)
-            return self.get_model_hash()
-        
+        #try: 
+        return hw.get_model_hash(token=SERVER_TOKEN)
+        # except json.JSONDecodeError as jde:
+        #     print(f"Error getting the model hash: {jde}")
+        #     sleep(10)
+        #     return self.get_model_hash()
+        # except exceptions.ConnectionError as ce:
+        #     print(f"Error connecting to Server: {ce}")
+        #     sleep(10)
+        #     return self.get_model_hash()
+
 if __name__ == "__main__":
     s = My_Sniffer() 
     s.start()  
