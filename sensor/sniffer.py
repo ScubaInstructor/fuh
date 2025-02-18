@@ -52,7 +52,7 @@ else:
 # Load the model
 MODELPATH = LOCALPREFIX + "model.pkl" 
 SCALERPATH = LOCALPREFIX + "scaler.pkl"
-IPCAPATH = LOCALPREFIX + "ipca_mit_size_34.pkl"
+IPCAPATH = LOCALPREFIX + "ipca.pkl"
 IPCASIZE = 34 # TODO This is a magic number!
 MODEL_UPDATE_INTERVAL = 6 # update interval in hours
 
