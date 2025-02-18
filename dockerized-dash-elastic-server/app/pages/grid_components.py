@@ -5,6 +5,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import geoip2.database
 import pandas as pd
+import asyncio
+from ..elastic_connector import CustomElasticsearchConnector
 
 # World Map
 def create_world_map(fig_id, df):
@@ -237,10 +239,10 @@ def create_boxplot(detail_flow_df, prediction):
     cec = CustomElasticsearchConnector()
     x = asyncio.run(cec.get_all_model_properties())
 
-    model_df = pd.DataFrame(pd.DataFrame(x.iloc[1]["boxplotdata"][0]["metrics"])).drop(["metric_name"], axis=1)
+    model_df = pd.DataFrame(pd.DataFrame(x.iloc[0]["boxplotdata"][0]["metrics"])).drop(["metric_name"], axis=1)
     model_df = model_df.apply(lambda x: x.str[0])
 
-    model_pred_df = pd.DataFrame(pd.DataFrame(x.iloc[1]["boxplotdata"][boxplot_index]["metrics"])).drop(["metric_name"], axis=1)
+    model_pred_df = pd.DataFrame(pd.DataFrame(x.iloc[0]["boxplotdata"][boxplot_index]["metrics"])).drop(["metric_name"], axis=1)
     model_pred_df = model_pred_df.apply(lambda x: x.str[0])
 
     norm_model_df = model_df.div(model_df.iloc[2], axis=1)

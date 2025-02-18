@@ -57,9 +57,9 @@ def create_confusion_matrix(model, X_test, y_test) -> ndarray:
 def create_figure(conf_matrix:ndarray, model) -> plt:
     plt.figure(figsize=(8, 7))  
     sns.heatmap(conf_matrix, annot=True, cmap='Blues', xticklabels=model.classes_, yticklabels=model.classes_)
-    plt.set_title('Confusion Matrix')
-    plt.set_xlabel('Predicted label')
-    plt.set_ylabel('True label')
+    plt.title('Confusion Matrix')
+    plt.xlabel('Predicted label')
+    plt.ylabel('True label')
     plt.tight_layout()
     return plt
 
@@ -134,6 +134,8 @@ from numpy import array
 target_names = model.classes_
 y_pred_rf = model.predict(X_test)
 metrics = classification_report(y_true = y_test, y_pred = y_pred_rf, target_names = target_names, output_dict = True)
+print(metrics)
+print(model.classes_)
 precision = [metrics[target_name]['precision'] for target_name in target_names]
 recall = [metrics[target_name]['recall'] for target_name in target_names]
 f1_score = [metrics[target_name]['f1-score'] for target_name in target_names]
@@ -152,9 +154,20 @@ def create_metrics_overview_from_elastic_data(class_metric_data:list[list], clas
     plt.title('Classification Report')
     plt.tight_layout()
     return plt
+#%%
+from sklearn.metrics import precision_recall_fscore_support as f_score
+
+predicted = model.predict(X_test)
+precision, recall, fscore, support = f_score(y_test, predicted)
+print(f"precision = {precision.mean()}")
+print(f"recall = {recall.mean()}")
+print(f"f1-score = {fscore.mean()}")
+
 
 # %%
 classes= extract_class_names(data_to_index)
+classes.sort()
+print(classes)
 create_metrics_overview_from_elastic_data(list_for_elastic, classes).show()
 # %%
 from datetime import datetime

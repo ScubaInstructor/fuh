@@ -238,7 +238,9 @@ class CustomElasticsearchConnector:
                 resp =  await client.get(index=INDEX_NAME,id=hit.meta.id)
                 return resp.body['_source']['pcap_data']
 
-    async def save_model_properties(self, hash_value: str, timestamp, own_flow_count:int, score:float, confusion_matrix_data:dict=None, class_metric_data:list[list]=None) -> str:
+    async def save_model_properties(self, hash_value: str, timestamp, own_flow_count:int, score:float, 
+                                    confusion_matrix_data:dict=None, class_metric_data:list[list]=None,
+                                    boxplotdata:dict=None) -> str:
         # Initialize Elasticsearch client
         async with AsyncElasticsearch(
             self.hosts,
@@ -255,7 +257,8 @@ class CustomElasticsearchConnector:
                 "timestamp": timestamp,
                 "own_flow_count": own_flow_count,
                 "confusion_matrix": confusion_matrix_data,
-                "class_metric_data": class_metric_data
+                "class_metric_data": class_metric_data,
+                "boxplotdata": boxplotdata
             }
             resp =  await client.index(index=MODEL_INDEX_NAME, body=data)
             return resp["_id"]

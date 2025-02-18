@@ -20,16 +20,16 @@ le = LabelEncoder()
 le.fit(labels)
 transformed_labels = le.transform(labels)
 X_train, X_test, y_train, y_test = train_test_split(features, transformed_labels, test_size = 0.25, random_state = 0)
-full_cicids2017_data = pd.read_csv("scripts/data_sources/data_renamed.csv")
-#bdata, bscaler, bipca, bipca_size =  adapt_cicids2017_for_training(data=full_cicids2017_data, use_ipca=True, balance_the_data=True, binary_switch=True)
-#joblib.dump(bdata, "scripts/data_sources/bdata.pkl")
-bdata = joblib.load("scripts/data_sources/bdata.pkl")
-bfeatures = bdata.drop('attack_type', axis = 1)
-mapping = {'DDoS': 'attack', 'DoS': 'attack', 'Port Scan': 'attack', 'Bot': 'attack', 'BENIGN': 'benign', 'Brute Force': 'attack', 'Web Attack': 'attack'}
-binary_labels = bdata['attack_type'].replace(mapping)
-le.fit(binary_labels)
-transformed_binary_labels = le.transform(binary_labels)
-b_X_train, b_X_test, b_y_train, b_y_test = train_test_split(bfeatures, transformed_binary_labels, test_size = 0.25, random_state = 0)
+# full_cicids2017_data = pd.read_csv("scripts/data_sources/data_renamed.csv")
+# #bdata, bscaler, bipca, bipca_size =  adapt_cicids2017_for_training(data=full_cicids2017_data, use_ipca=True, balance_the_data=True, binary_switch=True)
+# #joblib.dump(bdata, "scripts/data_sources/bdata.pkl")
+# bdata = joblib.load("scripts/data_sources/bdata.pkl")
+# bfeatures = bdata.drop('attack_type', axis = 1)
+# mapping = {'DDoS': 'attack', 'DoS': 'attack', 'Port Scan': 'attack', 'Bot': 'attack', 'BENIGN': 'benign', 'Brute Force': 'attack', 'Web Attack': 'attack'}
+# binary_labels = bdata['attack_type'].replace(mapping)
+# le.fit(binary_labels)
+# transformed_binary_labels = le.transform(binary_labels)
+# b_X_train, b_X_test, b_y_train, b_y_test = train_test_split(bfeatures, transformed_binary_labels, test_size = 0.25, random_state = 0)
 
 
 attack_data = data[data["attack_type"]!="BENIGN"]
