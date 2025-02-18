@@ -9,13 +9,17 @@
       "sensor_name": {
         "type": "keyword"
       },
-      "sensor_port": {
+      
+      "ip_src_prt": {
         "type": "integer"
       },
-      "partner_ip": {
+      "ip_src": {
         "type": "ip"
       },
-      "partner_port": {
+      "ip_dst": {
+        "type": "ip"
+      },
+      "ip_dst_prt": {
         "type": "integer"
       },
 

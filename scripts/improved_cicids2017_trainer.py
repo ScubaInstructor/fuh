@@ -77,7 +77,7 @@ def load_data(directory:str, cutoff:int) -> pd.DataFrame:
 
 
 
-def scale_and_pca(data:pd.DataFrame) -> pd.DataFrame:
+def scale_and_pca(data:pd.DataFrame) -> tuple:
     # Scale The Dataset
     X = data.drop('Label', axis=1)
     y = data['Label']
@@ -92,7 +92,7 @@ def scale_and_pca(data:pd.DataFrame) -> pd.DataFrame:
     transformed_X = ipca.transform(scaled_X)
     new_data = pd.DataFrame(transformed_X, columns = [f'PC{i+1}' for i in range(ipca_size)])
     new_data['Label'] = y.values
-    return new_data
+    return new_data, scaler, ipca
 
 def upsample_the_dataset(dataset:pd.DataFrame)-> pd.DataFrame:    
     X = dataset.drop('Label', axis=1)
@@ -197,20 +197,24 @@ if __name__ == '__main__':
     dropped_cols = one_variable.index
     data = raw_dataset[not_one_variable]
     print(f'Dropped columns: {dropped_cols}')
-    new_data = scale_and_pca(data)
+    new_data, scaler, ipca = scale_and_pca(data)
     data = upsample_the_dataset(new_data) # This Data could be stored in a pkl file for later use...
     rf, X_train, y_train, X_test, y_test = train_random_forest(data)
     start = time.time()    
     print(cross_val_score(rf, X_train, y_train)) # mean 0.978429628 bei 3.590430974960327 s training
     end = time.time()
     print(f"Evaluationtime {end - start}")
+    joblib.dump(rf, "scripts/model.pkl")
+    joblib.dump(scaler, "scripts/scaler.pkl")
+    joblib.dump(ipca, "scripts/ipca.pkl")
+    pd.DataFrame.to_csv(data, "scripts/balanced_dataset_cicids201_improved.csv")
     # get_params_for_RandomForestClassifier(X_train, y_train) # returned {'n_estimators': 1400, 'min_samples_split': 5, 'min_samples_leaf': 1, 'max_features': 'log2', 'max_depth': 90, 'bootstrap': False}
-    best_params = {'n_estimators': 1400, 'min_samples_split': 5, 'min_samples_leaf': 1, 'max_features': 'log2', 'max_depth': 90, 'bootstrap': False}
-    rf, X_train, y_train, X_test, y_test = train_random_forest(data, best_params)
-    start = time.time()
-    print(cross_val_score(rf, X_train, y_train)) # mean 0.9875259279999999 bei 187.25912809371948 s training 
-    end = time.time()
-    print(f"Evaluationtime {end - start}")
+    # best_params = {'n_estimators': 1400, 'min_samples_split': 5, 'min_samples_leaf': 1, 'max_features': 'log2', 'max_depth': 90, 'bootstrap': False}
+    # rf, X_train, y_train, X_test, y_test = train_random_forest(data, best_params)
+    # start = time.time()
+    # print(cross_val_score(rf, X_train, y_train)) # mean 0.9875259279999999 bei 187.25912809371948 s training 
+    # end = time.time()
+    # print(f"Evaluationtime {end - start}")
     # Just pics following
     if CREAT_FIGS:
         cm = create_confusion_matrix(rf, X_test, y_test)
