@@ -217,14 +217,14 @@ def create_boxplot_data_for_elastic(mergeddata):
     result = []
     
     # For complete Dataset
-    analysis_data_complete = mergeddata.drop(["attack_type","dst_port"], axis=1)
+    analysis_data_complete = mergeddata.drop(["attack_type","ip_dst_prt"], axis=1)
     metrics_complete = _create_metrics_list(analysis_data_complete)
     result.append({"class": "complete", "metrics": metrics_complete})
     
     # By class
     classes = list(mergeddata["attack_type"].unique())
     for c in classes:
-        class_data = mergeddata[mergeddata["attack_type"]==c].drop(["attack_type","dst_port"], axis=1)
+        class_data = mergeddata[mergeddata["attack_type"]==c].drop(["attack_type","ip_dst_prt"], axis=1)
         metrics_class = _create_metrics_list(class_data)
         result.append({"class": c, "metrics": metrics_class})
     

@@ -3,17 +3,16 @@ from datetime import datetime
 from os import makedirs
 from shutil import copyfile
 from .elastic_connector import CustomElasticsearchConnector
-from pandas import DataFrame, concat, json_normalize
+from pandas import DataFrame, concat, json_normalize, read_csv
 from sklearn.model_selection import cross_val_score, train_test_split
 from joblib import dump, load
 from numpy import ndarray
-from .pipelining_utilities import adapt_cicids2017_for_training, gemeinsame_columns
+from .pipelining_utilities import adapt_cicids2017_for_training, COLUMNS
 import zipfile
 from sklearn.metrics import precision_recall_fscore_support as f_score
 from sklearn.metrics import accuracy_score as ascore
 
 from .model_visualisations import Model_Visualisator
-from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
 from . import MODELPATH, MODELARCHIVEPATH, MODELNAME, APPPATH, ZIPFILENAME
 
 DEBUGGING = True
@@ -46,7 +45,11 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
         DataFrame: A DataFrame containing the merged training dataset. Class size is 5000.
     """
     # TODO paths must be fixed someday
-    trainingdata = load("app/datasources/DataFrame_with_balanced_dataset.pkl") # load("DataFrame_with_balanced_dataset.pkl")
+    trainingdata = read_csv(APPPATH + "/datasources/balanced_dataset_cicids201_improved.csv")
+    trainingdata = trainingdata.rename(columns={"label": "attack_type"}) # From here on the attack_type is used.
+    attacks = trainingdata["attack_type"]
+    trainingdata = trainingdata[COLUMNS]
+    trainingdata["attack_type"] = attacks
     if len(own_data) == 0:
         df =  trainingdata
     else:
@@ -68,8 +71,8 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
             own_flows_of_same_class = own_data[own_data['attack_type'].str.lower()==name]
             own_flows_of_same_class.reset_index(drop=True, inplace=True)
             addition = concat([own_flows_of_same_class[['attack_type']], json_normalize(own_flows_of_same_class['flow_data'])], axis=1)
-            addition = addition[gemeinsame_columns + ['attack_type'] ]
-            df = df[gemeinsame_columns + ['attack_type'] ]
+            addition = addition[COLUMNS + ['attack_type'] ]
+            df = df[COLUMNS + ['attack_type'] ]
             df = concat([df, addition], ignore_index=True)
             dfs.append(df)
         
@@ -78,7 +81,7 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
         for name in remaining_classes:
             # Extrahiere Daten für jede Klasse
             df = trainingdata[trainingdata['attack_type'].str.lower() == name.lower()]
-            df = df[gemeinsame_columns + ['attack_type'] ]
+            df = df[COLUMNS + ['attack_type'] ]
             dfs.append(df)
         # Combine all classes
         df = concat(dfs, ignore_index = True)
@@ -214,14 +217,14 @@ def create_boxplot_data_for_elastic(mergeddata):
     result = []
     
     # For complete Dataset
-    analysis_data_complete = mergeddata.drop(["attack_type","dst_port"], axis=1)
+    analysis_data_complete = mergeddata.drop(["attack_type","ip_dst_prt"], axis=1)
     metrics_complete = _create_metrics_list(analysis_data_complete)
     result.append({"class": "complete", "metrics": metrics_complete})
     
     # By class
     classes = list(mergeddata["attack_type"].unique())
     for c in classes:
-        class_data = mergeddata[mergeddata["attack_type"]==c].drop(["attack_type","dst_port"], axis=1)
+        class_data = mergeddata[mergeddata["attack_type"]==c].drop(["attack_type","ip_dst_prt"], axis=1)
         metrics_class = _create_metrics_list(class_data)
         result.append({"class": c, "metrics": metrics_class})
     
@@ -241,9 +244,8 @@ def retrain() -> str:
     predicted = model.predict(X_test)
     score = ascore(y_test,predicted)
     own_flow_count = own_data.shape[0]
-    print(own_flow_count)
     model_hash = compute_model_hash(model)
-    dump(model, APPPATH + MODELPATH + MODELNAME)
+    dump(model,  APPPATH + MODELPATH + MODELNAME)
     # prepare Model Propertis for elastic
     boxplotdata = create_boxplot_data_for_elastic(mergeddata)
     mv = Model_Visualisator()

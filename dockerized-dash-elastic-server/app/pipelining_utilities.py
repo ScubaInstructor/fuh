@@ -5,31 +5,23 @@ from imblearn.over_sampling import SMOTE
 
 import numpy as np
 
+IPCA_SIZE = 34
+
 """
 Functions for the datapipeline
 """
-gemeinsame_columns = ['dst_port', 'flow_duration', 'tot_fwd_pkts', 'tot_bwd_pkts', 
-                      'totlen_fwd_pkts', 'totlen_bwd_pkts', 'fwd_pkt_len_max', 
-                      'fwd_pkt_len_min', 'fwd_pkt_len_mean', 'fwd_pkt_len_std', 
-                      'bwd_pkt_len_max', 'bwd_pkt_len_min', 'bwd_pkt_len_mean', 
-                      'bwd_pkt_len_std', 'flow_byts_s', 'flow_pkts_s', 
-                      'flow_iat_mean', 'flow_iat_std', 'flow_iat_max', 
-                      'flow_iat_min', 'fwd_iat_tot', 'fwd_iat_mean', 
-                      'fwd_iat_std', 'fwd_iat_max', 'fwd_iat_min', 
-                      'bwd_iat_tot', 'bwd_iat_mean', 'bwd_iat_std', 'bwd_iat_max', 
-                      'bwd_iat_min', 'fwd_psh_flags', 'fwd_urg_flags', 
-                      'fwd_header_len', 'bwd_header_len', 'fwd_pkts_s', 
-                      'bwd_pkts_s', 'pkt_len_min', 'pkt_len_max', 'pkt_len_mean', 
-                      'pkt_len_std', 'pkt_len_var', 'fin_flag_cnt', 'syn_flag_cnt', 
-                      'rst_flag_cnt', 'psh_flag_cnt', 'ack_flag_cnt', 
-                      'urg_flag_cnt', 'cwr_flag_count', 'ece_flag_cnt', 
-                      'down_up_ratio', 'pkt_size_avg', 'fwd_seg_size_avg', 
-                      'bwd_seg_size_avg', 'subflow_fwd_pkts', 'subflow_fwd_byts', 
-                      'subflow_bwd_pkts', 'subflow_bwd_byts', 'init_fwd_win_byts', 
-                      'init_bwd_win_byts', 'fwd_act_data_pkts', 'fwd_seg_size_min', 
-                      'active_mean', 'active_std', 'active_max', 'active_min', 
-                      'idle_mean', 'idle_std', 'idle_max', 'idle_min']
+removed_columns = ['flow_id', 'ip_src', 'ip_dst', 'str_time', 'bw_urg_flag', 'cwe_cnt', 'ece_cnt', 'subfl_bw_pkt', ]    # these wont only serve for overfitting the model 
 
+# the following columns are the ones which are not sparse, and which do not contain ipdresse and timestamps
+COLUMNS = ['ip_src_prt', 'ip_dst_prt', 'protocol', 'flow_duration', 
+           'fwd_pkt_stats', 'bwd_pkt_stats', 'tot_l_fw_pkt', 'tot_l_bw_pkt', 'fw_pkt_l_max', 'fw_pkt_l_min', 'fw_pkt_l_avg', 
+           'fw_pkt_l_std', 'bw_iat_tot', 'bw_iat_avg', 'bw_iat_std', 'bw_iat_max', 'bw_iat_min', 'fw_psh_flag', 'bw_psh_flag', 
+           'fw_urg_flag', 'fw_rst_flag', 'bw_rst_flag', 'fw_hdr_len', 'bw_hdr_len', 'fw_pkt_s', 'bw_pkt_s', 
+           'pkt_len_min', 'pkt_len_max', 'pkt_len_avg', 'pkt_len_std', 'pkt_len_va', 'fin_cnt', 'syn_cnt', 'rst_cnt', 'pst_cnt', 
+           'ack_cnt', 'urg_cnt', 'down_up_ratio', 'pkt_size_avg', 'fw_seg_avg', 'bw_seg_avg', 'fw_byt_blk_avg', 
+           'fw_pkt_blk_avg', 'fw_blk_rate_avg', 'bw_byt_blk_avg', 'bw_pkt_blk_avg', 'bw_blk_rate_avg', 'subfl_fw_pk', 'subfl_fw_byt', 
+           'subfl_bw_byt', 'fw_win_byt', 'bw_win_byt', 'Fw_act_pkt', 'fw_seg_min', 'atv_avg', 'atv_std', 'atv_max', 
+           'atv_min', 'idl_avg', 'idl_std', 'idl_max', 'idl_min', 'icmp_code', 'icmp_type', 'cumulative_connection_duration']
 
 def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: IncrementalPCA, 
           ipca_size: int = None) -> pd.DataFrame:
@@ -50,7 +42,7 @@ def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
         if not ipca_size:
             raise ValueError()
 
-    data = data[gemeinsame_columns]
+    data = data[COLUMNS]
     
     if not scaler:
         scaler = StandardScaler()
@@ -62,11 +54,11 @@ def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
         transformed_features = ipca.transform(scaled_features)
         adapted_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
     else:
-        adapted_data = pd.DataFrame(scaled_features, columns=gemeinsame_columns)
+        adapted_data = pd.DataFrame(scaled_features, columns=COLUMNS)
     return adapted_data
 
 def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: IncrementalPCA, 
-          ipca_size: int= None) -> pd.DataFrame:
+          ipca_size: int= IPCA_SIZE) -> pd.DataFrame:
     """
 
     Prepares data for re-training by selecting only used features, optionally scaling and transforming via PCA. An 'attack_type' column is added.
@@ -74,8 +66,8 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
     Args: 
         data (pd.DataFrame): The input DataFrame containing the data to be processed. 
         scaler (StandardScaler): A pre-trained StandardScaler or None if a StandardScaler should be fit to this data. 
-        ipca (IncrementalPCA): A pre-trained IncrementalPCA object or None if no PCA should be applied. 
-        ipca_size (int): The number of PCA components or None. Must be set if ipca is used. Defaults to None.
+        ipca (IncrementalPCA): A pre-trained IncrementalPCA object 
+        ipca_size (int): The number of PCA components defaults to 34.
 
     Returns: 
         pd.DataFrame: The transformed DataFrame, ready for re-training.
@@ -85,7 +77,7 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
         if not ipca_size:
             raise ValueError()
 
-    data = data[gemeinsame_columns]
+    data = data[COLUMNS]
 
     if not scaler:
         scaler = StandardScaler()
@@ -97,7 +89,7 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
         transformed_features = ipca.transform(scaled_features)
         adapted_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
     else: # no ipca
-        adapted_data = pd.DataFrame(scaled_features, columns=gemeinsame_columns)
+        adapted_data = pd.DataFrame(scaled_features, columns=COLUMNS)
     
     # The trainingdata is not from Attacks!
     cLength = len(adapted_data[adapted_data.columns[0]])
@@ -125,7 +117,7 @@ def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True,
             - int: The number of PCA components (or None if PCA was not used).
     """
 
-    c = gemeinsame_columns + ['attack_type'] 
+    c = COLUMNS + ['attack_type'] 
     data = data[c] 
     features = data.drop('attack_type', axis = 1)
     attacks = data['attack_type']
@@ -135,14 +127,14 @@ def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True,
     scaled_features = scaler.fit_transform(features)
     # Principal Component Analysis
     if use_ipca:
-        ipca_size = len(features.columns) // 2
+        ipca_size = IPCA_SIZE
         ipca = IncrementalPCA(n_components = ipca_size, batch_size = 500)
         for batch in np.array_split(scaled_features, len(features) // 500):
             ipca.partial_fit(batch) 
         transformed_features = ipca.transform(scaled_features)
         new_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
     else: # no ipca
-        new_data = pd.DataFrame(scaled_features, columns=gemeinsame_columns)
+        new_data = pd.DataFrame(scaled_features, columns=COLUMNS)
         ipca = None
         ipca_size = None
 

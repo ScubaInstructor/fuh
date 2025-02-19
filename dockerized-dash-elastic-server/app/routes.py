@@ -2,12 +2,15 @@ from pathlib import Path
 from flask import Blueprint, jsonify, render_template, redirect, request, send_file
 from flask_login import login_required, current_user
 import jwt
-from . import db, app, MODELNAME, MODELPATH, ZIPFILENAME, mc, cec
+from . import db, app,APPPATH, MODELNAME, MODELPATH, SCALERNAME, IPCANAME, ZIPFILENAME, mc, cec
 #from elastic_connector import CustomElasticsearchConnector, API_KEY, INDEX_NAME
 import asyncio
+import pandas as pd
+from joblib import load
 from flask import current_app
 from datetime import datetime, timedelta
 from .models import Sensor
+from .pipelining_utilities import adapt_for_prediction
 import dotenv
 from os import getenv
 from .discord_bot import DiscordClient
@@ -66,8 +69,16 @@ def notify_users():
 
 @main_routes.route('/upload', methods=['POST'])
 def upload():
-    # check auth
-    token = request.headers.get('Authorization').split()[1]
+    # Route where unclassified Flows and PCAP Data is sent to
+
+    # Instantiate model parameters
+    model = load(APPPATH + MODELPATH + MODELNAME)
+    scaler = load(APPPATH + MODELPATH + SCALERNAME)
+    ipca = load(APPPATH + MODELPATH + IPCANAME)
+
+    # Sensor Authentification
+    #token = request.headers.get('Authorization').split()[1]
+    token = request.headers.get('Authorization')
     try:
         payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
         # Check if sensor name is known
@@ -78,33 +89,56 @@ def upload():
             if sensor_name not in reg_sensor_names:
                 return jsonify({"error": "Sensor doesn't exists"}), 401
         # check if request is well formed
+
         if ('flow_data' in request.json and 
                 'pcap_data' in request.json and 
-                'probabilities' in request.json  and 
                 'timestamp' in request.json and 
-                'prediction' in request.json and 
                 'sensor_name' in request.json and
-                'sensor_port' in request.json and
-                'partner_ip' in request.json and
-                'partner_port' in request.json and
-                'has_been_seen'in request.json and
-                'attack_class'in request.json and
-                'flow_id' in request.json and
-                'model_hash'in request.json):
+                'src_prt' in request.json and
+                'src_ip' in request.json and
+                'dst_prt' in request.json and
+                'dst_ip' in request.json and
+                'flow_id' in request.json):
             
-            
-            # check if hash is valid     
-            sensor_hash = request.json["model_hash"]
-            print("Sensorhash: " + sensor_hash)
-            #global modelhash 
-            print("Serverhash: " + mc.get_hash())
-            if mc.get_hash() != sensor_hash:
-                return jsonify({"update_error": "Model is out of date!"}), 400
-            # receive data and store it in elastic
             doc = request.json
+            # remove flow_ex not needed
+            doc.pop('flow_ex', None)
+            # adapt for prediction
+            flow_data = pd.DataFrame([request.json['flow_data']])
+            flow_data = adapt_for_prediction(flow_data,scaler,ipca,34)
+
+            # # predict
+            prediction = model.predict(flow_data)
+            
+            # # get probabilites
+            proba = model.predict_proba(flow_data)
+
+            # prepare the dict with the probabilities
+
+            probabilities = {}
+
+            for i in range(len(proba[0])):
+                probabilities[model.classes_[i]] = proba[0][i]
+            
+            # Prepare dict for upload
+            doc.update({
+                        'prediction': prediction.tolist()[0],
+                        'probabilities': probabilities,
+                        'attack_class': "not yet classified",
+                        'has_been_seen': False, # TODO Is this redundant, if we have the attack_class field?
+                        'flow_data': request.json["flow_data"],
+                        'model_hash' : mc.get_hash()
+                    })  
+            # receive data and store it in elastic
+            #doc = request.json
+
+            timestamp = datetime.strptime(doc['timestamp'], '%Y-%m-%d %H:%M:%S.%f')
+            doc['timestamp'] = timestamp.isoformat()
+
+
             asyncio.run(cec.store_flow_data(data=doc))
             
-            # Discord notification to do 
+            #  Discord notification to do 
             if NOTIFICATION_ACTIVE:
                 notify_users() 
         else:

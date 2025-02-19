@@ -115,7 +115,7 @@ def update_boxplot(is_open, selected_row_data):
     if not is_open or not selected_row_data:
         return []
     detail_df = pd.DataFrame(selected_row_data)
-    detail_flow_df = detail_df["flow_data"].apply(pd.Series).select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1)
+    detail_flow_df = detail_df["flow_data"].apply(pd.Series).select_dtypes(include='number').drop(["src_port", "dst_port", "protocol","icmp_type","icmp_code"], axis=1)
     # detail_flow_df = pd.concat([detail_flow_df, min_flow_data, mean_flow_data, max_flow_data, q1_flow_data, q3_flow_data],ignore_index=True)
     # detail_flow_df = detail_flow_df.div(max_flow_data.iloc[0])
 
