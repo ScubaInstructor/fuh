@@ -69,7 +69,8 @@ def create_app():
 #         return hash_func.hexdigest()
 
 def restore_model_to_previous_version(elastic_id:str, mc: Modelhash_Container) -> None | FileNotFoundError:
-    """ Extract the model with the specified id from the respective file in the archive folder and replace the current model.
+    """ Extract the model, scaler and ipca with the specified model id from the respective file 
+    in the archive folder and replace the current files.
 
     Args:
         elastic_id (str): the uuid for the model which should be used by the sensors from now on. 
@@ -80,7 +81,7 @@ def restore_model_to_previous_version(elastic_id:str, mc: Modelhash_Container) -
     try:
         copyfile(f"{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip", APPPATH + MODELPATH + ZIPFILENAME)
         zf = zipfile.ZipFile(APPPATH + MODELPATH + ZIPFILENAME, "r")
-        zf.extractall(member=MODELNAME, path=APPPATH + MODELPATH)
+        zf.extractall(path=APPPATH + MODELPATH)
         mc.set_hash(mc.compute_file_hash( APPPATH + MODELPATH + MODELNAME))
     except FileNotFoundError:
         print("Requested File not found")

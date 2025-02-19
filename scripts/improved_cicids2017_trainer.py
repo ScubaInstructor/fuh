@@ -17,6 +17,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 CREAT_FIGS = False
 removed_columns = ['id', 'Flow ID','Src IP', 'Dst IP', 'Timestamp', ] # these wont only serve for overfitting the model 
+['Bwd URG Flags', 'CWR Flag Count', 'ECE Flag Count', 'Subflow Bwd Packets', 'Attempted Category'] # These are empty and not anymore included in cleaned data
 columns = [ 'Src Port', 'Dst Port', 'Protocol',
        'Flow Duration', 'Total Fwd Packet', 'Total Bwd packets',
        'Total Length of Fwd Packet', 'Total Length of Bwd Packet',
@@ -43,8 +44,24 @@ columns = [ 'Src Port', 'Dst Port', 'Protocol',
        'Fwd Act Data Pkts', 'Fwd Seg Size Min', 'Active Mean', 'Active Std',
        'Active Max', 'Active Min', 'Idle Mean', 'Idle Std', 'Idle Max',
        'Idle Min', 'ICMP Code', 'ICMP Type', 'Total TCP Flow Time', 'Label',
-       'Attempted Category']
+       'Attempted Category'] 
 
+mapping_for_columns = {"flow_id":"Flow ID","ip_src":"Src IP","ip_src_prt":"Src Port","ip_dst":"Dst IP",
+"ip_dst_prt":"Dst Port","protocol":"Protocol","str_time":"Timestamp","flow_duration":"Flow Duration","fwd_pkt_stats":"Total Fwd Packet",
+"bwd_pkt_stats":"Total Bwd packets","tot_l_fw_pkt":"Total Length of Fwd Packet","tot_l_bw_pkt":"Total Length of Bwd Packet","fw_pkt_l_max":"Fwd Packet Length Max",
+"fw_pkt_l_min":"Fwd Packet Length Min","fw_pkt_l_avg":"Fwd Packet Length Mean","fw_pkt_l_std":"Fwd Packet Length Std",
+"bw_iat_tot":"Bwd IAT Total","bw_iat_avg":"Bwd IAT Mean","bw_iat_std":"Bwd IAT Std","bw_iat_max":"Bwd IAT Max","bw_iat_min":"Bwd IAT Min",
+"fw_psh_flag":"Fwd PSH Flags","bw_psh_flag":"Bwd PSH Flags","fw_urg_flag":"Fwd URG Flags","bw_urg_flag":"Bwd URG Flags","fw_rst_flag":"Fwd RST Flags",
+"bw_rst_flag":"Bwd RST Flags","fw_hdr_len":"Fwd Header Length","bw_hdr_len":"Bwd Header Length","fw_pkt_s":"Fwd Packets/s","bw_pkt_s":"Bwd Packets/s",
+"pkt_len_min":"Packet Length Min","pkt_len_max":"Packet Length Max","pkt_len_avg":"Packet Length Mean","pkt_len_std":"Packet Length Std","pkt_len_va":"Packet Length Variance",
+"fin_cnt":"FIN Flag Count","syn_cnt":"SYN Flag Count","rst_cnt":"RST Flag Count","pst_cnt":"PSH Flag Count","ack_cnt":"ACK Flag Count","urg_cnt":"URG Flag Count",
+"cwe_cnt":"CWR Flag Count","ece_cnt":"ECE Flag Count","down_up_ratio":"Down/Up Ratio","pkt_size_avg":"Average Packet Size","fw_seg_avg":"Fwd Segment Size Avg",
+"bw_seg_avg":"Bwd Segment Size Avg","fw_byt_blk_avg":"Fwd Bytes/Bulk Avg","fw_pkt_blk_avg":"Fwd Packet/Bulk Avg","fw_blk_rate_avg":"Fwd Bulk Rate Avg","bw_byt_blk_avg":"Bwd Bytes/Bulk Avg",
+"bw_pkt_blk_avg":"Bwd Packet/Bulk Avg","bw_blk_rate_avg":"Bwd Bulk Rate Avg","subfl_fw_pk":"Subflow Fwd Packets","subfl_fw_byt":"Subflow Fwd Bytes","subfl_bw_pkt":"Subflow Bwd Packets",
+"subfl_bw_byt":"Subflow Bwd Bytes","fw_win_byt":"FWD Init Win Bytes","bw_win_byt":"Bwd Init Win Bytes","Fw_act_pkt":"Fwd Act Data Pkts","fw_seg_min":"Fwd Seg Size Min",
+"atv_avg":"Active Mean","atv_std":"Active Std","atv_max":"Active Max","atv_min":"Active Min","idl_avg":"Idle Mean","idl_std":"Idle Std","idl_max":"Idle Max",
+"idl_min":"Idle Min","icmp_code":"ICMP Code","icmp_type":"ICMP Type","cumulative_connection_duration":"Total TCP Flow Time","label":"Label"}
+swapped_mapping = {value: key for key, value in mapping_for_columns.items()}
 # These startparameters are only used to find best params for the RFC once!
 # They are based on previous experiences...
 start_parameters = {'bootstrap': [True, False],
@@ -79,8 +96,8 @@ def load_data(directory:str, cutoff:int) -> pd.DataFrame:
 
 def scale_and_pca(data:pd.DataFrame) -> tuple:
     # Scale The Dataset
-    X = data.drop('Label', axis=1)
-    y = data['Label']
+    X = data.drop('label', axis=1)
+    y = data['label']
     scaler = StandardScaler()
     scaled_X = scaler.fit_transform(X)
     # Principal Component Analysis
@@ -91,12 +108,12 @@ def scale_and_pca(data:pd.DataFrame) -> tuple:
     print(f'information retained: {sum(ipca.explained_variance_ratio_):.2%}')
     transformed_X = ipca.transform(scaled_X)
     new_data = pd.DataFrame(transformed_X, columns = [f'PC{i+1}' for i in range(ipca_size)])
-    new_data['Label'] = y.values
+    new_data['label'] = y.values
     return new_data, scaler, ipca
 
 def upsample_the_dataset(dataset:pd.DataFrame)-> pd.DataFrame:    
-    X = dataset.drop('Label', axis=1)
-    y = dataset['Label']
+    X = dataset.drop('label', axis=1)
+    y = dataset['label']
     smote = SMOTE(sampling_strategy='auto', random_state=0)
     X_upsampled, y_upsampled = smote.fit_resample(X, y)
     blnc_data = pd.DataFrame(X_upsampled)
@@ -177,12 +194,27 @@ def get_params_for_RandomForestClassifier(X_train, y_train):
 if __name__ == '__main__':
     # load Data 
     raw_dataset =  load_data("nids-daten/sampled_CICIDS2017_improved_rnd_5000", 2000)
-
+    
     # because of very sparse values we remove following columns
     sparse_columns = ['Bwd URG Flags', 'CWR Flag Count', 'ECE Flag Count', 'Subflow Bwd Packets', 'Attempted Category']
     useable_columns = [c for c in columns if c not in sparse_columns]
     raw_dataset = raw_dataset[useable_columns]
-
+    Row_with_now_columns_in_received_http_request = ["Bwd Packet Length Max",
+    "Bwd Packet Length Min",
+    "Bwd Packet Length Mean",
+    "Bwd Packet Length Std",
+    "Flow Bytes/s",
+    "Flow Packets/s",
+    "Flow IAT Mean",
+    "Flow IAT Std",
+    "Flow IAT Max",
+    "Flow IAT Min",
+    "Fwd IAT Total",
+    "Fwd IAT Mean",
+    "Fwd IAT Std",
+    "Fwd IAT Max",
+    "Fwd IAT Min"]
+    raw_dataset = raw_dataset.drop(Row_with_now_columns_in_received_http_request, axis=1)
     # Check for Duplicates
     dups = raw_dataset[raw_dataset.duplicated()]
     print(f'Number of duplicates: {len(dups)}')
@@ -195,10 +227,12 @@ if __name__ == '__main__':
     not_one_variable = num_unique[num_unique > 1].index
 
     dropped_cols = one_variable.index
-    data = raw_dataset[not_one_variable]
+    cleaned_data = raw_dataset[not_one_variable]
+    cleaned_data = cleaned_data.rename(columns=swapped_mapping)# This Data could be stored in a pkl file for later use...
+    #pd.DataFrame.to_csv(cleaned_data,"scripts/lowercase_balanced_dataset_cicids201_improved.csv")
     print(f'Dropped columns: {dropped_cols}')
-    new_data, scaler, ipca = scale_and_pca(data)
-    data = upsample_the_dataset(new_data) # This Data could be stored in a pkl file for later use...
+    new_data, scaler, ipca = scale_and_pca(cleaned_data)
+    data = upsample_the_dataset(new_data) 
     rf, X_train, y_train, X_test, y_test = train_random_forest(data)
     start = time.time()    
     print(cross_val_score(rf, X_train, y_train)) # mean 0.978429628 bei 3.590430974960327 s training
@@ -207,7 +241,7 @@ if __name__ == '__main__':
     joblib.dump(rf, "scripts/model.pkl")
     joblib.dump(scaler, "scripts/scaler.pkl")
     joblib.dump(ipca, "scripts/ipca.pkl")
-    pd.DataFrame.to_csv(data, "scripts/balanced_dataset_cicids201_improved.csv")
+    pd.DataFrame.to_csv(cleaned_data, "scripts/balanced_dataset_cicids201_improved.csv")
     # get_params_for_RandomForestClassifier(X_train, y_train) # returned {'n_estimators': 1400, 'min_samples_split': 5, 'min_samples_leaf': 1, 'max_features': 'log2', 'max_depth': 90, 'bootstrap': False}
     # best_params = {'n_estimators': 1400, 'min_samples_split': 5, 'min_samples_leaf': 1, 'max_features': 'log2', 'max_depth': 90, 'bootstrap': False}
     # rf, X_train, y_train, X_test, y_test = train_random_forest(data, best_params)
