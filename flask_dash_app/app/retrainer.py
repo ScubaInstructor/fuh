@@ -46,8 +46,10 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
     """
     # TODO paths must be fixed someday
     trainingdata = read_csv(APPPATH + "/datasources/balanced_dataset_cicids201_improved.csv")
-    trainingdata.rename(columns={"Label": "attack_type"}) # From here on the attack_type is used.
+    trainingdata = trainingdata.rename(columns={"label": "attack_type"}) # From here on the attack_type is used.
+    attacks = trainingdata["attack_type"]
     trainingdata = trainingdata[COLUMNS]
+    trainingdata["attack_type"] = attacks
     if len(own_data) == 0:
         df =  trainingdata
     else:
