@@ -30,13 +30,13 @@ def create_world_map(fig_id, df):
         except:
             return None, None
     
-    df['source_lat'], df['source_lon'] = zip(*df['partner_ip'].apply(ip_to_lat_lon))
+    df['source_lat'], df['source_lon'] = zip(*df['dst_ip'].apply(ip_to_lat_lon))
     
     fig = px.scatter_geo(
         df,
         lat='source_lat',
         lon='source_lon',
-        hover_name='partner_ip',
+        hover_name='dst_ip',
         color='prediction',
         scope='world'
     )

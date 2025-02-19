@@ -1,77 +1,82 @@
-from dash import Dash, html, dcc
-from flask_login import current_user
-from flask import redirect, url_for, request
-from dotenv import load_dotenv
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search
-import os
-import elasticsearch
-import logging
-import pandas as pd
+import requests
+import json
+import time
+from datetime import datetime
 
-# Setup logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+class FlowSender:
+    def __init__(self, server_url="http://localhost:5000/upload", token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiU2Vuc29yNCIsImV4cCI6MTczOTk4NjM3MX0.SrS4-JUeO3TY05l-bLowGy2S6BzaH97i6XuwSHZwXj0"):
+        self.server_url = server_url
+        self.headers = {
+            'Content-Type': 'application/json',
+            'Authorization': token,
+            'User-Agent': 'Java/11.0.25',
+            'Accept': '*/*',
+            'Connection': 'keep-alive'
+        }
 
-# Loading of the .env file
-load_dotenv()
-# Elastic
-ES_HOST = os.getenv('ES_HOST')  # Change this to your Elasticsearch host
-ES_PORT = int(os.getenv('ES_PORT'))        # Change this to your Elasticsearch port
-ES_INDEX = os.getenv('ES_INDEX')  # Index name for storing flow data
-# Get these values from your Elasticsearch installation
-ES_API_KEY = os.getenv('ES_API_KEY')  # API key for access to elastic 
-SENSOR_NAME = os.getenv('SENSOR_NAME')  # Unique name to identify this sensor
+    def extract_json_from_post_data(self, post_data_section):
+        # Find the JSON data between the first { and last }
+        start_idx = post_data_section.find('{')
+        end_idx = post_data_section.rfind('}') + 1
+        if start_idx == -1 or end_idx == 0:
+            return None
+        
+        # Extract the JSON string
+        json_str = post_data_section[start_idx:end_idx]
+        
+        # Fix the nested JSON by escaping double quotes
+        json_str = json_str.replace('"{', '{').replace('}"', '}')
+        json_str = json_str.replace('\\"', '"')  # Unescape any already escaped quotes
+        
+        return json_str
 
+    def send_flow(self, flow_data):
+        try:
+            # Parse the flow data string into a dictionary
+            flow_dict = json.loads(flow_data)
+            
+            # Send POST request
+            response = requests.post(
+                self.server_url,
+                headers=self.headers,
+                json=flow_dict,
+                timeout=5
+            )
+            
+            # Print response details
+            print(f"Status Code: {response.status_code}")
+            print(f"Response: {response.text}")
+            return response.status_code == 200
+            
+        except Exception as e:
+            print(f"Error sending flow: {e}")
+            return False
 
-try:
-    # Initialize Elasticsearch client
-    es = Elasticsearch(
-            f"{ES_HOST}:{ES_PORT}",
-            api_key=ES_API_KEY,  # Authentication via API-key
-            verify_certs=False,
-            ssl_show_warn=False,
-            request_timeout=30,
-            retry_on_timeout=True
-        )
-
-    # # Verify index exists
-    # if not es.indices.exists(index=ES_INDEX):
-    #     logger.error(f"Index {ES_INDEX} does not exist")
-    #     raise Exception(f"Index {ES_INDEX} not found")
-
-    # Build search query
-    s = Search(using=es, index=ES_INDEX)
-
-    # Debug: Print total documents in index
-    response = s.execute()
-    logger.debug(f"Total documents in index: {response.hits.total.value}")
-
-    # Get sample document to verify structure
-    sample = es.search(index=ES_INDEX, size=1)
-    #logger.debug(f"Sample document structure: {sample['hits']['hits'][0] if sample['hits']['hits'] else 'No documents found'}")
-
-    # Modify search to match your document structure
-    s = Search(using=es, index=ES_INDEX) \
-        .extra(size=10) \
-        .source(['id', 'flow_data', 'prediction'])  # Specify fields to return
-
-    response = s.execute()
-
-    # Print results with more detail
-    df_list = []
-    for hit in response:
-        logger.info(f"Document ID: {hit.meta.id}")
-        logger.info(f"Source data: {hit.to_dict()}")
-        df_list.append(pd.DataFrame([hit.to_dict()["prediction"]]))
+def process_file(file_path):
+    with open(file_path, 'r') as file:
+        content = file.read()
     
-    df = pd.concat(df_list)
-    print (df) 
+    # Split the content into individual POST data sections
+    sections = content.split('POST Data:')
+    
+    # Remove the first element (empty or header)
+    sections = [s for s in sections if s.strip()]
+    
+    return sections
 
-except elasticsearch.AuthorizationException as e:
-    print(f"Authorization error: {e}")
-    print("Please check your API key permissions")
-except elasticsearch.ConnectionError as e:
-    print(f"Connection error: {e}")
-except Exception as e:
-    print(f"Unexpected error: {e}")
+if __name__ == "__main__":
+    # Initialize the sender
+    sender = FlowSender(server_url="http://127.0.0.1:5000/upload", token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiU2Vuc29yNCIsImV4cCI6MTczOTk4NjM3MX0.SrS4-JUeO3TY05l-bLowGy2S6BzaH97i6XuwSHZwXj0")
+    
+    # Process the file and get POST data sections
+    sections = process_file("flask_dash_app/app/sample-post-single.txt")
+    
+    # Send each flow with a delay
+    for i, section in enumerate(sections, 1):
+        print(f"\nProcessing flow {i}/{len(sections)}")
+        json_data = sender.extract_json_from_post_data(section)
+        if json_data:
+            print(f"Sending flow at {datetime.now()}")
+            success = sender.send_flow(json_data)
+            print(f"Send {'successful' if success else 'failed'}")
+            time.sleep(1)  # Add delay between requests

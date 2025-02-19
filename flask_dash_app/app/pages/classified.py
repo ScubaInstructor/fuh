@@ -54,15 +54,15 @@ try:
         # Normal behaviour trigger
         trigger = "normal"
         flow_data = df["flow_data"].apply(pd.Series)
-        min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
-        max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
-        mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
-        q1_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.25])
-        q3_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.75])
+        # min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
+        # max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
+        # mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
+        # q1_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.25])
+        # q3_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.75])
 
-        min_flow_data = pd.DataFrame([min_flow_data], columns=mean_flow_data.index.to_list())
-        max_flow_data = pd.DataFrame([max_flow_data], columns=mean_flow_data.index.to_list())
-        mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
+        # min_flow_data = pd.DataFrame([min_flow_data], columns=mean_flow_data.index.to_list())
+        # max_flow_data = pd.DataFrame([max_flow_data], columns=mean_flow_data.index.to_list())
+        # mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
         # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
         # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
         
@@ -365,12 +365,12 @@ def serve_layout(pathname):
                         return response.location.latitude, response.location.longitude
                     except:
                         return None, None
-                df['source_lat'], df['source_lon'] = zip(*df['partner_ip'].apply(ip_to_lat_lon))
+                df['source_lat'], df['source_lon'] = zip(*df['dst_ip'].apply(ip_to_lat_lon))
                 # Recalculate flow statistics
                 flow_data = df["flow_data"].apply(pd.Series)
-                min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
-                max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
-                mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
+                # min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
+                # max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
+                # mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
         except Exception as e:
             print(f"Error loading data: {e}")
             trigger = "error"
@@ -424,7 +424,8 @@ def serve_layout(pathname):
                         make_grid(df, seen=True, grid_id="seen_grid", 
                                 columns=[{"field": "timestamp"},
                                     {"field": "sensor_name"},
-                                    {"field": "partner_ip"},
+                                    {"field": "src_ip"},
+                                    {"field": "dst_ip"},
                                     {"field": "attack_class"},
                                     {"field": "flow_id"}]),
                         dbc.Button("Reset", id="classified-reset-grid", 

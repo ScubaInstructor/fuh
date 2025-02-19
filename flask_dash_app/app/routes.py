@@ -78,7 +78,8 @@ def upload():
     ipca = load(APPPATH + MODELPATH + IPCANAME)
 
     # Sensor Authentification
-    token = request.headers.get('Authorization').split()[1]
+    #token = request.headers.get('Authorization').split()[1]
+    token = request.headers.get('Authorization')
     try:
         payload = jwt.decode(token, app.secret_key, options={"verify_exp": False} , algorithms=['HS256'])
         # Check if sensor name is known
@@ -94,24 +95,29 @@ def upload():
                 'pcap_data' in request.json and 
                 'timestamp' in request.json and 
                 'sensor_name' in request.json and
-                'sensor_port' in request.json and
-                'partner_ip' in request.json and
-                'partner_port' in request.json and
+                'src_prt' in request.json and
+                'src_ip' in request.json and
+                'dst_prt' in request.json and
+                'dst_ip' in request.json and
                 'flow_id' in request.json):
             
             doc = request.json
+            # remove flow_ex not needed
+            doc.pop('flow_ex', None)
             # adapt for prediction
             flow_data = pd.DataFrame([request.json['flow_data']])
             flow_data = adapt_for_prediction(flow_data,scaler,ipca,34)
 
-            # predict
+            # # predict
             prediction = model.predict(flow_data)
             
-            # get probabilites
+            # # get probabilites
             proba = model.predict_proba(flow_data)
 
             # prepare the dict with the probabilities
+
             probabilities = {}
+
             for i in range(len(proba[0])):
                 probabilities[model.classes_[i]] = proba[0][i]
             
@@ -125,7 +131,11 @@ def upload():
                         'model_hash' : mc.get_hash()
                     })  
             # receive data and store it in elastic
-            doc = request.json
+            #doc = request.json
+
+            timestamp = datetime.strptime(doc['timestamp'], '%Y-%m-%d %H:%M:%S.%f')
+            doc['timestamp'] = timestamp.isoformat()
+
 
             asyncio.run(cec.store_flow_data(data=doc))
             

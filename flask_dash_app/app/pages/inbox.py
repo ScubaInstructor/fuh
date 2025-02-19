@@ -37,15 +37,15 @@ try:
         # Normal behaviour trigger
         trigger = "normal"
         flow_data = df["flow_data"].apply(pd.Series)
-        min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
-        max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
-        mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
-        q1_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.25])
-        q3_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.75])
+        # min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
+        # max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
+        # mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
+        # q1_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.25])
+        # q3_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).quantile([0.75])
 
-        min_flow_data = pd.DataFrame([min_flow_data], columns=mean_flow_data.index.to_list())
-        max_flow_data = pd.DataFrame([max_flow_data], columns=mean_flow_data.index.to_list())
-        mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
+        # min_flow_data = pd.DataFrame([min_flow_data], columns=mean_flow_data.index.to_list())
+        # max_flow_data = pd.DataFrame([max_flow_data], columns=mean_flow_data.index.to_list())
+        # mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
         # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
         # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
         
@@ -120,7 +120,7 @@ def update_boxplot(is_open, selected_row_data):
     if not is_open or not selected_row_data:
         return []
     detail_df = pd.DataFrame(selected_row_data)
-    detail_flow_df = detail_df["flow_data"].apply(pd.Series).select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1)
+    detail_flow_df = detail_df["flow_data"].apply(pd.Series).select_dtypes(include='number').drop(["ip_src_prt", "ip_dst_prt", "protocol"], axis=1)
     # detail_flow_df = pd.concat([detail_flow_df, min_flow_data, mean_flow_data, max_flow_data, q1_flow_data, q3_flow_data],ignore_index=True)
     # detail_flow_df = detail_flow_df.div(max_flow_data.iloc[0])
 
@@ -365,12 +365,12 @@ def serve_layout(pathname):
                         return response.location.latitude, response.location.longitude
                     except:
                         return None, None
-                df['source_lat'], df['source_lon'] = zip(*df['partner_ip'].apply(ip_to_lat_lon))
+                df['source_lat'], df['source_lon'] = zip(*df['dst_ip'].apply(ip_to_lat_lon))
                 # Recalculate flow statistics
                 flow_data = df["flow_data"].apply(pd.Series)
-                min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
-                max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
-                mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
+                # min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
+                # max_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).max()
+                # mean_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).mean()
         except Exception as e:
             print(f"Error loading data: {e}")
             trigger = "error"
@@ -431,7 +431,7 @@ def serve_layout(pathname):
                     #make_grid(seen=False, grid_id="unseen_grid")
                     # Left side - Grid
                     dbc.Col([
-                        make_grid(df, seen=False, grid_id="unseen_grid", columns=[{"field": "timestamp"},{"field": "sensor_name"},{"field": "partner_ip"},{"field": "prediction"},{"field": "flow_id"}]),
+                        make_grid(df, seen=False, grid_id="unseen_grid", columns=[{"field": "timestamp"},{"field": "sensor_name"},{"field": "src_ip"},{"field": "dst_ip"},{"field": "prediction"},{"field": "flow_id"}]),
                         dbc.Button("Reset", id="reset-grid", className="ms-auto", n_clicks=None, style={"margin-top": "2px"})
                     ], width=6, style={"border": "1px solid #ddd", "padding": "10px"}),  # Add border and padding for debugging
                     # Right side - Pie Chart

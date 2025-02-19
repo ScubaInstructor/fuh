@@ -21,7 +21,7 @@ COLUMNS = ['ip_src_prt', 'ip_dst_prt', 'protocol', 'flow_duration',
            'ack_cnt', 'urg_cnt', 'down_up_ratio', 'pkt_size_avg', 'fw_seg_avg', 'bw_seg_avg', 'fw_byt_blk_avg', 
            'fw_pkt_blk_avg', 'fw_blk_rate_avg', 'bw_byt_blk_avg', 'bw_pkt_blk_avg', 'bw_blk_rate_avg', 'subfl_fw_pk', 'subfl_fw_byt', 
            'subfl_bw_byt', 'fw_win_byt', 'bw_win_byt', 'Fw_act_pkt', 'fw_seg_min', 'atv_avg', 'atv_std', 'atv_max', 
-           'atv_min', 'idl_avg', 'idl_std', 'idl_max', 'idl_min', 'icmp_code', 'icmp_type', 'cumulative_connection_duration', 'label']
+           'atv_min', 'idl_avg', 'idl_std', 'idl_max', 'idl_min', 'icmp_code', 'icmp_type', 'cumulative_connection_duration']
 
 def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: IncrementalPCA, 
           ipca_size: int = None) -> pd.DataFrame:
