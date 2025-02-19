@@ -10,16 +10,16 @@
         "type": "keyword"
       },
       
-      "ip_src_prt": {
+      "src_prt": {
         "type": "integer"
       },
-      "ip_src": {
+      "src_ip": {
         "type": "ip"
       },
-      "ip_dst": {
+      "dst_ip": {
         "type": "ip"
       },
-      "ip_dst_prt": {
+      "dst_prt": {
         "type": "integer"
       },
 
