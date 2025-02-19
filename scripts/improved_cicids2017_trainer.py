@@ -16,52 +16,128 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 CREAT_FIGS = False
-removed_columns = ['id', 'Flow ID','Src IP', 'Dst IP', 'Timestamp', ] # these wont only serve for overfitting the model 
-['Bwd URG Flags', 'CWR Flag Count', 'ECE Flag Count', 'Subflow Bwd Packets', 'Attempted Category'] # These are empty and not anymore included in cleaned data
-columns = [ 'Src Port', 'Dst Port', 'Protocol',
-       'Flow Duration', 'Total Fwd Packet', 'Total Bwd packets',
-       'Total Length of Fwd Packet', 'Total Length of Bwd Packet',
-       'Fwd Packet Length Max', 'Fwd Packet Length Min',
-       'Fwd Packet Length Mean', 'Fwd Packet Length Std',
-       'Bwd Packet Length Max', 'Bwd Packet Length Min',
-       'Bwd Packet Length Mean', 'Bwd Packet Length Std', 'Flow Bytes/s',
-       'Flow Packets/s', 'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max',
-       'Flow IAT Min', 'Fwd IAT Total', 'Fwd IAT Mean', 'Fwd IAT Std',
-       'Fwd IAT Max', 'Fwd IAT Min', 'Bwd IAT Total', 'Bwd IAT Mean',
-       'Bwd IAT Std', 'Bwd IAT Max', 'Bwd IAT Min', 'Fwd PSH Flags',
-       'Bwd PSH Flags', 'Fwd URG Flags', 'Bwd URG Flags', 'Fwd RST Flags',
-       'Bwd RST Flags', 'Fwd Header Length', 'Bwd Header Length',
-       'Fwd Packets/s', 'Bwd Packets/s', 'Packet Length Min',
-       'Packet Length Max', 'Packet Length Mean', 'Packet Length Std',
-       'Packet Length Variance', 'FIN Flag Count', 'SYN Flag Count',
-       'RST Flag Count', 'PSH Flag Count', 'ACK Flag Count', 'URG Flag Count',
-       'CWR Flag Count', 'ECE Flag Count', 'Down/Up Ratio',
-       'Average Packet Size', 'Fwd Segment Size Avg', 'Bwd Segment Size Avg',
-       'Fwd Bytes/Bulk Avg', 'Fwd Packet/Bulk Avg', 'Fwd Bulk Rate Avg',
-       'Bwd Bytes/Bulk Avg', 'Bwd Packet/Bulk Avg', 'Bwd Bulk Rate Avg',
-       'Subflow Fwd Packets', 'Subflow Fwd Bytes', 'Subflow Bwd Packets',
-       'Subflow Bwd Bytes', 'FWD Init Win Bytes', 'Bwd Init Win Bytes',
-       'Fwd Act Data Pkts', 'Fwd Seg Size Min', 'Active Mean', 'Active Std',
-       'Active Max', 'Active Min', 'Idle Mean', 'Idle Std', 'Idle Max',
-       'Idle Min', 'ICMP Code', 'ICMP Type', 'Total TCP Flow Time', 'Label',
-       'Attempted Category'] 
+# removed_columns = ['id', 'Flow ID','Src IP', 'Dst IP', 'Timestamp', ] # these wont only serve for overfitting the model 
+# ['Bwd URG Flags', 'CWR Flag Count', 'ECE Flag Count', 'Subflow Bwd Packets', 'Attempted Category'] # These are empty and not anymore included in cleaned data
+# columns = [ 'Src Port', 'Dst Port', 'Protocol',
+#        'Flow Duration', 'Total Fwd Packet', 'Total Bwd packets',
+#        'Total Length of Fwd Packet', 'Total Length of Bwd Packet',
+#        'Fwd Packet Length Max', 'Fwd Packet Length Min',
+#        'Fwd Packet Length Mean', 'Fwd Packet Length Std',
+#        'Bwd Packet Length Max', 'Bwd Packet Length Min',
+#        'Bwd Packet Length Mean', 'Bwd Packet Length Std', 'Flow Bytes/s',
+#        'Flow Packets/s', 'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max',
+#        'Flow IAT Min', 'Fwd IAT Total', 'Fwd IAT Mean', 'Fwd IAT Std',
+#        'Fwd IAT Max', 'Fwd IAT Min', 'Bwd IAT Total', 'Bwd IAT Mean',
+#        'Bwd IAT Std', 'Bwd IAT Max', 'Bwd IAT Min', 'Fwd PSH Flags',
+#        'Bwd PSH Flags', 'Fwd URG Flags', 'Bwd URG Flags', 'Fwd RST Flags',
+#        'Bwd RST Flags', 'Fwd Header Length', 'Bwd Header Length',
+#        'Fwd Packets/s', 'Bwd Packets/s', 'Packet Length Min',
+#        'Packet Length Max', 'Packet Length Mean', 'Packet Length Std',
+#        'Packet Length Variance', 'FIN Flag Count', 'SYN Flag Count',
+#        'RST Flag Count', 'PSH Flag Count', 'ACK Flag Count', 'URG Flag Count',
+#        'CWR Flag Count', 'ECE Flag Count', 'Down/Up Ratio',
+#        'Average Packet Size', 'Fwd Segment Size Avg', 'Bwd Segment Size Avg',
+#        'Fwd Bytes/Bulk Avg', 'Fwd Packet/Bulk Avg', 'Fwd Bulk Rate Avg',
+#        'Bwd Bytes/Bulk Avg', 'Bwd Packet/Bulk Avg', 'Bwd Bulk Rate Avg',
+#        'Subflow Fwd Packets', 'Subflow Fwd Bytes', 'Subflow Bwd Packets',
+#        'Subflow Bwd Bytes', 'FWD Init Win Bytes', 'Bwd Init Win Bytes',
+#        'Fwd Act Data Pkts', 'Fwd Seg Size Min', 'Active Mean', 'Active Std',
+#        'Active Max', 'Active Min', 'Idle Mean', 'Idle Std', 'Idle Max',
+#        'Idle Min', 'ICMP Code', 'ICMP Type', 'Total TCP Flow Time', 'Label',
+#        'Attempted Category'] 
 
-mapping_for_columns = {"flow_id":"Flow ID","ip_src":"Src IP","ip_src_prt":"Src Port","ip_dst":"Dst IP",
-"ip_dst_prt":"Dst Port","protocol":"Protocol","str_time":"Timestamp","flow_duration":"Flow Duration","fwd_pkt_stats":"Total Fwd Packet",
-"bwd_pkt_stats":"Total Bwd packets","tot_l_fw_pkt":"Total Length of Fwd Packet","tot_l_bw_pkt":"Total Length of Bwd Packet","fw_pkt_l_max":"Fwd Packet Length Max",
-"fw_pkt_l_min":"Fwd Packet Length Min","fw_pkt_l_avg":"Fwd Packet Length Mean","fw_pkt_l_std":"Fwd Packet Length Std",
-"bw_iat_tot":"Bwd IAT Total","bw_iat_avg":"Bwd IAT Mean","bw_iat_std":"Bwd IAT Std","bw_iat_max":"Bwd IAT Max","bw_iat_min":"Bwd IAT Min",
-"fw_psh_flag":"Fwd PSH Flags","bw_psh_flag":"Bwd PSH Flags","fw_urg_flag":"Fwd URG Flags","bw_urg_flag":"Bwd URG Flags","fw_rst_flag":"Fwd RST Flags",
-"bw_rst_flag":"Bwd RST Flags","fw_hdr_len":"Fwd Header Length","bw_hdr_len":"Bwd Header Length","fw_pkt_s":"Fwd Packets/s","bw_pkt_s":"Bwd Packets/s",
-"pkt_len_min":"Packet Length Min","pkt_len_max":"Packet Length Max","pkt_len_avg":"Packet Length Mean","pkt_len_std":"Packet Length Std","pkt_len_va":"Packet Length Variance",
-"fin_cnt":"FIN Flag Count","syn_cnt":"SYN Flag Count","rst_cnt":"RST Flag Count","pst_cnt":"PSH Flag Count","ack_cnt":"ACK Flag Count","urg_cnt":"URG Flag Count",
-"cwe_cnt":"CWR Flag Count","ece_cnt":"ECE Flag Count","down_up_ratio":"Down/Up Ratio","pkt_size_avg":"Average Packet Size","fw_seg_avg":"Fwd Segment Size Avg",
-"bw_seg_avg":"Bwd Segment Size Avg","fw_byt_blk_avg":"Fwd Bytes/Bulk Avg","fw_pkt_blk_avg":"Fwd Packet/Bulk Avg","fw_blk_rate_avg":"Fwd Bulk Rate Avg","bw_byt_blk_avg":"Bwd Bytes/Bulk Avg",
-"bw_pkt_blk_avg":"Bwd Packet/Bulk Avg","bw_blk_rate_avg":"Bwd Bulk Rate Avg","subfl_fw_pk":"Subflow Fwd Packets","subfl_fw_byt":"Subflow Fwd Bytes","subfl_bw_pkt":"Subflow Bwd Packets",
-"subfl_bw_byt":"Subflow Bwd Bytes","fw_win_byt":"FWD Init Win Bytes","bw_win_byt":"Bwd Init Win Bytes","Fw_act_pkt":"Fwd Act Data Pkts","fw_seg_min":"Fwd Seg Size Min",
-"atv_avg":"Active Mean","atv_std":"Active Std","atv_max":"Active Max","atv_min":"Active Min","idl_avg":"Idle Mean","idl_std":"Idle Std","idl_max":"Idle Max",
-"idl_min":"Idle Min","icmp_code":"ICMP Code","icmp_type":"ICMP Type","cumulative_connection_duration":"Total TCP Flow Time","label":"Label"}
+# old_mapping_for_columns = {"flow_id":"Flow ID","ip_src":"Src IP","ip_src_prt":"Src Port","ip_dst":"Dst IP",
+# "ip_dst_prt":"Dst Port","protocol":"Protocol","str_time":"Timestamp","flow_duration":"Flow Duration","fwd_pkt_stats":"Total Fwd Packet",
+# "bwd_pkt_stats":"Total Bwd packets","tot_l_fw_pkt":"Total Length of Fwd Packet","tot_l_bw_pkt":"Total Length of Bwd Packet","fw_pkt_l_max":"Fwd Packet Length Max",
+# "fw_pkt_l_min":"Fwd Packet Length Min","fw_pkt_l_avg":"Fwd Packet Length Mean","fw_pkt_l_std":"Fwd Packet Length Std",
+# "bw_iat_tot":"Bwd IAT Total","bw_iat_avg":"Bwd IAT Mean","bw_iat_std":"Bwd IAT Std","bw_iat_max":"Bwd IAT Max","bw_iat_min":"Bwd IAT Min",
+# "fw_psh_flag":"Fwd PSH Flags","bw_psh_flag":"Bwd PSH Flags","fw_urg_flag":"Fwd URG Flags","bw_urg_flag":"Bwd URG Flags","fw_rst_flag":"Fwd RST Flags",
+# "bw_rst_flag":"Bwd RST Flags","fw_hdr_len":"Fwd Header Length","bw_hdr_len":"Bwd Header Length","fw_pkt_s":"Fwd Packets/s","bw_pkt_s":"Bwd Packets/s",
+# "pkt_len_min":"Packet Length Min","pkt_len_max":"Packet Length Max","pkt_len_avg":"Packet Length Mean","pkt_len_std":"Packet Length Std","pkt_len_va":"Packet Length Variance",
+# "fin_cnt":"FIN Flag Count","syn_cnt":"SYN Flag Count","rst_cnt":"RST Flag Count","pst_cnt":"PSH Flag Count","ack_cnt":"ACK Flag Count","urg_cnt":"URG Flag Count",
+# "cwe_cnt":"CWR Flag Count","ece_cnt":"ECE Flag Count","down_up_ratio":"Down/Up Ratio","pkt_size_avg":"Average Packet Size","fw_seg_avg":"Fwd Segment Size Avg",
+# "bw_seg_avg":"Bwd Segment Size Avg","fw_byt_blk_avg":"Fwd Bytes/Bulk Avg","fw_pkt_blk_avg":"Fwd Packet/Bulk Avg","fw_blk_rate_avg":"Fwd Bulk Rate Avg","bw_byt_blk_avg":"Bwd Bytes/Bulk Avg",
+# "bw_pkt_blk_avg":"Bwd Packet/Bulk Avg","bw_blk_rate_avg":"Bwd Bulk Rate Avg","subfl_fw_pk":"Subflow Fwd Packets","subfl_fw_byt":"Subflow Fwd Bytes","subfl_bw_pkt":"Subflow Bwd Packets",
+# "subfl_bw_byt":"Subflow Bwd Bytes","fw_win_byt":"FWD Init Win Bytes","bw_win_byt":"Bwd Init Win Bytes","Fw_act_pkt":"Fwd Act Data Pkts","fw_seg_min":"Fwd Seg Size Min",
+# "atv_avg":"Active Mean","atv_std":"Active Std","atv_max":"Active Max","atv_min":"Active Min","idl_avg":"Idle Mean","idl_std":"Idle Std","idl_max":"Idle Max",
+# "idl_min":"Idle Min","icmp_code":"ICMP Code","icmp_type":"ICMP Type","cumulative_connection_duration":"Total TCP Flow Time","label":"Label"}
+
+mapping_for_columns = {
+"Src Port":"ip_src_prt",
+
+"Dst Port":"ip_dst_prt",
+"Protocol":"protocol",
+
+"Flow Duration":"flow_duration",
+"Total Fwd Packet":"fwd_pkt_stats",
+"Total Bwd packets":"bwd_pkt_stats",
+"Total Length of Fwd Packet":"tot_l_fw_pkt",
+"Total Length of Bwd Packet":"tot_l_bw_pkt",
+"Fwd Packet Length Max":"fw_pkt_l_max",
+"Fwd Packet Length Min":"fw_pkt_l_min",
+"Fwd Packet Length Mean":"fw_pkt_l_avg",
+"Fwd Packet Length Std":"fw_pkt_l_std",
+"Bwd IAT Total":"bw_iat_tot",
+"Bwd IAT Mean":"bw_iat_avg",
+"Bwd IAT Std":"bw_iat_std",
+"Bwd IAT Max":"bw_iat_max",
+"Bwd IAT Min":"bw_iat_min",
+"Fwd PSH Flags":"fw_psh_flag",
+"Bwd PSH Flags":"bw_psh_flag",
+"Fwd URG Flags":"fw_urg_flag",
+"Bwd URG Flags":"bw_urg_flag",
+"Fwd RST Flags":"fw_rst_flag",
+"Bwd RST Flags":"bw_rst_flag",
+"Fwd Header Length":"fw_hdr_len",
+"Bwd Header Length":"bw_hdr_len",
+"Fwd Packets/s":"fw_pkt_s",
+"Bwd Packets/s":"bw_pkt_s",
+"Packet Length Min":"pkt_len_min",
+"Packet Length Max":"pkt_len_max",
+"Packet Length Mean":"pkt_len_avg",
+"Packet Length Std":"pkt_len_std",
+"Packet Length Variance":"pkt_len_va",
+"FIN Flag Count":"fin_cnt",
+"SYN Flag Count":"syn_cnt",
+"RST Flag Count":"rst_cnt",
+"PSH Flag Count":"pst_cnt",
+"ACK Flag Count":"ack_cnt",
+"URG Flag Count":"urg_cnt",
+"CWR Flag Count":"cwe_cnt",
+"ECE Flag Count":"ece_cnt",
+"Down/Up Ratio":"down_up_ratio",
+"Average Packet Size":"pkt_size_avg",
+"Fwd Segment Size Avg":"fw_seg_avg",
+"Bwd Segment Size Avg":"bw_seg_avg",
+"Fwd Bytes/Bulk Avg":"fw_byt_blk_avg",
+"Fwd Packet/Bulk Avg":"fw_pkt_blk_avg",
+"Fwd Bulk Rate Avg":"fw_blk_rate_avg",
+"Bwd Bytes/Bulk Avg":"bw_byt_blk_avg",
+"Bwd Packet/Bulk Avg":"bw_pkt_blk_avg",
+"Bwd Bulk Rate Avg":"bw_blk_rate_avg",
+"Subflow Fwd Packets":"subfl_fw_pk",
+"Subflow Fwd Bytes":"subfl_fw_byt",
+"Subflow Bwd Packets":"subfl_bw_pkt",
+"Subflow Bwd Bytes":"subfl_bw_byt",
+"FWD Init Win Bytes":"fw_win_byt",
+"Bwd Init Win Bytes":"bw_win_byt",
+"Fwd Act Data Pkts":"Fw_act_pkt",
+"Fwd Seg Size Min":"fw_seg_min",
+"Active Mean":"atv_avg",
+"Active Std":"atv_std",
+"Active Max":"atv_max",
+"Active Min":"atv_min",
+"Idle Mean":"idl_avg",
+"Idle Std":"idl_std",
+"Idle Max":"idl_max",
+"Idle Min":"idl_min",
+"ICMP Code":"icmp_code",
+"ICMP Type":"icmp_type",
+"Total TCP Flow Time":"cumulative_connection_duration",
+"Label":"label"}
+
 swapped_mapping = {value: key for key, value in mapping_for_columns.items()}
+columns = [value for key, value in mapping_for_columns.items()]
 # These startparameters are only used to find best params for the RFC once!
 # They are based on previous experiences...
 start_parameters = {'bootstrap': [True, False],
@@ -195,26 +271,31 @@ if __name__ == '__main__':
     # load Data 
     raw_dataset =  load_data("nids-daten/sampled_CICIDS2017_improved_rnd_5000", 2000)
     
+    # Following Code is obseolete because of new Naming 
     # because of very sparse values we remove following columns
-    sparse_columns = ['Bwd URG Flags', 'CWR Flag Count', 'ECE Flag Count', 'Subflow Bwd Packets', 'Attempted Category']
-    useable_columns = [c for c in columns if c not in sparse_columns]
-    raw_dataset = raw_dataset[useable_columns]
-    Row_with_now_columns_in_received_http_request = ["Bwd Packet Length Max",
-    "Bwd Packet Length Min",
-    "Bwd Packet Length Mean",
-    "Bwd Packet Length Std",
-    "Flow Bytes/s",
-    "Flow Packets/s",
-    "Flow IAT Mean",
-    "Flow IAT Std",
-    "Flow IAT Max",
-    "Flow IAT Min",
-    "Fwd IAT Total",
-    "Fwd IAT Mean",
-    "Fwd IAT Std",
-    "Fwd IAT Max",
-    "Fwd IAT Min"]
-    raw_dataset = raw_dataset.drop(Row_with_now_columns_in_received_http_request, axis=1)
+    # sparse_columns = ['Bwd URG Flags', 'CWR Flag Count', 'ECE Flag Count', 'Subflow Bwd Packets', 'Attempted Category']
+    # useable_columns = [c for c in columns if c not in sparse_columns]
+    # raw_dataset = raw_dataset[useable_columns]
+    # Row_with_now_columns_in_received_http_request = ["Bwd Packet Length Max",
+    # "Bwd Packet Length Min",
+    # "Bwd Packet Length Mean",
+    # "Bwd Packet Length Std",
+    # "Flow Bytes/s",
+    # "Flow Packets/s",
+    # "Flow IAT Mean",
+    # "Flow IAT Std",
+    # "Flow IAT Max",
+    # "Flow IAT Min",
+    # "Fwd IAT Total",
+    # "Fwd IAT Mean",
+    # "Fwd IAT Std",
+    # "Fwd IAT Max",
+    # "Fwd IAT Min"]
+    # raw_dataset = raw_dataset.drop(Row_with_now_columns_in_received_http_request, axis=1)
+
+    # Map Columns in Dataframe to values of the data in the http requests
+    raw_dataset = raw_dataset.rename(columns=mapping_for_columns)
+    raw_dataset = raw_dataset[columns] #exclude unused Clumns
     # Check for Duplicates
     dups = raw_dataset[raw_dataset.duplicated()]
     print(f'Number of duplicates: {len(dups)}')
@@ -227,8 +308,7 @@ if __name__ == '__main__':
     not_one_variable = num_unique[num_unique > 1].index
 
     dropped_cols = one_variable.index
-    cleaned_data = raw_dataset[not_one_variable]
-    cleaned_data = cleaned_data.rename(columns=swapped_mapping)# This Data could be stored in a pkl file for later use...
+    cleaned_data = raw_dataset[not_one_variable]    # This Data could be stored in a pkl file for later use...
     #pd.DataFrame.to_csv(cleaned_data,"scripts/lowercase_balanced_dataset_cicids201_improved.csv")
     print(f'Dropped columns: {dropped_cols}')
     new_data, scaler, ipca = scale_and_pca(cleaned_data)

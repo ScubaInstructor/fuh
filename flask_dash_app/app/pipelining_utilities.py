@@ -10,27 +10,18 @@ IPCA_SIZE = 34
 """
 Functions for the datapipeline
 """
+removed_columns = ['flow_id', 'ip_src', 'ip_dst', 'str_time', 'bw_urg_flag', 'cwe_cnt', 'ece_cnt', 'subfl_bw_pkt', ]    # these wont only serve for overfitting the model 
 
 # the following columns are the ones which are not sparse, and which do not contain ipdresse and timestamps
-removed_columns = ['flow_id', 'ip_src', 'ip_dst', 'str_time', 'bw_urg_flag', 'cwe_cnt', 'ece_cnt', 'subfl_bw_pkt', ]    # these wont only serve for overfitting the model 
-COLUMNS = ['ip_src_prt', 'ip_dst_prt', 'protocol',
-       'flow_duration', 'fwd_pkt_stats', 'bwd_pkt_stats',
-       'tot_l_fw_pkt', 'tot_l_bw_pkt', 'fw_pkt_l_max', 'fw_pkt_l_min',
-       'fw_pkt_l_avg', 'fw_pkt_l_std', 'bw_iat_tot', 'bw_iat_avg',
-       'bw_iat_std', 'bw_iat_max', 'bw_iat_min', 'fw_psh_flag', 'bw_psh_flag',
-       'fw_urg_flag', 'fw_rst_flag', 'bw_rst_flag',
-       'fw_hdr_len', 'bw_hdr_len', 'fw_pkt_s', 'bw_pkt_s', 'pkt_len_min',
-       'pkt_len_max', 'pkt_len_avg', 'pkt_len_std', 'pkt_len_va', 'fin_cnt',
-       'syn_cnt', 'rst_cnt', 'pst_cnt', 'ack_cnt', 'urg_cnt', 
-       'down_up_ratio', 'pkt_size_avg', 'fw_seg_avg', 'bw_seg_avg',
-       'fw_byt_blk_avg', 'fw_pkt_blk_avg', 'fw_blk_rate_avg', 'bw_byt_blk_avg',
-       'bw_pkt_blk_avg', 'bw_blk_rate_avg', 'subfl_fw_pk', 'subfl_fw_byt',
-       'subfl_bw_byt', 'fw_win_byt', 'bw_win_byt',
-       'Fw_act_pkt', 'fw_seg_min', 'Bw_act_pkt', 'bw_seg_min', 'atv_avg',
-       'atv_std', 'atv_max', 'atv_min', 'idl_avg', 'idl_std', 'idl_max',
-       'idl_min', 'icmp_code', 'icmp_type', 'fwd_tcp_retrans_cnt',
-       'bwd_tcp_retrans_cnt', 'total_tcp_retrans_cnt',
-       'cumulative_connection_duration', 'label']
+COLUMNS = ['ip_src_prt', 'ip_dst_prt', 'protocol', 'flow_duration', 
+           'fwd_pkt_stats', 'bwd_pkt_stats', 'tot_l_fw_pkt', 'tot_l_bw_pkt', 'fw_pkt_l_max', 'fw_pkt_l_min', 'fw_pkt_l_avg', 
+           'fw_pkt_l_std', 'bw_iat_tot', 'bw_iat_avg', 'bw_iat_std', 'bw_iat_max', 'bw_iat_min', 'fw_psh_flag', 'bw_psh_flag', 
+           'fw_urg_flag', 'fw_rst_flag', 'bw_rst_flag', 'fw_hdr_len', 'bw_hdr_len', 'fw_pkt_s', 'bw_pkt_s', 
+           'pkt_len_min', 'pkt_len_max', 'pkt_len_avg', 'pkt_len_std', 'pkt_len_va', 'fin_cnt', 'syn_cnt', 'rst_cnt', 'pst_cnt', 
+           'ack_cnt', 'urg_cnt', 'down_up_ratio', 'pkt_size_avg', 'fw_seg_avg', 'bw_seg_avg', 'fw_byt_blk_avg', 
+           'fw_pkt_blk_avg', 'fw_blk_rate_avg', 'bw_byt_blk_avg', 'bw_pkt_blk_avg', 'bw_blk_rate_avg', 'subfl_fw_pk', 'subfl_fw_byt', 
+           'subfl_bw_byt', 'fw_win_byt', 'bw_win_byt', 'Fw_act_pkt', 'fw_seg_min', 'atv_avg', 'atv_std', 'atv_max', 
+           'atv_min', 'idl_avg', 'idl_std', 'idl_max', 'idl_min', 'icmp_code', 'icmp_type', 'cumulative_connection_duration', 'label']
 
 def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: IncrementalPCA, 
           ipca_size: int = None) -> pd.DataFrame:
