@@ -1,3 +1,5 @@
+## Mapping CNS2022 improved .csv zu KafkaCICFlowmeter JSON
+
 | CICIDS2017_improved | KafkaCICFlowmeter | Matched Column Name |
 |----------|----------|--------------------|
 | Flow ID | Flow ID | flow_id |
@@ -20,8 +22,8 @@
 | Bwd Packet Length Min | Bwd Packet Length Min | bwd_packet_length_min |
 | Bwd Packet Length Mean | Bwd Packet Length Mean | bwd_packet_length_mean |
 | Bwd Packet Length Std | Bwd Packet Length Std | bwd_packet_length_std |
-| Flow Bytes/s | Flow Bytes/s | flow_bytes/s |
-| Flow Packets/s | Flow Packets/s | flow_packets/s |
+| Flow Bytes/s | Flow Bytes/s | flow_bytes_s |
+| Flow Packets/s | Flow Packets/s | flow_packets_s |
 | Flow IAT Mean | Flow IAT Mean | flow_iat_mean |
 | Flow IAT Std | Flow IAT Std | flow_iat_std |
 | Flow IAT Max | Flow IAT Max | flow_iat_max |
@@ -44,8 +46,8 @@
 | Bwd RST Flags | Bwd RST Flags | bwd_rst_flags |
 | Fwd Header Length | Fwd Header Length | fwd_header_length |
 | Bwd Header Length | Bwd Header Length | bwd_header_length |
-| Fwd Packets/s | Fwd Packets/s | fwd_packets/s |
-| Bwd Packets/s | Bwd Packets/s | bwd_packets/s |
+| Fwd Packets/s | Fwd Packets/s | fwd_packets_s |
+| Bwd Packets/s | Bwd Packets/s | bwd_packets_s |
 | Packet Length Min | Packet Length Min | packet_length_min |
 | Packet Length Max | Packet Length Max | packet_length_max |
 | Packet Length Mean | Packet Length Mean | packet_length_mean |
@@ -59,15 +61,15 @@
 | URG Flag Count | URG Flag Count | urg_flag_count |
 | CWR Flag Count | CWR Flag Count | cwr_flag_count |
 | ECE Flag Count | ECE Flag Count | ece_flag_count |
-| Down/Up Ratio | Down/Up Ratio | down/up_ratio |
+| Down/Up Ratio | Down/Up Ratio | down_up_ratio |
 | Average Packet Size | Average Packet Size | average_packet_size |
 | Fwd Segment Size Avg | Fwd Segment Size Avg | fwd_segment_size_avg |
 | Bwd Segment Size Avg | Bwd Segment Size Avg | bwd_segment_size_avg |
-| Fwd Bytes/Bulk Avg | Fwd Bytes/Bulk Avg | fwd_bytes/bulk_avg |
-| Fwd Packet/Bulk Avg | Fwd Packet/Bulk Avg | fwd_packet/bulk_avg |
+| Fwd Bytes/Bulk Avg | Fwd Bytes/Bulk Avg | fwd_bytes_bulk_avg |
+| Fwd Packet/Bulk Avg | Fwd Packet/Bulk Avg | fwd_packet_bulk_avg |
 | Fwd Bulk Rate Avg | Fwd Bulk Rate Avg | fwd_bulk_rate_avg |
-| Bwd Bytes/Bulk Avg | Bwd Bytes/Bulk Avg | bwd_bytes/bulk_avg |
-| Bwd Packet/Bulk Avg | Bwd Packet/Bulk Avg | bwd_packet/bulk_avg |
+| Bwd Bytes/Bulk Avg | Bwd Bytes/Bulk Avg | bwd_bytes_bulk_avg |
+| Bwd Packet/Bulk Avg | Bwd Packet/Bulk Avg | bwd_packet_bulk_avg |
 | Bwd Bulk Rate Avg | Bwd Bulk Rate Avg | bwd_bulk_rate_avg |
 | Subflow Fwd Packets | Subflow Fwd Packets | subflow_fwd_packets |
 | Subflow Fwd Bytes | Subflow Fwd Bytes | subflow_fwd_bytes |
