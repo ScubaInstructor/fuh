@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import jwt
 from os import getcwd, getenv, path, chmod
 from datetime import datetime, timedelta, timezone
@@ -18,9 +19,8 @@ def generate_env_file_for_sensors(user_id):
         'exp': datetime.now(timezone.utc) + timedelta(seconds=1)
     }
     token = jwt.encode(payload, key, algorithm='HS256')
-    # TODO, update environment config to include port
-    #FLASK_PORT_NUMBER = getenv('FLASK_PORT_NUMBER')
-    FLASK_PORT_NUMBER = "5000"
+    load_dotenv(dotenv_path="/dash/.env")
+    FLASK_PORT_NUMBER = getenv('FLASK_PORT_NUMBER')
     header_text=f'''# LOCAL CONFIGURATION 
 SNIFFING_INTERFACE="" # This can be set to a specific network interface to listen to, else all interfaces are listened to 
 DEBUGGING="1"   # Sends all Flows to server and be more noisy
