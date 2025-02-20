@@ -89,10 +89,10 @@
 | Idle Min | Idle Min | idle_min |
 | ICMP Code | ICMP Code | icmp_code |
 | ICMP Type | ICMP Type | icmp_type |
-| Total TCP Flow Time | Fwd TCP Retrans. Count | No match |
+| Total TCP Flow Time | Total TCP Flow Time | total_tcp_flow_time|
 |  | Bwd TCP Retrans. Count | No match |
 | | Total TCP Retrans. Count | No match |
-| | Total Connection Flow Time | No match |
+| | Fwd TCP Retrans. Count | No match |
 | Label | Label | label |
 
 
