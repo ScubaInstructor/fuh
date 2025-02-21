@@ -1452,7 +1452,7 @@ public class BasicFlow {
         features.put("protocol", getProtocol().val);
 
         String starttime = DateFormatter.convertEpochTimestamp2String(flowStartTime);
-        features.put("str_time", starttime);//7
+        features.put("timestamp", starttime);//7
 
         long flowDuration = flowLastSeen - flowStartTime;
         features.put("flow_duration", flowDuration);
