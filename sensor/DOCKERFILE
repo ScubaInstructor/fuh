@@ -31,7 +31,7 @@ COPY pipelining_utilities.py /app/pipelining_utilities.py
 COPY httpWriter.py /app/httpWriter.py
 COPY model.pkl /app
 COPY scaler.pkl /app
-COPY ipca_mit_size_34.pkl /app
+COPY ipca.pkl /app
 
 
 WORKDIR /app
