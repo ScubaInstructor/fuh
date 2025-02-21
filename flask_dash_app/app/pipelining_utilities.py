@@ -8,7 +8,7 @@ import numpy as np
 """
 Functions for the datapipeline
 """
-gemeinsame_columns = ['dst_port', 'flow_duration', 'tot_fwd_pkts', 'tot_bwd_pkts', 
+COLUMNS = ['dst_port', 'flow_duration', 'tot_fwd_pkts', 'tot_bwd_pkts', 
                       'totlen_fwd_pkts', 'totlen_bwd_pkts', 'fwd_pkt_len_max', 
                       'fwd_pkt_len_min', 'fwd_pkt_len_mean', 'fwd_pkt_len_std', 
                       'bwd_pkt_len_max', 'bwd_pkt_len_min', 'bwd_pkt_len_mean', 
@@ -50,7 +50,7 @@ def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
         if not ipca_size:
             raise ValueError()
 
-    data = data[gemeinsame_columns]
+    data = data[COLUMNS]
     
     if not scaler:
         scaler = StandardScaler()
@@ -62,7 +62,7 @@ def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
         transformed_features = ipca.transform(scaled_features)
         adapted_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
     else:
-        adapted_data = pd.DataFrame(scaled_features, columns=gemeinsame_columns)
+        adapted_data = pd.DataFrame(scaled_features, columns=COLUMNS)
     return adapted_data
 
 def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: IncrementalPCA, 
@@ -85,7 +85,7 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
         if not ipca_size:
             raise ValueError()
 
-    data = data[gemeinsame_columns]
+    data = data[COLUMNS]
 
     if not scaler:
         scaler = StandardScaler()
@@ -97,7 +97,7 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
         transformed_features = ipca.transform(scaled_features)
         adapted_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
     else: # no ipca
-        adapted_data = pd.DataFrame(scaled_features, columns=gemeinsame_columns)
+        adapted_data = pd.DataFrame(scaled_features, columns=COLUMNS)
     
     # The trainingdata is not from Attacks!
     cLength = len(adapted_data[adapted_data.columns[0]])
@@ -125,7 +125,7 @@ def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True,
             - int: The number of PCA components (or None if PCA was not used).
     """
 
-    c = gemeinsame_columns + ['attack_type'] 
+    c = COLUMNS + ['attack_type'] 
     data = data[c] 
     features = data.drop('attack_type', axis = 1)
     attacks = data['attack_type']
@@ -142,7 +142,7 @@ def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True,
         transformed_features = ipca.transform(scaled_features)
         new_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
     else: # no ipca
-        new_data = pd.DataFrame(scaled_features, columns=gemeinsame_columns)
+        new_data = pd.DataFrame(scaled_features, columns=COLUMNS)
         ipca = None
         ipca_size = None
 

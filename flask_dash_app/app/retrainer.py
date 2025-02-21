@@ -7,7 +7,7 @@ from pandas import DataFrame, concat, json_normalize
 from sklearn.model_selection import cross_val_score, train_test_split
 from joblib import dump, load
 from numpy import ndarray
-from .pipelining_utilities import adapt_cicids2017_for_training, gemeinsame_columns
+from .pipelining_utilities import adapt_cicids2017_for_training, COLUMNS
 import zipfile
 from sklearn.metrics import precision_recall_fscore_support as f_score
 from sklearn.metrics import accuracy_score as ascore
@@ -67,8 +67,8 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
             own_flows_of_same_class = own_data[own_data['attack_type'].str.lower()==name]
             own_flows_of_same_class.reset_index(drop=True, inplace=True)
             addition = concat([own_flows_of_same_class[['attack_type']], json_normalize(own_flows_of_same_class['flow_data'])], axis=1)
-            addition = addition[gemeinsame_columns + ['attack_type'] ]
-            df = df[gemeinsame_columns + ['attack_type'] ]
+            addition = addition[COLUMNS + ['attack_type'] ]
+            df = df[COLUMNS + ['attack_type'] ]
             df = concat([df, addition], ignore_index=True)
             dfs.append(df)
         
@@ -77,7 +77,7 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
         for name in remaining_classes:
             # Extrahiere Daten für jede Klasse
             df = trainingdata[trainingdata['attack_type'].str.lower() == name.lower()]
-            df = df[gemeinsame_columns + ['attack_type'] ]
+            df = df[COLUMNS + ['attack_type'] ]
             dfs.append(df)
         # Combine all classes
         df = concat(dfs, ignore_index = True)
