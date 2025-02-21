@@ -2,6 +2,7 @@ package com.vanwaasen.cicfm.flink;
 
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.connector.sink2.SinkWriter;
+import org.apache.flink.api.connector.sink2.WriterInitContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,8 +22,16 @@ public class HttpPostSink implements Sink<String> {
         this.serverKey = serverKey;
     }
 
+    // Suppress deprecation warning for backward compatibility
+    @SuppressWarnings("deprecation")
     @Override
-    public SinkWriter<String> createWriter(Sink.InitContext initContext) {  // ✅ Fix: Correct Flink method
+    public SinkWriter<String> createWriter(Sink.InitContext initContext) {
+        // Redirect to the new method to maintain backward compatibility
+        return createWriter((WriterInitContext) initContext);
+    }
+
+    @Override
+    public SinkWriter<String> createWriter(WriterInitContext context) {
         return new HttpPostWriter(endpointUrl, serverKey);
     }
 
