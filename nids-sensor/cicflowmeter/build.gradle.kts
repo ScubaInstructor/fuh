@@ -59,4 +59,3 @@ tasks.register<Jar>("fatJar") {
 
     with(tasks.jar.get())
 }
-
