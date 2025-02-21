@@ -1,5 +1,5 @@
 import hashlib
-from os import getenv
+from os import getenv, makedirs
 import os
 from shutil import copyfile
 import zipfile
@@ -7,7 +7,9 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-
+import asyncio
+import joblib
+from elasticsearch import AsyncElasticsearch
 
 from .elastic_connector import CustomElasticsearchConnector
 from .modelhash_container import Modelhash_Container
@@ -27,6 +29,7 @@ MODELARCHIVEPATH = MODELPATH + "old_models"
 # Initialize Elasticsearch connector and get data
 cec = CustomElasticsearchConnector()
 mc = Modelhash_Container(APPPATH+MODELPATH+MODELNAME)
+
 
 def create_app():
     load_dotenv(dotenv_path="/dash/.env")
@@ -51,22 +54,49 @@ def create_app():
 
     return app
 
-# def compute_file_hash(file_path: str) -> str: # DEPRECATED as it is now in Container class
-#         """Compute the hash of a file using the sha265 algorithm.
-        
-#         Args:
-#             - file_path (str) = the path to the file
-        
-#         Returns:
-#             str: The hash value
-#         """
-#         hash_func = hashlib.sha256()
-#         with open(file_path, 'rb') as file:
-#             # Read the file in chunks of 8192 bytes
-#             while chunk := file.read(8192):
-#                 hash_func.update(chunk)
-        
-#         return hash_func.hexdigest()
+   
+
+async def load_initial_model_metrics_to_elastic() -> str:
+    load_dotenv(dotenv_path="/usr/share/elasticsearch/.env") 
+    HOSTS = ['https://es01:9200']
+    MODEL_INDEX_NAME = getenv("MODEL_DATA_INDEX_NAME")
+
+    load_dotenv(dotenv_path="/shared_secrets/server-api-key.env")
+    API_KEY = getenv("ELASTIC_SERVER_KEY") 
+    data = joblib.load(APPPATH+MODELPATH+"dict_with_initial_model_data.pkl")
+    async with AsyncElasticsearch(
+                HOSTS,
+                api_key=API_KEY,  # Authentication via API-key
+                verify_certs=False,
+                ssl_show_warn=False,
+                request_timeout=30,
+                retry_on_timeout=True
+            ) as client:
+        resp = await client.index(index=MODEL_INDEX_NAME, body=data)
+        return resp["_id"]
+
+# upload initial model metrics to elasti, if this is the first startup
+file_path = '/shared_secrets/upload_initial_model_metrics'
+if os.path.exists(file_path):
+    print("this is the first startup! I will upload the metrics of the initial model to elastic")
+    elastic_id = asyncio.run(load_initial_model_metrics_to_elastic())
+    files = [APPPATH +MODELPATH + MODELNAME, APPPATH +MODELPATH + SCALERNAME, APPPATH +MODELPATH + IPCANAME]
+    
+    # to store old models
+    makedirs(APPPATH +MODELARCHIVEPATH, exist_ok = True)
+
+    # create zipfile
+    zf = zipfile.ZipFile("" + APPPATH +MODELPATH + ZIPFILENAME, "w")
+
+    for f in files:
+        # write file to zip
+        zf.write(f)
+    zf.close()
+    # Copy the model to archive with the name of the ip of the elastic document
+    copyfile(zf.filename, f"{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip")
+    print(f"Deleting flag file: {file_path}")
+    os.remove(file_path)
+
 
 def restore_model_to_previous_version(elastic_id:str, mc: Modelhash_Container) -> None | FileNotFoundError:
     """ Extract the model, scaler and ipca with the specified model id from the respective file 
@@ -102,3 +132,4 @@ def remove_model_zip_file_from_disk(elastic_id:str) -> bool:
     except FileNotFoundError as fne:
         print(fne)
         return False
+
