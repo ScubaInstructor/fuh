@@ -1,0 +1,152 @@
+services:
+  kafka:
+    image: apache/kafka:3.9.0
+    ports:
+      - "9092:9092"  # External PLAINTEXT access
+      - "9093:9093"  # Controller communication
+      - "9094:9094"  # Internal PLAINTEXT access
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:9094,CONTROLLER://kafka:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:9094
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_DELETE_TOPIC_ENABLE: "true"  # Enables topic deletion
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"  # Disables auto topic creation
+      KAFKA_MESSAGE_MAX_BYTES: 52428800  
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 52428800
+    networks:
+      - flink-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.0
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9094
+    networks:
+      - flink-network
+
+  kafka-init:
+    image: apache/kafka:3.9.0
+    container_name: kafka-init
+    depends_on:
+      - kafka
+    networks:
+      - flink-network
+    entrypoint: []   # <--- remove any custom entrypoint
+    command:
+      - /bin/bash
+      - -c
+      - |
+        until /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server kafka:9094 > /dev/null 2>&1; do
+          echo "Waiting for Kafka to be ready..."
+          sleep 2
+        done
+
+        echo "Kafka is ready, now creating topics..."
+
+        /opt/kafka/bin/kafka-topics.sh --create \
+          --if-not-exists \
+          --bootstrap-server kafka:9094 \
+          --topic network-packets \
+          --partitions 10 \
+          --replication-factor 1 \
+          --config cleanup.policy=delete \
+          --config retention.ms=604800000 \
+          --config segment.bytes=1073741824
+
+        /opt/kafka/bin/kafka-topics.sh --create \
+          --if-not-exists \
+          --bootstrap-server kafka:9094 \
+          --topic network-flows \
+          --partitions 1 \
+          --replication-factor 1 \
+          --config cleanup.policy=delete \
+          --config retention.ms=604800000 \
+          --config segment.bytes=1073741824
+
+        /opt/kafka/bin/kafka-configs.sh \
+          --bootstrap-server kafka:9094 \
+          --entity-type topics \
+          --entity-name network-flows \
+          --alter \
+          --add-config max.message.bytes=52428800
+
+        echo "Topic creation and configs complete."
+
+  flink-jobmanager:
+    image: flink:1.20.1
+    ports:
+      - "8081:8081"
+    # - "5005:5005" 
+    command: jobmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+    # - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005  # enable debug port
+    volumes:
+      - ./flink/jars:/opt/flink/usrlib
+    networks:
+      - flink-network
+
+  flink-taskmanager:
+    image: flink:1.20.1
+    # ports:
+    #  - "5006:5006"
+    depends_on:
+      - flink-jobmanager
+    command: taskmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+      - TASK_MANAGER_NUMBER_OF_TASK_SLOTS=15
+    # - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5006  # enable debug port
+    volumes:
+      - ./flink/jars:/opt/flink/usrlib
+    networks:
+      - flink-network
+
+  flink-cicflowmeter-job-submitter:
+    image: flink:1.20.1
+    container_name: flink-cicflowmeter-job-submitter
+    depends_on:
+      - flink-jobmanager
+    volumes:
+      - ./flink/jars:/opt/flink/usrlib
+    # NOTE: Must specify "-m flink-jobmanager:8081" to tell CLI where to submit
+    entrypoint: [
+      "/opt/flink/bin/flink",
+      "run",
+      "-m", "flink-jobmanager:8081",
+      "-d",
+      "-c", "com.vanwaasen.cicfm.flink.KafkaFlinkProcessor",
+      "/opt/flink/usrlib/flink-cic-flowmeter-1.5.0.jar"
+    ]
+    networks:
+      - flink-network
+
+  flink-http-job-submitter:
+    image: flink:1.20.1
+    container_name: flink-http-job-submitter
+    depends_on:
+      - flink-jobmanager
+    volumes:
+      - ./flink/jars:/opt/flink/usrlib
+    entrypoint: [
+      "/opt/flink/bin/flink",
+      "run",
+      "-m", "flink-jobmanager:8081",
+      "-d",
+      "-c", "com.vanwaasen.cicfm.flink.HttpFlinkProcessor",
+      "/opt/flink/usrlib/flink-http-sender-1.5.0.jar"
+    ]
+    networks:
+      - flink-network
+
+networks:
+  flink-network:
+    driver: bridge
