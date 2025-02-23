@@ -62,7 +62,7 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data:DataFrame):
             # Extrahiere Daten für jede Klasse
             df = trainingdata[trainingdata['attack_type'].str.lower() == name]
             # sample down to make space for own flow data
-            n = 5000 - added_classes[name]
+            n = max(5000 - added_classes[name], 0)
             df = df.sample(n=n, random_state=0)
             # add own flows of respective group
             own_flows_of_same_class = own_data[own_data['attack_type'].str.lower()==name]
