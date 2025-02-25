@@ -14,12 +14,19 @@ import plotly.express as px
 from ..elastic_connector import CustomElasticsearchConnector
 import asyncio
 
-from .grid_components import (create_world_map, make_pie_chart, make_detailed_grid,
-                            make_grid, display_line, create_boxplot, make_prediction_pie_chart)
+from .grid_components import (
+    create_world_map,
+    make_pie_chart,
+    make_detailed_grid,
+    make_grid,
+    display_line,
+    create_boxplot,
+    make_prediction_pie_chart,
+)
 
 
 # Initialize  Dash App
-dash.register_page(__name__, path='/inbox/')
+dash.register_page(__name__, path="/inbox/")
 
 # Number of flows to display
 flow_nr = 5000
@@ -48,7 +55,7 @@ try:
         # mean_flow_data = pd.DataFrame([mean_flow_data], columns=mean_flow_data.index.to_list())
         # q1_flow_data = pd.DataFrame([q1_flow_data], columns=q1_flow_data.index.to_list())
         # q3_flow_data = pd.DataFrame([q3_flow_data], columns=q3_flow_data.index.to_list())
-        
+
 except Exception as e:
     trigger = "error"
     df = pd.DataFrame()
@@ -57,56 +64,60 @@ except Exception as e:
 
 # Get statistics of flow data
 
+
 def create_welcome_alert():
     df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
-    return dbc.Alert(        
-        "Welcome! You have " + str(len(df[df["has_been_seen"] == False])) + " new flows.",
+    return dbc.Alert(
+        "Welcome! You have "
+        + str(len(df[df["has_been_seen"] == False]))
+        + " new flows.",
         id="welcome-alert",
         dismissable=True,
         is_open=True,
         duration=6000,
     )
 
+
 def make_modal():
     return dbc.Modal(
-            [
-                dbc.ModalHeader(dbc.ModalTitle("Detailed Flow View")),
-                dbc.ModalBody("This is the content of the modal", id="modal-body"),
-                dbc.ModalFooter([
+        [
+            dbc.ModalHeader(dbc.ModalTitle("Detailed Flow View")),
+            dbc.ModalBody("This is the content of the modal", id="modal-body"),
+            dbc.ModalFooter(
+                [
                     dbc.Button(
-                        "Submit Classification", 
-                        id="submit-classification", 
+                        "Submit Classification",
+                        id="submit-classification",
                         color="primary",
                         className="mt-2",
-                        n_clicks=None
+                        n_clicks=None,
                     ),
                     dbc.Button(
-                        "Download PCAP", 
-                        id="download-pcap", 
+                        "Download PCAP",
+                        id="download-pcap",
                         color="primary",
                         className="mt-2",
-                        n_clicks=None
+                        n_clicks=None,
                     ),
                     dcc.Download(id="download-pcap-content"),
-                    dbc.Button("Close", id="close", className="ms-auto", n_clicks=None)
-                ]),
-            ],
-            id="modal",
-            size="xl",
-            is_open=False,
-        )
+                    dbc.Button("Close", id="close", className="ms-auto", n_clicks=None),
+                ]
+            ),
+        ],
+        id="modal",
+        size="xl",
+        is_open=False,
+    )
+
 
 # Callbacks
 # Detailed Grid Callback
 def create_grid_callback(grid_id, detail_grid_id):
-    @callback(
-        Output(detail_grid_id, 'rowData'),
-        Input(grid_id, 'selectedRows')
-    )
+    @callback(Output(detail_grid_id, "rowData"), Input(grid_id, "selectedRows"))
     def update_detail_grid(selected_rows):
         if not selected_rows:
             return []
-        
+
         return pd.DataFrame(selected_rows).to_dict("records")
 
 
@@ -114,7 +125,7 @@ def create_grid_callback(grid_id, detail_grid_id):
 @callback(
     Output("boxplot-content", "children"),
     [Input("accordion", "active_item")],
-    [State('selected-row-store', 'data')]
+    [State("selected-row-store", "data")],
 )
 def update_boxplot(is_open, selected_row_data):
     if not is_open or not selected_row_data:
@@ -130,19 +141,19 @@ def update_boxplot(is_open, selected_row_data):
 # First callback for modal visibility
 @callback(
     Output("modal", "is_open"),
-    Input('unseen_grid', 'selectedRows'),
-    Input("close", "n_clicks"), 
-    Input('submit-classification', 'n_clicks'),
+    Input("unseen_grid", "selectedRows"),
+    Input("close", "n_clicks"),
+    Input("submit-classification", "n_clicks"),
     State("modal", "is_open"),
-    prevent_initial_call=True
+    prevent_initial_call=True,
 )
 def toggle_modal(selected_rows, close_clicks, submit_clicks, is_open):
 
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    changed_id = [p["prop_id"] for p in dash.callback_context.triggered][0]
     print("trigger modal")
     print(changed_id)
     print(submit_clicks)
-    if "close" in changed_id or 'submit-classification' in changed_id:
+    if "close" in changed_id or "submit-classification" in changed_id:
         print("close or submit clicked")
         return False
     if selected_rows:
@@ -151,63 +162,68 @@ def toggle_modal(selected_rows, close_clicks, submit_clicks, is_open):
     print("not in if")
     return dash.no_update
 
+
 # Second callback for modal content
-@callback(
-    Output("modal-body", "children"),
-    Input('unseen_grid', 'selectedRows')
-)
+@callback(Output("modal-body", "children"), Input("unseen_grid", "selectedRows"))
 def update_modal_content(selected_rows):
     detail_df = pd.DataFrame(selected_rows)
     # detail_flow_df = detail_df["flow_data"].apply(pd.Series).select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1)
     # detail_flow_df = pd.concat([detail_flow_df, min_flow_data, mean_flow_data, max_flow_data, q1_flow_data, q3_flow_data],ignore_index=True)
     # detail_flow_df = detail_flow_df.div(max_flow_data.iloc[0])
-    #prob_data = eval(detail_df["probabilities"].iloc[0])
-    #prob_df = pd.DataFrame(list(prob_data.items()), columns=['class', 'probability'])
-    
+    # prob_data = eval(detail_df["probabilities"].iloc[0])
+    # prob_df = pd.DataFrame(list(prob_data.items()), columns=['class', 'probability'])
+
     if not selected_rows:
         return dash.no_update
-    
+
     return [
-        dcc.Store(id='selected-row-store', data=detail_df.to_dict("records")),
+        dcc.Store(id="selected-row-store", data=detail_df.to_dict("records")),
         make_detailed_grid("detailed_modal_grid", selected_rows),
         make_pie_chart("prob_pie_modal", selected_rows),
         dbc.Accordion(
-        [
-            dbc.AccordionItem(
-                children=[html.Div(id="boxplot-content")],  # Add container for content
-                title="Flow Metrics",
-                id="accordion-item"
-            ),
-        ],
-        start_collapsed=True, id="accordion"
+            [
+                dbc.AccordionItem(
+                    children=[
+                        html.Div(id="boxplot-content")
+                    ],  # Add container for content
+                    title="Flow Metrics",
+                    id="accordion-item",
+                ),
+            ],
+            start_collapsed=True,
+            id="accordion",
         ),
-        dbc.Row([
-            html.H5(children="Attack Type Classification", className="mb-0 mb-1"),
-            dcc.Dropdown(
-                id='attack-type-dropdown',
-                options=list(df.probabilities.values[0].keys()),
-                value=detail_df.prediction.values[0],
-                clearable=False,
-                className='mb-3'
-            ),
-        ], className="mt-3 mb-3"),
-        ]
+        dbc.Row(
+            [
+                html.H5(children="Attack Type Classification", className="mb-0 mb-1"),
+                dcc.Dropdown(
+                    id="attack-type-dropdown",
+                    options=list(df.probabilities.values[0].keys()),
+                    value=detail_df.prediction.values[0],
+                    clearable=False,
+                    className="mb-3",
+                ),
+            ],
+            className="mt-3 mb-3",
+        ),
+    ]
 
 
 @callback(
-    [Output('alert-store', 'data'),
-     Output('alert-container', 'children')],
-    [Input('submit-classification', 'n_clicks')],
-    [State('attack-type-dropdown', 'value'),
-     State('selected-row-store', 'data'),
-     State('alert-store', 'data')]
+    [Output("alert-store", "data"), Output("alert-container", "children")],
+    [Input("submit-classification", "n_clicks")],
+    [
+        State("attack-type-dropdown", "value"),
+        State("selected-row-store", "data"),
+        State("alert-store", "data"),
+    ],
 )
 def handle_classification(n_clicks, selected_type, selected_row_data, current_alerts):
-    print ("handle classification")
+    print("handle classification")
     print(n_clicks)
     if n_clicks is None:
         return current_alerts, []
-    
+
     # Change flow classification in elastic
     detail_df = pd.DataFrame(selected_row_data)
     flow_id = detail_df["flow_id"].values[0]
@@ -218,59 +234,66 @@ def handle_classification(n_clicks, selected_type, selected_row_data, current_al
         # asyncio.run(cec.set_flow_as_seen(flow_id=flow_id))
         # Create new alert
         new_alert = {
-            'id': f'alert-{len(current_alerts)}',
-            'message': f'Flow {flow_id} classified as {selected_type}'
+            "id": f"alert-{len(current_alerts)}",
+            "message": f"Flow {flow_id} classified as {selected_type}",
         }
         status = "success"
     except:
         new_alert = {
-        'id': f'alert-{len(current_alerts)}',
-        'message': f'Flow {flow_id} could not be classified. Elastic Database Error.',
+            "id": f"alert-{len(current_alerts)}",
+            "message": f"Flow {flow_id} could not be classified. Elastic Database Error.",
         }
         status = "danger"
-        
 
-    
     # Add new alert to list
     updated_alerts = current_alerts + [new_alert]
-    
+
     # Create alert components
     alert_components = [
         dbc.Alert(
-            f"{alert['message']}", 
-            id=alert['id'],
+            f"{alert['message']}",
+            id=alert["id"],
             dismissable=True,
             is_open=True,
             color=status,
             duration=6000,
-            className="mt-2"
-        ) for alert in updated_alerts
+            className="mt-2",
+        )
+        for alert in updated_alerts
     ]
-    
+
     return updated_alerts, alert_components
+
 
 @callback(
     Output("download-pcap-content", "data"),
     Input("download-pcap", "n_clicks"),
-    State('selected-row-store', 'data'),
-    prevent_initial_call=True
+    State("selected-row-store", "data"),
+    prevent_initial_call=True,
 )
 def download_pcap(n_clicks, selected_row_data):
     if n_clicks is None:
         return None
 
     # Request pcap data for flow id
-    item = asyncio.run(cec.get_all_flows(view="all", size=1, include_pcap=True, flow_id=selected_row_data[0]["flow_id"]))
+    item = asyncio.run(
+        cec.get_all_flows(
+            view="all",
+            size=1,
+            include_pcap=True,
+            flow_id=selected_row_data[0]["flow_id"],
+        )
+    )
     detail_df = pd.DataFrame(item)
-    pcap_data = (detail_df["pcap_data"].values[0])
+    pcap_data = detail_df["pcap_data"].values[0]
     flow_id = detail_df["flow_id"].values[0]
-    
+
     # Return as downloadable file
     return dict(
         content=pcap_data,
         base64=True,
         filename=f"flow_{flow_id}.pcap",
-        type="application/vnd.tcpdump.pcap"
+        type="application/vnd.tcpdump.pcap",
     )
 
 
@@ -281,69 +304,100 @@ def download_pcap(n_clicks, selected_row_data):
     Input("submit-classification", "n_clicks"),
     Input("reset-grid", "n_clicks"),
     Input("world-map-inbox", "clickData"),
-    State('df_with_location', 'data'),
-    State('attack-type-dropdown', 'value'),
-    State('selected-row-store', 'data')
+    State("df_with_location", "data"),
+    State("attack-type-dropdown", "value"),
+    State("selected-row-store", "data"),
 )
-def update_grid(clickData, n_clicks_submit, n_clicks_reset, clickData_map, df_with_location_data, selected_type, selected_row_data):
-    #print(clickData, n_clicks_submit, n_clicks_reset, clickData_map, )
+def update_grid(
+    clickData,
+    n_clicks_submit,
+    n_clicks_reset,
+    clickData_map,
+    df_with_location_data,
+    selected_type,
+    selected_row_data,
+):
+    # print(clickData, n_clicks_submit, n_clicks_reset, clickData_map, )
     trigger = dash.callback_context.triggered_id
-    
 
     if trigger == "reset-grid" and n_clicks_reset:
-        df_update = asyncio.run(cec.get_all_flows(view="all", size=flow_nr, include_pcap=False))
+        df_update = asyncio.run(
+            cec.get_all_flows(view="all", size=flow_nr, include_pcap=False)
+        )
         unseen_data = df_update[df_update["has_been_seen"] == False].to_dict("records")
-        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
-    
+        return (
+            unseen_data,
+            create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure,
+        )
+
     if trigger == "submit-classification" and n_clicks_submit:
         detail_df = pd.DataFrame(selected_row_data)
         flow_id = detail_df["flow_id"].values[0]
         asyncio.run(cec.set_attack_class(flow_id=flow_id, attack_class=selected_type))
         asyncio.run(cec.set_flow_as_seen(flow_id=flow_id))
         print("Updating grid after classification...")
-        df_update = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
+        df_update = asyncio.run(
+            cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False)
+        )
         df = df_update[df_update["has_been_seen"] == False]
-        unseen_data =  df.to_dict("records")
-        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
-        
+        unseen_data = df.to_dict("records")
+        return (
+            unseen_data,
+            create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure,
+        )
+
     if trigger == "time-scatter" and clickData:
         print("Updating grid based on time-scatter click...")
         df = pd.DataFrame(df_with_location_data)
-        #df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
-        #df["time_bin"] = df["timestamp"].dt.floor("0.1min")
+        # df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
+        # df["time_bin"] = df["timestamp"].dt.floor("0.1min")
         df["time_bin"] = pd.to_datetime(df["time_bin"])
-        unseen_data = df[df["time_bin"]==clickData["points"][0]['x']].to_dict("records")
-        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
-    
+        unseen_data = df[df["time_bin"] == clickData["points"][0]["x"]].to_dict(
+            "records"
+        )
+        return (
+            unseen_data,
+            create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure,
+        )
+
     if trigger == "world-map-inbox" and clickData_map:
         print("Updating grid based on world-map-inbox click...")
         df = pd.DataFrame(df_with_location_data)
-        df_lat = df[df["source_lat"]==clickData_map["points"][0]["lat"]]
-        unseen_data = df_lat[df_lat["source_lon"]==clickData_map["points"][0]["lon"]].to_dict("records")
+        df_lat = df[df["source_lat"] == clickData_map["points"][0]["lat"]]
+        unseen_data = df_lat[
+            df_lat["source_lon"] == clickData_map["points"][0]["lon"]
+        ].to_dict("records")
         clickData_map = None
-        return unseen_data, create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure
-    
+        return (
+            unseen_data,
+            create_world_map("world-map-inbox", pd.DataFrame(unseen_data)).figure,
+        )
 
     # Default return for initial load
     print("Default grid load...")
     return dash.no_update, dash.no_update
 
+
 # Replace the existing layout code with this basic layout
-layout = html.Div([
-    dcc.Location(id="url", refresh=False),
-    # dcc.Interval(id="interval-classified", interval=100, max_intervals=1),
-    html.Div(id="inbox-page-content-container"),
-    dcc.Store(id='df_with_location')
-])
+layout = html.Div(
+    [
+        dcc.Location(id="url", refresh=False),
+        # dcc.Interval(id="interval-classified", interval=100, max_intervals=1),
+        html.Div(id="inbox-page-content-container"),
+        dcc.Store(id="df_with_location"),
+    ]
+)
+
 
 # Add new callback to serve the main content
 @callback(
     Output("inbox-page-content-container", "children"),
     Output("df_with_location", "data"),
-    [#Input("interval-classified", "n_intervals"),
-    #  Input("refresh-button", "n_clicks"),
-     Input("url", "pathname")],  # Changed to use regular url instead of url-refresh
-    prevent_initial_call=False
+    [  # Input("interval-classified", "n_intervals"),
+        #  Input("refresh-button", "n_clicks"),
+        Input("url", "pathname")
+    ],  # Changed to use regular url instead of url-refresh
+    prevent_initial_call=False,
 )
 def serve_layout(pathname):
     if pathname == "/inbox/":
@@ -376,7 +430,7 @@ def serve_layout(pathname):
             trigger = "error"
             df = pd.DataFrame()
 
-# Check for failed elastic connection
+    # Check for failed elastic connection
 
         if trigger == "error":
             return dbc.Container([

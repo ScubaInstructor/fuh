@@ -1,0 +1,26 @@
+kafka:
+  enable_capture_traffic_to_kafka: true
+  packet_topic:
+    host: localhost
+    port: 9092
+    topic: network-packets
+  monitor_topic:
+    topic: heartbeat_topic
+
+capture:
+  tcpdump:
+    buffer_count: 100000
+    snaplen: 65535
+
+dissect:
+  drop_ipv4_packets: false
+  drop_ipv6_packets: false
+  drop_no_ip_packets: false
+  drop_no_cicfm_packets: true
+  write_unsupported_pcap: false
+  json:
+    buffer_count: 4000
+    compression: false
+    buffer_uncompressed_ratio: 10
+    buffer_compressed_ratio: 6
+    attach_pcap_file: true

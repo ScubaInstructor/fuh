@@ -1,9 +1,12 @@
+import asyncio
 import hashlib
+from os import getenv, makedirs
 from os import getenv, makedirs
 import os
 from shutil import copyfile
 import zipfile
 from dotenv import load_dotenv
+from elasticsearch import AsyncElasticsearch
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -13,6 +16,7 @@ from elasticsearch import AsyncElasticsearch
 
 from .elastic_connector import CustomElasticsearchConnector
 from .modelhash_container import Modelhash_Container
+
 # Initialize extensions
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -24,6 +28,8 @@ ZIPFILENAME = "model_scaler_ipca.zip"
 MODELNAME = "model.pkl"
 SCALERNAME = "scaler.pkl"
 IPCANAME = "ipca.pkl"
+SCALERNAME = "scaler.pkl"
+IPCANAME = "ipca.pkl"
 MODELARCHIVEPATH = MODELPATH + "old_models"
 
 # Initialize Elasticsearch connector and get data
@@ -33,23 +39,25 @@ mc = Modelhash_Container(APPPATH+MODELPATH+MODELNAME)
 
 def create_app():
     load_dotenv(dotenv_path="/dash/.env")
-    app.secret_key = getenv('YOUR_SECRET_KEY')
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.secret_key = getenv("YOUR_SECRET_KEY")
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'
+    login_manager.login_view = "auth.login"
 
     # Register blueprints
     from .routes import main_routes
     from .auth import auth_routes
+
     app.register_blueprint(main_routes)
     app.register_blueprint(auth_routes)
 
     # Initialize Dash app
     from .dash_app import init_dash_app
+
     init_dash_app(app)
 
     return app
@@ -103,13 +111,16 @@ def restore_model_to_previous_version(elastic_id:str, mc: Modelhash_Container) -
     in the archive folder and replace the current files.
 
     Args:
-        elastic_id (str): the uuid for the model which should be used by the sensors from now on. 
+        elastic_id (str): the uuid for the model which should be used by the sensors from now on.
     Returns:
         None if everything goes well or FileNotFoundError if the file doesn't exist
-    
+
     """
     try:
-        copyfile(f"{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip", APPPATH + MODELPATH + ZIPFILENAME)
+        copyfile(
+            f"{APPPATH + MODELARCHIVEPATH}/{elastic_id}.zip",
+            APPPATH + MODELPATH + ZIPFILENAME,
+        )
         zf = zipfile.ZipFile(APPPATH + MODELPATH + ZIPFILENAME, "r")
         zf.extractall(path=APPPATH + MODELPATH)
         mc.set_hash(mc.compute_file_hash( APPPATH + MODELPATH + MODELNAME))
@@ -117,8 +128,8 @@ def restore_model_to_previous_version(elastic_id:str, mc: Modelhash_Container) -
         print("Requested File not found")
         raise FileNotFoundError
 
-         
-def remove_model_zip_file_from_disk(elastic_id:str) -> bool:
+
+def remove_model_zip_file_from_disk(elastic_id: str) -> bool:
     """remove the zipfile to this elastic uuid from filesystem.
 
     Args:

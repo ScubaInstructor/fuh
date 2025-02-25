@@ -1,5 +1,3 @@
-
-
 # from time import sleep
 # import threading
 # from cicflowmeter.flow_session import FlowSession
@@ -18,9 +16,6 @@
 # SNIFFING_INTERFACE = os.getenv('SNIFFING_INTERFACE')
 
 
-
-
-
 # def startsniffing(qu: Queue):
 #     setattr(FlowSession, "output_mode", "intern")
 #     def output_function(s, data: Flow):
@@ -33,7 +28,6 @@
 # def counter(qu:Queue, n:int):
 #     for i in range(n):
 #         qu.put(i)
-
 
 
 # # Retrieve a single page and report the URL and contents
@@ -51,7 +45,6 @@
 # executor = ThreadPoolExecutor()
 # f1 = executor.submit(watch, q)
 # f2 = executor.submit(startsniffing, q)
-
 
 
 # from time import sleep
@@ -94,7 +87,7 @@
 #                 qu.task_done()
 #             except Empty:
 #                 continue  # Wenn die Queue leer ist, einfach weitermachen
-            
+
 
 # # Hauptteil, der Threads manuell erstellt und startet
 # q = Queue()
@@ -121,7 +114,7 @@
 # # Auslesen der Environment-Variable
 # SNIFFING_INTERFACE = os.getenv('SNIFFING_INTERFACE')
 
-# global q 
+# global q
 # q = multiprocessing.Queue()
 
 # setattr(FlowSession, "output_mode", "intern")
@@ -131,12 +124,11 @@
 
 # setattr(FlowSession, "output", output_function)
 
-# def startsniffing():   
+# def startsniffing():
 #     try:
 #         sniff(session=FlowSession, iface=SNIFFING_INTERFACE)
 #     except Exception as e:
 #         print(f"Error while sniffing: {e}")
-
 
 
 # # Retrieve a single page and report the URL and contents
@@ -163,20 +155,15 @@
 # sniffing_process.start()
 
 # Optional: Prozess für das Zählen und Hinzufügen von Daten zur Queue
-#counter_process = multiprocessing.Process(target=counter, args=(q, 10))
-#counter_process.start()
+# counter_process = multiprocessing.Process(target=counter, args=(q, 10))
+# counter_process.start()
 
 # Warten, dass alle Prozesse beendet sind
 # sniffing_process.join()
 # watch_process.join()
-#counter_process.join()
+# counter_process.join()
 
 # multiThreading und -processeing versucht klappt nicht...
-
-
-
-
-
 
 
 # from cicflowmeter.flow_session import FlowSession
@@ -217,37 +204,36 @@ import asyncio
 from datetime import datetime
 from httpWriter import HttpWriter
 
-doc = {             
-                        'flow_id': "1234",
-                        'sensor_name': "debug script", # unique Sensorname
-                        'sensor_port': 96,
-                        'partner_ip': "127.131.189.123", # Ip of the other endpoint of the flow
-                        'partner_port': 1848,
-
-                        'timestamp': datetime.now().isoformat(),
-                        'prediction': "BENIGN",
-                        'probabilities': {"BENIGN":0.8,"BOT":0.2},
-                        'attack_class': "not yet classified",
-
-                        'has_been_seen': False, # TODO Is this redundant, if we have the attack_class field?
-                        'flow_data': {"empty":True},
-                        'pcap_data': "pcap_base64",  # Add the PCAP data as Base 64 encoded String
-
-                        'model_hash' : "b0e8823cfe218394846dbb8d8180248b433615cdb8b357bfd2dbc136cb082663"
-                    }   
+doc = {
+    "flow_id": "1234",
+    "sensor_name": "debug script",  # unique Sensorname
+    "sensor_port": 96,
+    "partner_ip": "127.131.189.123",  # Ip of the other endpoint of the flow
+    "partner_port": 1848,
+    "timestamp": datetime.now().isoformat(),
+    "prediction": "BENIGN",
+    "probabilities": {"BENIGN": 0.8, "BOT": 0.2},
+    "attack_class": "not yet classified",
+    "has_been_seen": False,  # TODO Is this redundant, if we have the attack_class field?
+    "flow_data": {"empty": True},
+    "pcap_data": "pcap_base64",  # Add the PCAP data as Base 64 encoded String
+    "model_hash": "b0e8823cfe218394846dbb8d8180248b433615cdb8b357bfd2dbc136cb082663",
+}
 
 SERVER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoic2Vuc29ycyIsImV4cCI6MTczNjY3NzMxN30.XZdTEsLIozjKQbFfe0Qf2gvZOLFGDK7j0sidrB7P71U"
+
 
 def upload_to_flask_server(data: dict):
     """
     Upload the dict to the Flask server
     Args:    data (dict): this contains all the data to be sent to Flask
-    Returns: 
+    Returns:
     """
-    async def _upload_to_flask_server( data:dict):
+
+    async def _upload_to_flask_server(data: dict):
         hw = HttpWriter("http://localhost:8888/upload")
         return hw.write(data=data, token=SERVER_TOKEN)
-    
+
     # try:
     #     loop = asyncio.get_event_loop()
     # except RuntimeError as e:
@@ -256,11 +242,13 @@ def upload_to_flask_server(data: dict):
     #         asyncio.set_event_loop(loop)
     #     else:
     #         raise
-    
+
     return asyncio.run(_upload_to_flask_server(data=data))
+
 
 def get_model_hash():
     hw = HttpWriter("http://localhost:5000/get_model_hash")
     return hw.get_model_hash(token=SERVER_TOKEN)
+
 
 print(get_model_hash())

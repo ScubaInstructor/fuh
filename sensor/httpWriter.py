@@ -1,8 +1,8 @@
 import json
-from  requests import Response, Session
+from requests import Response, Session
 
 
-class HttpWriter():
+class HttpWriter:
     """
     Eine Klasse zum Senden von HTTP POST-Anfragen.
 
@@ -18,7 +18,7 @@ class HttpWriter():
         """
         self.url = output_url
         self.session = Session()
-    
+
     def notify(self, token):
         """
         Notify the server about the new data.
@@ -29,17 +29,17 @@ class HttpWriter():
         Returns:
             none:
         """
-        headers = {'Authorization': f'Bearer {token}'}
+        headers = {"Authorization": f"Bearer {token}"}
         return self.session.post(self.url, headers=headers)
-    
-    def write(self, data: dict, token:str) -> Response:
+
+    def write(self, data: dict, token: str) -> Response:
         """
         Sends a single POST-Request with all the Data to the Server.
 
         Args:
             data (dict): A dict of elements to be transferred containing
                 - flow_id = the flow_id,
-                - sensor_name = AN unique name for the sensor 
+                - sensor_name = AN unique name for the sensor
                 - sensor_port = the port of the sensor
                 - partner_ip = Ip of the other endpoint of the flow
                 - partner_port = the port of the partner
@@ -54,15 +54,14 @@ class HttpWriter():
             token (str): the authentication token
         Returns: Response: The response from the post request
         """
-        headers = {'Authorization': f'Bearer {token}'}
+        headers = {"Authorization": f"Bearer {token}"}
         return self.session.post(self.url, json=data, headers=headers)
-    
-    def download_file(self, token:str):
-        headers = {'Authorization': f'Bearer {token}'}
+
+    def download_file(self, token: str):
+        headers = {"Authorization": f"Bearer {token}"}
         return self.session.get(self.url, headers=headers)
-    
+
     def get_model_hash(self, token):
-        headers = {'Authorization': f'Bearer {token}'}
+        headers = {"Authorization": f"Bearer {token}"}
         resp = json.loads(self.session.get(self.url, headers=headers).text)
-        return resp['model_hash']
-        
+        return resp["model_hash"]

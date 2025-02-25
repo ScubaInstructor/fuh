@@ -1,0 +1,17 @@
+kafka:
+  kafka_source:
+    host: localhost
+    port: 9092
+    topic: network-packets
+    format: json
+  kafka_sink:
+    host: localhost
+    port: 9092
+    topic: network-flows
+    format: json
+  monitor_topic:
+    topic: heartbeat_topic
+kafkaflowmeter:
+  flowTimeout: 120000000
+  activityTimeout: 5000000
+  bidirectional: true

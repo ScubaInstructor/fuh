@@ -23,22 +23,26 @@ COLUMNS = ['ip_src_prt', 'ip_dst_prt', 'protocol', 'flow_duration',
            'subfl_bw_byt', 'fw_win_byt', 'bw_win_byt', 'Fw_act_pkt', 'fw_seg_min', 'atv_avg', 'atv_std', 'atv_max', 
            'atv_min', 'idl_avg', 'idl_std', 'idl_max', 'idl_min', 'icmp_code', 'icmp_type', 'cumulative_connection_duration']
 
-def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: IncrementalPCA, 
-          ipca_size: int = None) -> pd.DataFrame:
+def adapt_for_prediction(
+    data: pd.DataFrame,
+    scaler: StandardScaler,
+    ipca: IncrementalPCA,
+    ipca_size: int = None,
+) -> pd.DataFrame:
     """
     Prepares data for predictions by selecting only used features, optionally scaling, and transforming via PCA.
 
-    Args: 
-        data (pd.DataFrame): The input DataFrame containing the data to be processed. 
-        scaler (StandardScaler): A pre-trained StandardScaler or None if a StandardScaler should be fit to this data. 
-        ipca (IncrementalPCA): A pre-trained IncrementalPCA object or None if no PCA should be applied. 
+    Args:
+        data (pd.DataFrame): The input DataFrame containing the data to be processed.
+        scaler (StandardScaler): A pre-trained StandardScaler or None if a StandardScaler should be fit to this data.
+        ipca (IncrementalPCA): A pre-trained IncrementalPCA object or None if no PCA should be applied.
         ipca_size (int, optional): The number of PCA components or None. Must be set if ipca is used. Defaults to None.
 
-    Returns: 
+    Returns:
         pd.DataFrame: The transformed DataFrame, ready for predictions.
     """
-    
-    if ipca: # check if ipca_size if set if we use ipca
+
+    if ipca:  # check if ipca_size if set if we use ipca
         if not ipca_size:
             raise ValueError()
 
@@ -47,12 +51,14 @@ def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
     if not scaler:
         scaler = StandardScaler()
         scaled_features: np.ndarray = scaler.fit_transform(data)
-    else: 
+    else:
         scaled_features: np.ndarray = scaler.transform(data)
 
     if ipca:
         transformed_features = ipca.transform(scaled_features)
-        adapted_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
+        adapted_data = pd.DataFrame(
+            transformed_features, columns=[f"PC{i+1}" for i in range(ipca_size)]
+        )
     else:
         adapted_data = pd.DataFrame(scaled_features, columns=COLUMNS)
     return adapted_data
@@ -69,11 +75,11 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
         ipca (IncrementalPCA): A pre-trained IncrementalPCA object 
         ipca_size (int): The number of PCA components defaults to 34.
 
-    Returns: 
+    Returns:
         pd.DataFrame: The transformed DataFrame, ready for re-training.
     """
-    
-    if ipca: # check if ipca_size if set if we use ipca
+
+    if ipca:  # check if ipca_size if set if we use ipca
         if not ipca_size:
             raise ValueError()
 
@@ -85,7 +91,7 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
     else:
         scaled_features: np.ndarray = scaler.transform(data)
 
-    if ipca: # only when ipca is used
+    if ipca:  # only when ipca is used
         transformed_features = ipca.transform(scaled_features)
         adapted_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
     else: # no ipca
@@ -93,14 +99,17 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
     
     # The trainingdata is not from Attacks!
     cLength = len(adapted_data[adapted_data.columns[0]])
-    e = ["BENIGN" for _ in range(cLength)] # Number for BENIGN is 0 if 'attack_number' is used
-    adapted_data['attack_type'] = e
+    e = [
+        "BENIGN" for _ in range(cLength)
+    ]  # Number for BENIGN is 0 if 'attack_number' is used
+    adapted_data["attack_type"] = e
 
     return adapted_data
 
-def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True, 
-                       balance_the_data: bool = True) -> tuple[
-                           pd.DataFrame, StandardScaler, IncrementalPCA, int]:
+
+def adapt_cicids2017_for_training(
+    data: pd.DataFrame, use_ipca: bool = True, balance_the_data: bool = True
+) -> tuple[pd.DataFrame, StandardScaler, IncrementalPCA, int]:
     """
     Prepares CICIDS2017 data for training, including scaling, optional PCA, and data balancing.
 
@@ -130,7 +139,7 @@ def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True,
         ipca_size = IPCA_SIZE
         ipca = IncrementalPCA(n_components = ipca_size, batch_size = 500)
         for batch in np.array_split(scaled_features, len(features) // 500):
-            ipca.partial_fit(batch) 
+            ipca.partial_fit(batch)
         transformed_features = ipca.transform(scaled_features)
         new_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
     else: # no ipca
@@ -138,15 +147,16 @@ def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True,
         ipca = None
         ipca_size = None
 
-    new_data['attack_type'] = attacks.values
+    new_data["attack_type"] = attacks.values
 
     # Create balanced dataset
     if balance_the_data:
         adapted_data = balance_the_dataset(new_data)
-    else: # dont balance
+    else:  # dont balance
         adapted_data = new_data
 
     return adapted_data, scaler, ipca, ipca_size
+
 
 def balance_the_dataset(new_data):
     """
@@ -165,45 +175,42 @@ def balance_the_dataset(new_data):
         pd.DataFrame: The balanced dataset.
     """
     # Zähle die Häufigkeit jeder Klasse
-    class_counts = new_data['attack_type'].value_counts()
+    class_counts = new_data["attack_type"].value_counts()
     # Wähle nur Klassen mit mehr als 1950 Samples
     selected_classes = class_counts[class_counts > 1950]
     class_names = selected_classes.index
     # Filtere den Datensatz auf die ausgewählten Klassen
-    selected = new_data[new_data['attack_type'].isin(class_names)]
+    selected = new_data[new_data["attack_type"].isin(class_names)]
 
     dfs = []
     for name in class_names:
         # Extrahiere Daten für jede Klasse
-        df = selected[selected['attack_type'] == name]
+        df = selected[selected["attack_type"] == name]
         # Begrenze große Klassen auf 5000 Samples
         if len(df) > 2500:
-            df = df.sample(n = 5000, random_state = 0)
+            df = df.sample(n=5000, random_state=0)
         dfs.append(df)
-    
+
     # Kombiniere alle bearbeiteten Klassen
-    df = pd.concat(dfs, ignore_index = True)
-    
-    
-    # If no CPU count found Error 
+    df = pd.concat(dfs, ignore_index=True)
+
+    # If no CPU count found Error
     # import os
     # os.environ['LOKY_MAX_CPU_COUNT'] = '4'
 
-
     # Vorbereitung für SMOTE
-    X = df.drop('attack_type', axis=1)
-    y = df['attack_type']
+    X = df.drop("attack_type", axis=1)
+    y = df["attack_type"]
 
     # Anwenden von SMOTE zur Überabtastung der Minoritätsklassen
-    smote = SMOTE(sampling_strategy='auto', random_state=0)
+    smote = SMOTE(sampling_strategy="auto", random_state=0)
     X_upsampled, y_upsampled = smote.fit_resample(X, y)
 
     # Erstelle einen neuen, balancierten DataFrame
     blnc_data = pd.DataFrame(X_upsampled)
-    blnc_data['attack_type'] = y_upsampled
+    blnc_data["attack_type"] = y_upsampled
 
     # Mische den Datensatz
     blnc_data = blnc_data.sample(frac=1)
-    
 
     return blnc_data

@@ -1,0 +1,7 @@
+
+.devenv*
+**_pycache__**
+.direnv
+launch.json
+devenv.*
+.envrc

@@ -43,6 +43,7 @@ def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
             raise ValueError()
 
     data = data[COLUMNS]
+    data = data[COLUMNS]
     
     if not scaler:
         scaler = StandardScaler()
@@ -54,6 +55,7 @@ def adapt_for_prediction(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
         transformed_features = ipca.transform(scaled_features)
         adapted_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
     else:
+        adapted_data = pd.DataFrame(scaled_features, columns=COLUMNS)
         adapted_data = pd.DataFrame(scaled_features, columns=COLUMNS)
     return adapted_data
 
@@ -78,6 +80,7 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
             raise ValueError()
 
     data = data[COLUMNS]
+    data = data[COLUMNS]
 
     if not scaler:
         scaler = StandardScaler()
@@ -89,6 +92,7 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
         transformed_features = ipca.transform(scaled_features)
         adapted_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
     else: # no ipca
+        adapted_data = pd.DataFrame(scaled_features, columns=COLUMNS)
         adapted_data = pd.DataFrame(scaled_features, columns=COLUMNS)
     
     # The trainingdata is not from Attacks!
@@ -118,6 +122,7 @@ def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True,
     """
 
     c = COLUMNS + ['attack_type'] 
+    c = COLUMNS + ['attack_type'] 
     data = data[c] 
     features = data.drop('attack_type', axis = 1)
     attacks = data['attack_type']
@@ -134,6 +139,7 @@ def adapt_cicids2017_for_training(data: pd.DataFrame, use_ipca: bool = True,
         transformed_features = ipca.transform(scaled_features)
         new_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
     else: # no ipca
+        new_data = pd.DataFrame(scaled_features, columns=COLUMNS)
         new_data = pd.DataFrame(scaled_features, columns=COLUMNS)
         ipca = None
         ipca_size = None
