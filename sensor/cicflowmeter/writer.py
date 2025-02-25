@@ -1,6 +1,7 @@
-#import csv
+# import csv
 from typing import Protocol
-#import requests
+
+# import requests
 
 
 class OutputWriter(Protocol):
@@ -37,17 +38,20 @@ class OutputWriter(Protocol):
 #     def __del__(self):
 #         self.session.close()
 
+
 class InternWriter(OutputWriter):
     """
-    Writer, der eine Funktion übergeben bekommt, die die Flows verarbeitet. 
+    Writer, der eine Funktion übergeben bekommt, die die Flows verarbeitet.
     So können in die Flows einem Script weiterverarbeitet werden.
     """
+
     def __init__(self, output_function):
         self.output_function = output_function
-        
+
     def write(self, data: list):
-        '''write to function instead of url or file'''
+        """write to function instead of url or file"""
         self.output_function(data)
+
 
 def output_writer_factory(output_mode, output) -> OutputWriter:
     match output_mode:

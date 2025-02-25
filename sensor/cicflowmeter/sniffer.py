@@ -35,7 +35,7 @@ def create_sniffer(
                 session=FlowSession,
                 store=False,
             )
-        else: 
+        else:
             return AsyncSniffer(
                 iface=input_interface,
                 filter="ip and (tcp or udp)",
@@ -43,6 +43,7 @@ def create_sniffer(
                 session=FlowSession,
                 store=False,
             )
+
 
 def main():
     parser = argparse.ArgumentParser()

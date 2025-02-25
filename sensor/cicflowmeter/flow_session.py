@@ -11,6 +11,7 @@ from .utils import get_logger
 
 class FlowSession(DefaultSession):
     """Creates a list of network flows."""
+
     verbose = False
     fields = None
     output_mode = None
@@ -32,8 +33,8 @@ class FlowSession(DefaultSession):
 
     def process(self, pkt: Packet):
         """
-        Needed for use in scapy versions above 2.5 because of a breaking change in scapy. 
-        Functionality is same as previous on_packet_received, but returnvalues are added. 
+        Needed for use in scapy versions above 2.5 because of a breaking change in scapy.
+        Functionality is same as previous on_packet_received, but returnvalues are added.
         """
         self.logger.debug(f"Packet {self.packets_count}: {pkt}")
         count = 0
@@ -47,10 +48,9 @@ class FlowSession(DefaultSession):
             packet_flow_key = get_packet_flow_key(pkt, direction)
             flow = self.flows.get((packet_flow_key, count))
         except Exception:
-            return pkt  # Return the processed packet 
+            return pkt  # Return the processed packet
 
         self.packets_count += 1
-        
 
         # If there is no forward flow with a count of 0
         if flow is None:
@@ -83,15 +83,15 @@ class FlowSession(DefaultSession):
             # If it has FIN flag then early collect flow and continue
             flow.add_packet(pkt, direction)
             self.garbage_collect(pkt.time)
-            return None # Return None to indicate processing is incomplete
+            return None  # Return None to indicate processing is incomplete
 
         flow.add_packet(pkt, direction)
 
         if self.packets_count % GARBAGE_COLLECT_PACKETS == 0 or flow.duration > 120:
             self.garbage_collect(pkt.time)
-        
+
         return pkt  # Return the processed packet
-    
+
     def get_flows(self):
         return self.flows.values()
 
