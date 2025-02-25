@@ -14,12 +14,12 @@ from .discord_bot import DiscordClient
 
 # Discord stuff
 dotenv.load_dotenv(dotenv_path="/dash/.env") 
-DISCORD_NOTIFICATION_DELAY = 1 # number of hours for timedelay between notifications
+DISCORD_NOTIFICATION_DELAY = 5 # number of minutes for timedelay between notifications
 TOKEN = getenv('DISCORD_TOKEN')
 CHANNEL_ID = int(getenv('DISCORD_CHANNEL_ID'))
 discord_client = DiscordClient(channel_id=CHANNEL_ID)
 NOTIFICATION_ACTIVE = getenv('NOTIFICATION_ACTIVE') == '1'
-last_notification = datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY)
+last_notification = datetime.now() - timedelta(minutes=DISCORD_NOTIFICATION_DELAY)
 
 main_routes = Blueprint('main', __name__)
 
@@ -60,7 +60,7 @@ def get_model_hash():
 
 def notify_users():
     global last_notification
-    if last_notification < datetime.now() - timedelta(hours=DISCORD_NOTIFICATION_DELAY):
+    if last_notification < datetime.now() - timedelta(minutes=DISCORD_NOTIFICATION_DELAY):
         discord_client.run(token=TOKEN)
         last_notification = datetime.now()
 
