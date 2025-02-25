@@ -23,7 +23,7 @@ def generate_env_file_for_sensors(user_id):
     FLASK_PORT_NUMBER = getenv('FLASK_PORT_NUMBER')
     header_text=f'''# LOCAL CONFIGURATION 
 SNIFFING_INTERFACE="" # This can be set to a specific network interface to listen to, else all interfaces are listened to 
-DEBUGGING="1"   # Sends all Flows to server and be more noisy
+DEBUGGING="0"   # Sends all Flows to server and be more noisy
 SENSOR_NAME="{user_id}"  # choose a meaningful name to identify this sensor
 
 '''
