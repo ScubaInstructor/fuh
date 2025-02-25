@@ -49,8 +49,12 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data: DataFrame)
         DataFrame: A DataFrame containing the merged training dataset. Class size is 5000.
     """
     # TODO paths must be fixed someday
-    trainingdata = read_csv(APPPATH + "/datasources/balanced_dataset_cicids201_improved.csv")
-    trainingdata = trainingdata.rename(columns={"label": "attack_type"}) # From here on the attack_type is used.
+    trainingdata = read_csv(
+        APPPATH + "/datasources/balanced_dataset_cicids201_improved.csv"
+    )
+    trainingdata = trainingdata.rename(
+        columns={"label": "attack_type"}
+    )  # From here on the attack_type is used.
     attacks = trainingdata["attack_type"]
     trainingdata = trainingdata[COLUMNS]
     trainingdata["attack_type"] = attacks
@@ -77,9 +81,15 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data: DataFrame)
                 own_data["attack_type"].str.lower() == name
             ]
             own_flows_of_same_class.reset_index(drop=True, inplace=True)
-            addition = concat([own_flows_of_same_class[['attack_type']], json_normalize(own_flows_of_same_class['flow_data'])], axis=1)
-            addition = addition[COLUMNS + ['attack_type'] ]
-            df = df[COLUMNS + ['attack_type'] ]
+            addition = concat(
+                [
+                    own_flows_of_same_class[["attack_type"]],
+                    json_normalize(own_flows_of_same_class["flow_data"]),
+                ],
+                axis=1,
+            )
+            addition = addition[COLUMNS + ["attack_type"]]
+            df = df[COLUMNS + ["attack_type"]]
             df = concat([df, addition], ignore_index=True)
             dfs.append(df)
 
@@ -89,8 +99,8 @@ def merge_own_flows_into_trainigdataset_for_multiclassifier(own_data: DataFrame)
         ]
         for name in remaining_classes:
             # Extrahiere Daten für jede Klasse
-            df = trainingdata[trainingdata['attack_type'].str.lower() == name.lower()]
-            df = df[COLUMNS + ['attack_type'] ]
+            df = trainingdata[trainingdata["attack_type"].str.lower() == name.lower()]
+            df = df[COLUMNS + ["attack_type"]]
             dfs.append(df)
         # Combine all classes
         df = concat(dfs, ignore_index=True)
@@ -272,14 +282,16 @@ def create_boxplot_data_for_elastic(mergeddata):
     result = []
 
     # For complete Dataset
-    analysis_data_complete = mergeddata.drop(["attack_type","ip_dst_prt"], axis=1)
+    analysis_data_complete = mergeddata.drop(["attack_type", "ip_dst_prt"], axis=1)
     metrics_complete = _create_metrics_list(analysis_data_complete)
     result.append({"class": "complete", "metrics": metrics_complete})
 
     # By class
     classes = list(mergeddata["attack_type"].unique())
     for c in classes:
-        class_data = mergeddata[mergeddata["attack_type"]==c].drop(["attack_type","ip_dst_prt"], axis=1)
+        class_data = mergeddata[mergeddata["attack_type"] == c].drop(
+            ["attack_type", "ip_dst_prt"], axis=1
+        )
         metrics_class = _create_metrics_list(class_data)
         result.append({"class": c, "metrics": metrics_class})
 
@@ -305,7 +317,7 @@ def retrain() -> str:
     score = ascore(y_test, predicted)
     own_flow_count = own_data.shape[0]
     model_hash = compute_model_hash(model)
-    dump(model,  APPPATH + MODELPATH + MODELNAME)
+    dump(model, APPPATH + MODELPATH + MODELNAME)
     # prepare Model Propertis for elastic
     boxplotdata = create_boxplot_data_for_elastic(mergeddata)
     mv = Model_Visualisator()

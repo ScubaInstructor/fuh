@@ -29,16 +29,16 @@ def create_world_map(fig_id, df):
             return response.location.latitude, response.location.longitude
         except:
             return None, None
-    
-    df['source_lat'], df['source_lon'] = zip(*df['dst_ip'].apply(ip_to_lat_lon))
-    
+
+    df["source_lat"], df["source_lon"] = zip(*df["dst_ip"].apply(ip_to_lat_lon))
+
     fig = px.scatter_geo(
         df,
-        lat='source_lat',
-        lon='source_lon',
-        hover_name='dst_ip',
-        color='prediction',
-        scope='world'
+        lat="source_lat",
+        lon="source_lon",
+        hover_name="dst_ip",
+        color="prediction",
+        scope="world",
     )
     return dcc.Graph(
         id=fig_id,
@@ -84,7 +84,7 @@ def make_prediction_pie_chart(fig_id, selected_rows, metric, title="Predictions"
         selected_rows (list): List of dictionaries containing selected row data
         metric (str): The metric to display
         title (str): The title of the pie chart
-    
+
     Returns:
         dash.dcc.Graph: A Dash graph component containing the pie chart
     """
@@ -247,10 +247,14 @@ def create_boxplot(detail_flow_df, prediction):
     cec = CustomElasticsearchConnector()
     x = asyncio.run(cec.get_all_model_properties())
 
-    model_df = pd.DataFrame(pd.DataFrame(x.iloc[0]["boxplotdata"][0]["metrics"])).drop(["metric_name","icmp_type","icmp_code"], axis=1)
+    model_df = pd.DataFrame(pd.DataFrame(x.iloc[0]["boxplotdata"][0]["metrics"])).drop(
+        ["metric_name", "icmp_type", "icmp_code"], axis=1
+    )
     model_df = model_df.apply(lambda x: x.str[0])
 
-    model_pred_df = pd.DataFrame(pd.DataFrame(x.iloc[0]["boxplotdata"][boxplot_index]["metrics"])).drop(["metric_name","icmp_type","icmp_code"], axis=1)
+    model_pred_df = pd.DataFrame(
+        pd.DataFrame(x.iloc[0]["boxplotdata"][boxplot_index]["metrics"])
+    ).drop(["metric_name", "icmp_type", "icmp_code"], axis=1)
     model_pred_df = model_pred_df.apply(lambda x: x.str[0])
 
     norm_model_df = model_df.div(model_df.iloc[2], axis=1)

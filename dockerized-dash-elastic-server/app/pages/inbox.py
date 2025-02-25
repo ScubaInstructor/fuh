@@ -131,7 +131,14 @@ def update_boxplot(is_open, selected_row_data):
     if not is_open or not selected_row_data:
         return []
     detail_df = pd.DataFrame(selected_row_data)
-    detail_flow_df = detail_df["flow_data"].apply(pd.Series).select_dtypes(include='number').drop(["ip_src_prt", "ip_dst_prt", "protocol", "icmp_type", "icmp_code"], axis=1)
+    detail_flow_df = (
+        detail_df["flow_data"]
+        .apply(pd.Series)
+        .select_dtypes(include="number")
+        .drop(
+            ["ip_src_prt", "ip_dst_prt", "protocol", "icmp_type", "icmp_code"], axis=1
+        )
+    )
     # detail_flow_df = pd.concat([detail_flow_df, min_flow_data, mean_flow_data, max_flow_data, q1_flow_data, q3_flow_data],ignore_index=True)
     # detail_flow_df = detail_flow_df.div(max_flow_data.iloc[0])
 
@@ -404,14 +411,17 @@ def serve_layout(pathname):
         # Always reload data for any trigger
         try:
             print("Reloading data from Elasticsearch")
-            df = asyncio.run(cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False))
+            df = asyncio.run(
+                cec.get_all_flows(view="unseen", size=flow_nr, include_pcap=False)
+            )
             if df.empty:
                 trigger = "empty"
             else:
                 trigger = "normal"
-                
+
                 # Get Map
-                reader = geoip2.database.Reader('app/GeoLite2-City.mmdb')
+                reader = geoip2.database.Reader("app/GeoLite2-City.mmdb")
+
                 # add lat and long
                 def ip_to_lat_lon(ip):
                     try:
@@ -419,7 +429,10 @@ def serve_layout(pathname):
                         return response.location.latitude, response.location.longitude
                     except:
                         return None, None
-                df['source_lat'], df['source_lon'] = zip(*df['dst_ip'].apply(ip_to_lat_lon))
+
+                df["source_lat"], df["source_lon"] = zip(
+                    *df["dst_ip"].apply(ip_to_lat_lon)
+                )
                 # Recalculate flow statistics
                 flow_data = df["flow_data"].apply(pd.Series)
                 # min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
@@ -430,68 +443,129 @@ def serve_layout(pathname):
             trigger = "error"
             df = pd.DataFrame()
 
-    # Check for failed elastic connection
+        # Check for failed elastic connection
 
         if trigger == "error":
-            return dbc.Container([
-                dbc.Alert(
-                    "Could not connect to Elasticsearch. Please check your connection and try again.",
-                    color="danger",
-                    dismissable=False,
-                    is_open=True,
-                ),
-                dbc.Button(
-                    "Refresh Data",
-                    id="refresh-button",
-                    color="primary",
-                    className="mt-3", 
-                    href="/inbox/",
-                    external_link=True
-                )
-            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
+            return dbc.Container(
+                [
+                    dbc.Alert(
+                        "Could not connect to Elasticsearch. Please check your connection and try again.",
+                        color="danger",
+                        dismissable=False,
+                        is_open=True,
+                    ),
+                    dbc.Button(
+                        "Refresh Data",
+                        id="refresh-button",
+                        color="primary",
+                        className="mt-3",
+                        href="/inbox/",
+                        external_link=True,
+                    ),
+                ],
+                fluid=True,
+                className="px-0 mx-0",
+            ), df.to_dict("records")
         elif trigger == "empty":
-            return dbc.Container([
-                dbc.Alert(
-                    "No data available yet. Wait for incoming flows.",
-                    color="warning",
-                    dismissable=False,
-                    is_open=True,
-                ),
-                dbc.Button(
-                    "Refresh Data",
-                    id="refresh-button",
-                    color="primary",
-                    className="mt-3", 
-                    href="/inbox/",
-                    external_link=True
-                )
-            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
-        else:    
+            return dbc.Container(
+                [
+                    dbc.Alert(
+                        "No data available yet. Wait for incoming flows.",
+                        color="warning",
+                        dismissable=False,
+                        is_open=True,
+                    ),
+                    dbc.Button(
+                        "Refresh Data",
+                        id="refresh-button",
+                        color="primary",
+                        className="mt-3",
+                        href="/inbox/",
+                        external_link=True,
+                    ),
+                ],
+                fluid=True,
+                className="px-0 mx-0",
+            ), df.to_dict("records")
+        else:
             # Layout Components
-            return dbc.Container([
-                #dcc.Location(id='url', refresh=True),
-                dbc.Row([
-                    html.Div(create_welcome_alert()),
-                    dcc.Store(id='alert-store', data=[]),
-                    html.Div(id='alert-container'),
-                    html.Hr(),
-                ], className="mt-3 mb-3"),
-                dbc.Row([
-                    dbc.Col([display_line('time-scatter', df, "0.1min"),], width=9),
-                    dbc.Col([make_prediction_pie_chart("prediction_pie", df, "prediction")], width=3)
-                    ], className="mt-3 mb-3"),
-                # Main content row
-                dbc.Row([
-                    #make_grid(seen=False, grid_id="unseen_grid")
-                    # Left side - Grid
-                    dbc.Col([
-                        make_grid(df, seen=False, grid_id="unseen_grid", columns=[{"field": "timestamp"},{"field": "sensor_name"},{"field": "src_ip"},{"field": "dst_ip"},{"field": "prediction"},{"field": "flow_id"}]),
-                        dbc.Button("Reset", id="reset-grid", className="ms-auto", n_clicks=None, style={"margin-top": "2px"})
-                    ], width=6, style={"border": "1px solid #ddd", "padding": "10px"}),  # Add border and padding for debugging
-                    # Right side - Pie Chart
-                    dbc.Col([
-                        create_world_map("world-map-inbox", df)
-                    ], width=6, style={"border": "1px solid #ddd", "padding": "10px"})  # Add border and padding for debugging
-                ], style={'margin': '20px 0', 'display': 'flex', 'flex-direction': 'row'}),
-                make_modal(),
-            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
+            return dbc.Container(
+                [
+                    # dcc.Location(id='url', refresh=True),
+                    dbc.Row(
+                        [
+                            html.Div(create_welcome_alert()),
+                            dcc.Store(id="alert-store", data=[]),
+                            html.Div(id="alert-container"),
+                            html.Hr(),
+                        ],
+                        className="mt-3 mb-3",
+                    ),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    display_line("time-scatter", df, "0.1min"),
+                                ],
+                                width=9,
+                            ),
+                            dbc.Col(
+                                [
+                                    make_prediction_pie_chart(
+                                        "prediction_pie", df, "prediction"
+                                    )
+                                ],
+                                width=3,
+                            ),
+                        ],
+                        className="mt-3 mb-3",
+                    ),
+                    # Main content row
+                    dbc.Row(
+                        [
+                            # make_grid(seen=False, grid_id="unseen_grid")
+                            # Left side - Grid
+                            dbc.Col(
+                                [
+                                    make_grid(
+                                        df,
+                                        seen=False,
+                                        grid_id="unseen_grid",
+                                        columns=[
+                                            {"field": "timestamp"},
+                                            {"field": "sensor_name"},
+                                            {"field": "src_ip"},
+                                            {"field": "dst_ip"},
+                                            {"field": "prediction"},
+                                            {"field": "flow_id"},
+                                        ],
+                                    ),
+                                    dbc.Button(
+                                        "Reset",
+                                        id="reset-grid",
+                                        className="ms-auto",
+                                        n_clicks=None,
+                                        style={"margin-top": "2px"},
+                                    ),
+                                ],
+                                width=6,
+                                style={"border": "1px solid #ddd", "padding": "10px"},
+                            ),  # Add border and padding for debugging
+                            # Right side - Pie Chart
+                            dbc.Col(
+                                [create_world_map("world-map-inbox", df)],
+                                width=6,
+                                style={"border": "1px solid #ddd", "padding": "10px"},
+                            ),  # Add border and padding for debugging
+                        ],
+                        style={
+                            "margin": "20px 0",
+                            "display": "flex",
+                            "flex-direction": "row",
+                        },
+                    ),
+                    make_modal(),
+                ],
+                fluid=True,
+                className="px-0 mx-0",
+            ), df.to_dict("records")

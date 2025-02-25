@@ -2,8 +2,20 @@ from pathlib import Path
 from flask import Blueprint, jsonify, render_template, redirect, request, send_file
 from flask_login import login_required, current_user
 import jwt
-from . import db, app,APPPATH, MODELNAME, MODELPATH, SCALERNAME, IPCANAME, ZIPFILENAME, mc, cec
-#from elastic_connector import CustomElasticsearchConnector, API_KEY, INDEX_NAME
+from . import (
+    db,
+    app,
+    APPPATH,
+    MODELNAME,
+    MODELPATH,
+    SCALERNAME,
+    IPCANAME,
+    ZIPFILENAME,
+    mc,
+    cec,
+)
+
+# from elastic_connector import CustomElasticsearchConnector, API_KEY, INDEX_NAME
 import asyncio
 import pandas as pd
 from joblib import load
@@ -42,7 +54,7 @@ def dashboard():
 
 
 @main_routes.route("/get_model_hash", methods=["GET"])
-def get_model_hash():
+def get_model_hash():  # DEPRECATED after v0.9
     # check auth
     token = request.headers.get("Authorization").split()[1]
 
@@ -85,8 +97,8 @@ def upload():
     ipca = load(APPPATH + MODELPATH + IPCANAME)
 
     # Sensor Authentification
-    #token = request.headers.get('Authorization').split()[1]
-    token = request.headers.get('Authorization')
+    # token = request.headers.get('Authorization').split()[1]
+    token = request.headers.get("Authorization")
     try:
         payload = jwt.decode(
             token, app.secret_key, options={"verify_exp": False}, algorithms=["HS256"]
@@ -100,55 +112,56 @@ def upload():
                 return jsonify({"error": "Sensor doesn't exists"}), 401
         # check if request is well formed
 
-        if ('flow_data' in request.json and 
-                'pcap_data' in request.json and 
-                'timestamp' in request.json and 
-                'sensor_name' in request.json and
-                'src_prt' in request.json and
-                'src_ip' in request.json and
-                'dst_prt' in request.json and
-                'dst_ip' in request.json and
-                'flow_id' in request.json):
-            
+        if (
+            "flow_data" in request.json
+            and "pcap_data" in request.json
+            and "timestamp" in request.json
+            and "sensor_name" in request.json
+            and "src_prt" in request.json
+            and "src_ip" in request.json
+            and "dst_prt" in request.json
+            and "dst_ip" in request.json
+            and "flow_id" in request.json
+        ):
+
             doc = request.json
             # remove flow_ex not needed
-            doc.pop('flow_ex', None)
+            doc.pop("flow_ex", None)
             # adapt for prediction
-            flow_data = pd.DataFrame([request.json['flow_data']])
-            flow_data = adapt_for_prediction(flow_data,scaler,ipca,34)
+            flow_data = pd.DataFrame([request.json["flow_data"]])
+            flow_data = adapt_for_prediction(flow_data, scaler, ipca, 34)
 
             # # predict
             prediction = model.predict(flow_data)
-            
+
             # # get probabilites
             proba = model.predict_proba(flow_data)
 
             # prepare the dict with the probabilities
-
+            # TODO add Debug Flag and only submit if Attack!
             probabilities = {}
 
             for i in range(len(proba[0])):
                 probabilities[model.classes_[i]] = proba[0][i]
-            
+
             # Prepare dict for upload
-            doc.update({
-                        'prediction': prediction.tolist()[0],
-                        'probabilities': probabilities,
-                        'attack_class': "not yet classified",
-                        'has_been_seen': False, # TODO Is this redundant, if we have the attack_class field?
-                        'flow_data': request.json["flow_data"],
-                        'model_hash' : mc.get_hash()
-                    })  
-            # receive data and store it in elastic
-            #doc = request.json
+            doc.update(
+                {
+                    "prediction": prediction.tolist()[0],
+                    "probabilities": probabilities,
+                    "attack_class": "not yet classified",
+                    "has_been_seen": False,  # TODO Is this redundant, if we have the attack_class field?
+                    "flow_data": request.json["flow_data"],
+                    "model_hash": mc.get_hash(),
+                }
+            )
 
-            timestamp = datetime.strptime(doc['timestamp'], '%Y-%m-%d %H:%M:%S.%f')
-            doc['timestamp'] = timestamp.isoformat()
-
+            timestamp = datetime.strptime(doc["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
+            doc["timestamp"] = timestamp.isoformat()
 
             asyncio.run(cec.store_flow_data(data=doc))
-            
-            #  Discord notification to do 
+
+            #  Discord notification to do
             if NOTIFICATION_ACTIVE:
                 notify_users()
         else:

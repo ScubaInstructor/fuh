@@ -135,7 +135,12 @@ def update_boxplot(is_open, selected_row_data):
     if not is_open or not selected_row_data:
         return []
     detail_df = pd.DataFrame(selected_row_data)
-    detail_flow_df = detail_df["flow_data"].apply(pd.Series).select_dtypes(include='number').drop(["src_port", "dst_port", "protocol","icmp_type","icmp_code"], axis=1)
+    detail_flow_df = (
+        detail_df["flow_data"]
+        .apply(pd.Series)
+        .select_dtypes(include="number")
+        .drop(["src_port", "dst_port", "protocol", "icmp_type", "icmp_code"], axis=1)
+    )
     # detail_flow_df = pd.concat([detail_flow_df, min_flow_data, mean_flow_data, max_flow_data, q1_flow_data, q3_flow_data],ignore_index=True)
     # detail_flow_df = detail_flow_df.div(max_flow_data.iloc[0])
 
@@ -443,7 +448,10 @@ def serve_layout(pathname):
                         return response.location.latitude, response.location.longitude
                     except:
                         return None, None
-                df['source_lat'], df['source_lon'] = zip(*df['dst_ip'].apply(ip_to_lat_lon))
+
+                df["source_lat"], df["source_lon"] = zip(
+                    *df["dst_ip"].apply(ip_to_lat_lon)
+                )
                 # Recalculate flow statistics
                 flow_data = df["flow_data"].apply(pd.Series)
                 # min_flow_data = flow_data.select_dtypes(include='number').drop(["src_port", "dst_port", "protocol"], axis=1).min()
@@ -499,32 +507,68 @@ def serve_layout(pathname):
             ), df.to_dict("records")
 
         else:
-            return dbc.Container([
-                dbc.Row([
-                    html.Hr(),
-                ], className="mt-3 mb-3"),
-                dbc.Row([make_prediction_pie_chart("prediction_pie", df, "attack_class")], 
-                    className="mt-3 mb-3"),
-                dbc.Row([
-                    dbc.Col([
-                        make_grid(df, seen=True, grid_id="seen_grid", 
-                                columns=[{"field": "timestamp"},
-                                    {"field": "sensor_name"},
-                                    {"field": "src_ip"},
-                                    {"field": "dst_ip"},
-                                    {"field": "attack_class"},
-                                    {"field": "flow_id"}]),
-                        dbc.Button("Reset", id="classified-reset-grid", 
-                                className="ms-auto", n_clicks=None, 
-                                style={"margin-top": "2px"}),
-                        html.Div(id="retrain-button"),
-                        html.Div(id="retrain-status")
-                    ], width=6, style={"border": "1px solid #ddd", "padding": "10px"}),
-                    dbc.Col([
-                        create_world_map("world-map-classified", df)
-                    ], width=6, style={"border": "1px solid #ddd", "padding": "10px"})
-                ], style={'margin': '20px 0', 'display': 'flex', 'flex-direction': 'row'}),
-                make_modal(),
-            ], fluid=True, className="px-0 mx-0"), df.to_dict("records")
+            return dbc.Container(
+                [
+                    dbc.Row(
+                        [
+                            html.Hr(),
+                        ],
+                        className="mt-3 mb-3",
+                    ),
+                    dbc.Row(
+                        [
+                            make_prediction_pie_chart(
+                                "prediction_pie", df, "attack_class"
+                            )
+                        ],
+                        className="mt-3 mb-3",
+                    ),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    make_grid(
+                                        df,
+                                        seen=True,
+                                        grid_id="seen_grid",
+                                        columns=[
+                                            {"field": "timestamp"},
+                                            {"field": "sensor_name"},
+                                            {"field": "src_ip"},
+                                            {"field": "dst_ip"},
+                                            {"field": "attack_class"},
+                                            {"field": "flow_id"},
+                                        ],
+                                    ),
+                                    dbc.Button(
+                                        "Reset",
+                                        id="classified-reset-grid",
+                                        className="ms-auto",
+                                        n_clicks=None,
+                                        style={"margin-top": "2px"},
+                                    ),
+                                    html.Div(id="retrain-button"),
+                                    html.Div(id="retrain-status"),
+                                ],
+                                width=6,
+                                style={"border": "1px solid #ddd", "padding": "10px"},
+                            ),
+                            dbc.Col(
+                                [create_world_map("world-map-classified", df)],
+                                width=6,
+                                style={"border": "1px solid #ddd", "padding": "10px"},
+                            ),
+                        ],
+                        style={
+                            "margin": "20px 0",
+                            "display": "flex",
+                            "flex-direction": "row",
+                        },
+                    ),
+                    make_modal(),
+                ],
+                fluid=True,
+                className="px-0 mx-0",
+            ), df.to_dict("records")
     else:
         dash.no_update, dash.no_update

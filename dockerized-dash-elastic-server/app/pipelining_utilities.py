@@ -10,18 +10,86 @@ IPCA_SIZE = 34
 """
 Functions for the datapipeline
 """
-removed_columns = ['flow_id', 'ip_src', 'ip_dst', 'str_time', 'bw_urg_flag', 'cwe_cnt', 'ece_cnt', 'subfl_bw_pkt', ]    # these wont only serve for overfitting the model 
+removed_columns = [
+    "flow_id",
+    "ip_src",
+    "ip_dst",
+    "str_time",
+    "bw_urg_flag",
+    "cwe_cnt",
+    "ece_cnt",
+    "subfl_bw_pkt",
+]  # these wont only serve for overfitting the model
 
 # the following columns are the ones which are not sparse, and which do not contain ipdresse and timestamps
-COLUMNS = ['ip_src_prt', 'ip_dst_prt', 'protocol', 'flow_duration', 
-           'fwd_pkt_stats', 'bwd_pkt_stats', 'tot_l_fw_pkt', 'tot_l_bw_pkt', 'fw_pkt_l_max', 'fw_pkt_l_min', 'fw_pkt_l_avg', 
-           'fw_pkt_l_std', 'bw_iat_tot', 'bw_iat_avg', 'bw_iat_std', 'bw_iat_max', 'bw_iat_min', 'fw_psh_flag', 'bw_psh_flag', 
-           'fw_urg_flag', 'fw_rst_flag', 'bw_rst_flag', 'fw_hdr_len', 'bw_hdr_len', 'fw_pkt_s', 'bw_pkt_s', 
-           'pkt_len_min', 'pkt_len_max', 'pkt_len_avg', 'pkt_len_std', 'pkt_len_va', 'fin_cnt', 'syn_cnt', 'rst_cnt', 'pst_cnt', 
-           'ack_cnt', 'urg_cnt', 'down_up_ratio', 'pkt_size_avg', 'fw_seg_avg', 'bw_seg_avg', 'fw_byt_blk_avg', 
-           'fw_pkt_blk_avg', 'fw_blk_rate_avg', 'bw_byt_blk_avg', 'bw_pkt_blk_avg', 'bw_blk_rate_avg', 'subfl_fw_pk', 'subfl_fw_byt', 
-           'subfl_bw_byt', 'fw_win_byt', 'bw_win_byt', 'Fw_act_pkt', 'fw_seg_min', 'atv_avg', 'atv_std', 'atv_max', 
-           'atv_min', 'idl_avg', 'idl_std', 'idl_max', 'idl_min', 'icmp_code', 'icmp_type', 'cumulative_connection_duration']
+COLUMNS = [
+    "ip_src_prt",
+    "ip_dst_prt",
+    "protocol",
+    "flow_duration",
+    "fwd_pkt_stats",
+    "bwd_pkt_stats",
+    "tot_l_fw_pkt",
+    "tot_l_bw_pkt",
+    "fw_pkt_l_max",
+    "fw_pkt_l_min",
+    "fw_pkt_l_avg",
+    "fw_pkt_l_std",
+    "bw_iat_tot",
+    "bw_iat_avg",
+    "bw_iat_std",
+    "bw_iat_max",
+    "bw_iat_min",
+    "fw_psh_flag",
+    "bw_psh_flag",
+    "fw_urg_flag",
+    "fw_rst_flag",
+    "bw_rst_flag",
+    "fw_hdr_len",
+    "bw_hdr_len",
+    "fw_pkt_s",
+    "bw_pkt_s",
+    "pkt_len_min",
+    "pkt_len_max",
+    "pkt_len_avg",
+    "pkt_len_std",
+    "pkt_len_va",
+    "fin_cnt",
+    "syn_cnt",
+    "rst_cnt",
+    "pst_cnt",
+    "ack_cnt",
+    "urg_cnt",
+    "down_up_ratio",
+    "pkt_size_avg",
+    "fw_seg_avg",
+    "bw_seg_avg",
+    "fw_byt_blk_avg",
+    "fw_pkt_blk_avg",
+    "fw_blk_rate_avg",
+    "bw_byt_blk_avg",
+    "bw_pkt_blk_avg",
+    "bw_blk_rate_avg",
+    "subfl_fw_pk",
+    "subfl_fw_byt",
+    "subfl_bw_byt",
+    "fw_win_byt",
+    "bw_win_byt",
+    "Fw_act_pkt",
+    "fw_seg_min",
+    "atv_avg",
+    "atv_std",
+    "atv_max",
+    "atv_min",
+    "idl_avg",
+    "idl_std",
+    "idl_max",
+    "idl_min",
+    "icmp_code",
+    "icmp_type",
+    "cumulative_connection_duration",
+]
+
 
 def adapt_for_prediction(
     data: pd.DataFrame,
@@ -47,7 +115,7 @@ def adapt_for_prediction(
             raise ValueError()
 
     data = data[COLUMNS]
-    
+
     if not scaler:
         scaler = StandardScaler()
         scaled_features: np.ndarray = scaler.fit_transform(data)
@@ -63,16 +131,21 @@ def adapt_for_prediction(
         adapted_data = pd.DataFrame(scaled_features, columns=COLUMNS)
     return adapted_data
 
-def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: IncrementalPCA, 
-          ipca_size: int= IPCA_SIZE) -> pd.DataFrame:
+
+def adapt_for_retraining(
+    data: pd.DataFrame,
+    scaler: StandardScaler,
+    ipca: IncrementalPCA,
+    ipca_size: int = IPCA_SIZE,
+) -> pd.DataFrame:
     """
 
     Prepares data for re-training by selecting only used features, optionally scaling and transforming via PCA. An 'attack_type' column is added.
 
-    Args: 
-        data (pd.DataFrame): The input DataFrame containing the data to be processed. 
-        scaler (StandardScaler): A pre-trained StandardScaler or None if a StandardScaler should be fit to this data. 
-        ipca (IncrementalPCA): A pre-trained IncrementalPCA object 
+    Args:
+        data (pd.DataFrame): The input DataFrame containing the data to be processed.
+        scaler (StandardScaler): A pre-trained StandardScaler or None if a StandardScaler should be fit to this data.
+        ipca (IncrementalPCA): A pre-trained IncrementalPCA object
         ipca_size (int): The number of PCA components defaults to 34.
 
     Returns:
@@ -93,10 +166,12 @@ def adapt_for_retraining(data: pd.DataFrame, scaler: StandardScaler, ipca: Incre
 
     if ipca:  # only when ipca is used
         transformed_features = ipca.transform(scaled_features)
-        adapted_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
-    else: # no ipca
+        adapted_data = pd.DataFrame(
+            transformed_features, columns=[f"PC{i+1}" for i in range(ipca_size)]
+        )
+    else:  # no ipca
         adapted_data = pd.DataFrame(scaled_features, columns=COLUMNS)
-    
+
     # The trainingdata is not from Attacks!
     cLength = len(adapted_data[adapted_data.columns[0]])
     e = [
@@ -126,10 +201,10 @@ def adapt_cicids2017_for_training(
             - int: The number of PCA components (or None if PCA was not used).
     """
 
-    c = COLUMNS + ['attack_type'] 
-    data = data[c] 
-    features = data.drop('attack_type', axis = 1)
-    attacks = data['attack_type']
+    c = COLUMNS + ["attack_type"]
+    data = data[c]
+    features = data.drop("attack_type", axis=1)
+    attacks = data["attack_type"]
 
     # Scaling
     scaler = StandardScaler()
@@ -137,12 +212,14 @@ def adapt_cicids2017_for_training(
     # Principal Component Analysis
     if use_ipca:
         ipca_size = IPCA_SIZE
-        ipca = IncrementalPCA(n_components = ipca_size, batch_size = 500)
+        ipca = IncrementalPCA(n_components=ipca_size, batch_size=500)
         for batch in np.array_split(scaled_features, len(features) // 500):
             ipca.partial_fit(batch)
         transformed_features = ipca.transform(scaled_features)
-        new_data = pd.DataFrame(transformed_features, columns = [f'PC{i+1}' for i in range(ipca_size)])
-    else: # no ipca
+        new_data = pd.DataFrame(
+            transformed_features, columns=[f"PC{i+1}" for i in range(ipca_size)]
+        )
+    else:  # no ipca
         new_data = pd.DataFrame(scaled_features, columns=COLUMNS)
         ipca = None
         ipca_size = None
