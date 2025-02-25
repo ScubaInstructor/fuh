@@ -6,4 +6,4 @@ The incoming networktraffic will be grouped into flows and evaluated by machine 
 
 The server component can be found in [this](dockerized-dash-elastic-server) folder. Follow instructions in the local README to start the server. 
 
-The sensor is located in [this] (sensor) folder. There is al local README with instructions to start the sensor. 
+The sensor is located in [this](sensor) folder. There is al local README with instructions to start the sensor. 
