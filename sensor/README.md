@@ -1,23 +1,9 @@
-### Erster Sensor Versuch im Docker Container
+### Sensor with local model file in docker container
 
-Sendet Flow und pcap.Daten an deinen Elastic/Kibana Server.
+If anomaly detected, the sensor will send the flow, including pcap-file to the specified server. The sensor will check for new model updates, every 6 hours, and before sending a flow. If a new model is available, it will be downloaded and the flow will be reevaluated. 
 
-Docker Compose Projekt das einen Sensor erstellt. 
-Anpassen von *.env* und dann starten mit `docker-compose up`.
+Get a configuartion file like the *example.env* for your sensor from the server and put it in this folder. It has to be renamed to *.env*! Build your Docker container with  `sudo docker-compose up --build` after the servercomponent is up and running.
 
-~~Zum Senden von Dateien muss noch ein ssh-Keypair erstellt werden (z.B. mit `ssh-keygen`) und in *.env* ~~
-~~eingetragen werden. Dabei muss nur der name des Schlüssels, alse etwa *idrsa* und nicht *idrsa.pub* verwendet werden. Der Schlüssel muss Zugang zu dem Server gewähren, der die .pcap Dateien erhalten soll. Das kann mit dem Kommando `ssh-copy-id -i SCHLÜSSELNAME user@remoteserver` gemacht werden.~~
+The server is located [here](../dockerized-dash-elastic-server) and has to be started first.
 
-~~Der zugehörige Flaskserver sollte gestartet werden um die Daten zu empfangen. ~~
-
-Der Server in `server/Kibana` sollte mit `docker-compose up` gestartet werden und dessen ip und Portnummer in der *.env* Datei, damit der Sensor erfolgreich eine Verbindung zu elastic aufbauen kann.
-
-Um einen API Key zu erstellen kann entweder die Weboberfläche genutzt werden, oder es kann mit 
-'curl -X POST "https://ES_HOST:ES_PORT/_security/api_key" -H 'Content-Type: application/json' -u elastic_superuser:elastic_superuser_password -d '{"name": "test-api-key","role_descriptors": {"role-name": {"cluster": ["all"],"index": [{"names": ["ES_INDEX"],"privileges": ["all"]}]}}}' --insecure' 
-ein API Key der Form XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX== erstellt und in  der *.env* Datei eingetragen werden. 
-
-**Derzeit werden zu debugzwecken alle Flows gesendet, egal ob Anomalie oder nicht.**
-
-
-
-Zum starten ohne Docker mit `sudo python sniffer` starten. 
+After the build process you can restart the container with `sudo docker-compose up`. If there is a change in the *.env* file, you have to rebuild the container as written above. 
