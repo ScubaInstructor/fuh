@@ -48,26 +48,23 @@ tcpdump-sensor uses libpcap, a system-independent interface for user-level packe
 * librdkafka
 
 
-### tcpdump-sensor kompilieren
+### Build tcpdump-sensor
 
-* Voraussetzungen:
-  - cmake
-  - C compiler
+Voraussetzungen:
+ - libpcap (auf den meisten Linux-Distributionen und OSX bereits installiert)
+ - openSSL
+ - lz4
+ - librdkafka
+ - C99 compiler
+ - cmake
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Nach dem clone/checkout bitte im nids-sensor Verzeichnis folgendes ausführen:
+´´´
+mkdir tcpdump-sensor-build
+cd tcpdump-sensor-build
+cmake ../tcpdump-sensor-build
+cmake --build .
+´´´
 
 
 
