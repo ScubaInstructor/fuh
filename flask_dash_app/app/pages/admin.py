@@ -37,13 +37,13 @@ def user_management_content():
                     "field": "username", 
                     "sortable": True, 
                     "filter": True,
-                    "editable": True
+                    "editable": False
                 },
                 {
                     "field": "role", 
                     "sortable": True, 
                     "filter": True,
-                    "editable": True,
+                    "editable": False,
                     "cellEditor": "agSelectCellEditor",
                     "cellEditorParams": {
                         "values": ["user", "admin"]
@@ -51,9 +51,9 @@ def user_management_content():
                 },
                 {
                     "field": "password",
-                    "editable": True,
+                    "editable": False,
                     "cellRenderer": "passwordRenderer",
-                    "hide": False
+                    "hide": True
                 },
             ],
             defaultColDef={
@@ -64,17 +64,149 @@ def user_management_content():
             dashGridOptions={
                 "pagination": True,
                 "paginationAutoPageSize": True,
-                "rowSelection": "multiple",
+                "rowSelection": "single",
                 "deltaRowDataMode": True
             },
             getRowId="params.data.username",
             style={"height": 400}
         ),
         dbc.Button("Delete Selected", id="delete-selected-btn", color="danger", className="mt-3"),
-        dbc.Button("Add New User", id="add-user-btn", className="mt-3"),
-        html.Div(id="user-update-status")
+        dbc.Button("Add New User", id="add-user-btn", className="mt-3 ms-2"),  # Added margin-start
+        dbc.Button("Modify User", id="modify-user-btn", className="mt-3 ms-2"),
+        html.Div(id="user-update-status"),
+        
+        # Add Modal for new user
+        dbc.Modal([
+            dbc.ModalHeader(dbc.ModalTitle(id="user-modal-title")),
+            dbc.ModalBody([
+                dbc.Form([
+                    dbc.Row([
+                        dbc.Label("Username", width=2),
+                        dbc.Col(
+                            dbc.Input(
+                                type="text",
+                                id="new-user-name",
+                                placeholder="Enter username"
+                            ),
+                            width=10,
+                        ),
+                    ], className="mb-3"),
+                    dbc.Row([
+                        dbc.Label("Password", width=2),
+                        dbc.Col(
+                            dbc.Input(
+                                type="password",
+                                id="new-user-password",
+                                placeholder="Enter password (leave empty to keep current)"
+                            ),
+                            width=10,
+                        ),
+                    ], className="mb-3"),
+                    dbc.Row([
+                        dbc.Label("Role", width=2),
+                        dbc.Col(
+                            dbc.Select(
+                                id="new-user-role",
+                                options=[
+                                    {"label": "User", "value": "user"},
+                                    {"label": "Admin", "value": "admin"}
+                                ],
+                                value="user"
+                            ),
+                            width=10,
+                        ),
+                    ], className="mb-3"),
+                ])
+            ]),
+            dbc.ModalFooter([
+                dbc.Button("Close", id="add-user-close", className="ms-auto", n_clicks=0),
+                dbc.Button("Save", id="add-user-save", className="ms-2", color="primary", n_clicks=0),
+            ]),
+        ], id="add-user-modal", is_open=False),
+        dcc.Store(id='edit-user-data'),
     ])
 
+# Add new callback for modal
+@callback(
+    [Output("add-user-modal", "is_open"),
+     Output("user-modal-title", "children"),
+     Output("new-user-name", "value"),
+     Output("new-user-role", "value"),
+     Output("new-user-name", "disabled"),
+     Output("edit-user-data", "data")],
+    [Input("add-user-btn", "n_clicks"),
+     Input("modify-user-btn", "n_clicks"),
+     Input("add-user-close", "n_clicks"),
+     Input("add-user-save", "n_clicks")],
+    [State("add-user-modal", "is_open"),
+     State("users-grid", "selectedRows")]
+)
+def toggle_modal(n1, n2, n3, n4, is_open, selected_rows):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return False, "", None, "user", False, None
+        
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if button_id == "add-user-btn":
+        return True, "Add New User", "", "user", False, None
+    elif button_id == "modify-user-btn" and selected_rows:
+        user = selected_rows[0]
+        return True, "Modify User", user['username'], user['role'], True, user
+    elif button_id in ["add-user-close", "add-user-save"]:
+        return False, "", None, "user", False, None
+    
+    return is_open, "", None, "user", False, None
+
+# Modify the existing manage_users callback
+@callback(
+    [Output("users-grid", "rowData"),
+     Output("user-update-status", "children")],
+    [Input("delete-selected-btn", "n_clicks"),
+     Input("add-user-save", "n_clicks")],
+    [State("users-grid", "selectedRows"),
+     State("new-user-name", "value"),
+     State("new-user-password", "value"),
+     State("new-user-role", "value"),
+     State("edit-user-data", "data")]
+)
+def manage_users(delete_clicks, save_clicks, selected_rows, username, password, role, edit_data):
+    trigger = dash.callback_context.triggered_id
+    if not trigger:
+        return dash.no_update, dash.no_update
+    
+    try:
+        with current_app.app_context():
+            if trigger == "delete-selected-btn" and selected_rows:
+                for row in selected_rows:
+                    user = User.query.filter_by(username=row['username']).first()
+                    if user:
+                        db.session.delete(user)
+                db.session.commit()
+                
+            elif trigger == "add-user-save":
+                if edit_data:  # Modify existing user
+                    user = User.query.filter_by(username=username).first()
+                    if user:
+                        if password:  # Only update password if provided
+                            user.set_password(password)
+                        user.role = role
+                        db.session.commit()
+                else:  # Add new user
+                    if not username or not password:
+                        return dash.no_update, "Username and password are required"
+                    user = User(username=username, role=role)
+                    user.set_password(password)
+                    db.session.add(user)
+                    db.session.commit()
+            
+            # Refresh user list
+            users = User.query.all()
+            users_list = [{"username": user.username, "role": user.role} for user in users]
+            return users_list, "Operation completed successfully"
+            
+    except Exception as e:
+        return dash.no_update, f"Error: {str(e)}"
 
 def model_management_content():
     # return html.Div([
@@ -84,23 +216,22 @@ def model_management_content():
     try:
         import asyncio
         from ..elastic_connector import CustomElasticsearchConnector
+
         cec = CustomElasticsearchConnector()
-        model_properties = asyncio.run(cec.get_all_model_properties(size=1000)) 
+        model_properties = asyncio.run(cec.get_all_model_properties(size=1000))
         if len(model_properties) == 0:
             return html.Div("No models found in Elasticsearch.", style={"color": "red"})
-        # TODO only necessary for older models from early training stages...
-        model_properties['score'] = model_properties['score'].apply(lambda x: float(x) if isinstance(x, (int, float)) else float(x[0]))
-        box_plot_df = model_properties.sort_values(by='timestamp')
+        box_plot_df = model_properties.sort_values(by="timestamp")
         box_plot_df = box_plot_df.head(10)
-        model_list = model_properties.to_dict('records')  
+        model_list = model_properties.to_dict("records")
 
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         fig.add_trace(
             go.Scatter(
-                x=model_properties['timestamp'],
-                y=model_properties['score'],
-                mode='lines+markers',
-                name='Accuracy',
+                x=model_properties["timestamp"],
+                y=model_properties["score"],
+                mode="lines+markers",
+                name="Accuracy",
             ),
             secondary_y=False,  # left y-achsis
         )
@@ -125,126 +256,216 @@ def model_management_content():
             yaxis2_title='Own Flow Count',  # right achsis title
         )
 
-        return html.Div([
-            html.H3("Model Management"),
-            dag.AgGrid(
-                id="models-grid",
-                rowData=model_list,
-                columnDefs=[
-                    {"field": "model_hash", "headerName": "Model Hash", "sortable": True, "filter": True},
-                    {"field": "score", "headerName": "Score", "sortable": True, "filter": True},
-                    {"field": "timestamp", "headerName": "Timestamp", "sortable": True, "filter": True},
-                    {"field": "own_flow_count", "headerName": "Own Flow Count", "sortable": True, "filter": True}
-                ],
-                defaultColDef={
-                    "resizable": True,
-                    "sortable": True,
-                    "filter": True
-                },
-                dashGridOptions={
-                    "pagination": True,
-                    "paginationAutoPageSize": True,
-                    "rowSelection": "single",
-                    "onRowClicked": {"function": "onRowClicked"}    # Function to open dialog
-                },
-                style={"height": 400}
-            ),
-            dcc.Graph(figure=fig),
-            dcc.Graph(figure=mv.create_boxplot_for_all_models(box_plot_df)),
-            html.Div(id="model-management-status"),
-            dcc.Store(id='selected-model-data'),  # Saves the selected model data
-            dbc.Modal(  # Add the Modal-Dialog 
-                [
-                    dbc.ModalHeader(dbc.ModalTitle("Restore Model?")),
-                    dcc.Graph(id="confusion-matrix-figure"),
-                    dcc.Graph(id="model-metrics"),
-                    dbc.ModalBody("Do you want to restore this model?"),
-                    dbc.ModalFooter([
-                        dbc.Button("Delete", id="delete-model-button", color="danger", className="me-auto"),  # Delete Button left
-                        dbc.Button("No", id="modal-close-button", color="secondary" ,className="ms-2"),
-                        dbc.Button("Yes", id="restore-model-button", color="success", className="ms-2"),
-                    ]),
-                ],
-                id="restore-model-modal",
-                is_open=False,
-            ),
-        ])
+        return html.Div(
+            [
+                html.H3("Model Management"),
+                dag.AgGrid(
+                    id="models-grid",
+                    rowData=model_list,
+                    columnDefs=[
+                        {
+                            "field": "model_hash",
+                            "headerName": "Model Hash",
+                            "sortable": True,
+                            "filter": True,
+                        },
+                        {
+                            "field": "score",
+                            "headerName": "Score",
+                            "sortable": True,
+                            "filter": True,
+                        },
+                        {
+                            "field": "timestamp",
+                            "headerName": "Timestamp",
+                            "sortable": True,
+                            "filter": True,
+                        },
+                        {
+                            "field": "own_flow_count",
+                            "headerName": "Own Flow Count",
+                            "sortable": True,
+                            "filter": True,
+                        },
+                    ],
+                    defaultColDef={"resizable": True, "sortable": True, "filter": True},
+                    dashGridOptions={
+                        "pagination": True,
+                        "paginationAutoPageSize": True,
+                        "rowSelection": "single",
+                        "onRowClicked": {
+                            "function": "onRowClicked"
+                        },  # Function to open dialog
+                    },
+                    style={"height": 400},
+                ),
+                dcc.Graph(figure=fig),
+                dcc.Graph(figure=mv.create_boxplot_for_all_models(box_plot_df)),
+                html.Div(id="model-management-status"),
+                dcc.Store(id="selected-model-data"),  # Saves the selected model data
+                dbc.Modal(  # Add the Modal-Dialog
+                    [
+                        dbc.ModalHeader(dbc.ModalTitle("Restore Model?")),
+                        dcc.Graph(id="confusion-matrix-figure"),
+                        dcc.Graph(id="model-metrics"),
+                        dbc.ModalBody("Do you want to restore this model?"),
+                        dbc.ModalFooter(
+                            [
+                                dbc.Button(
+                                    "Delete",
+                                    id="delete-model-button",
+                                    color="danger",
+                                    className="me-auto",
+                                ),  # Delete Button left
+                                dbc.Button(
+                                    "No",
+                                    id="modal-close-button",
+                                    color="secondary",
+                                    className="ms-2",
+                                ),
+                                dbc.Button(
+                                    "Yes",
+                                    id="restore-model-button",
+                                    color="success",
+                                    className="ms-2",
+                                ),
+                            ]
+                        ),
+                    ],
+                    id="restore-model-modal",
+                    is_open=False,
+                ),
+            ]
+        )
     except ConnectionError as ce:
-        return html.Div(f"Could not connect to Elasticsearch. Please check your connection and try again.", style={"color": "red"})
+        return html.Div(
+            f"Could not connect to Elasticsearch. Please check your connection and try again.",
+            style={"color": "red"},
+        )
     except Exception as e:
         return html.Div(f"Error fetching model data: {str(e)}", style={"color": "red"})
+
 
 def sensor_management_content():
     with current_app.app_context():
         sensors = Sensor.query.all()
-        sensors_list = [{"name": sensor.name, "created_at": sensor.created_at.strftime("%Y-%m-%d %H:%M:%S")} for sensor in sensors]
+        sensors_list = [
+            {
+                "name": sensor.name,
+                "created_at": sensor.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            for sensor in sensors
+        ]
 
-    return html.Div([
-        html.H3("Sensor Management"),
-        dbc.Row([
-            dbc.Col([
-                dbc.Input(id="sensor-name-input", placeholder="Enter sensor name", type="text"),
-                dbc.Button("Create Sensor", id="submit-sensor", color="primary", className="mt-2"),
-                html.Div(id="sensor-submit-output"),
-                dcc.Download(id="download-sensor")
-            ], width=4),
-        ]),
-        html.Hr(),
-        dag.AgGrid(
-            id="sensors-grid",
-            rowData=sensors_list,
-            columnDefs=[
-                {
-                    "field": "select",
-                    "headerName": "",
-                    "checkboxSelection": True,
-                    "headerCheckboxSelection": True,
-                    "width": 50
+    return html.Div(
+        [
+            html.H3("Sensor Management"),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Input(
+                                id="sensor-name-input",
+                                placeholder="Enter sensor name",
+                                type="text",
+                            ),
+                            dbc.Button(
+                                "Create Sensor",
+                                id="submit-sensor",
+                                color="primary",
+                                className="mt-2",
+                            ),
+                            html.Div(id="sensor-submit-output"),
+                            dcc.Download(id="download-sensor"),
+                        ],
+                        width=4,
+                    ),
+                ]
+            ),
+            html.Hr(),
+            dag.AgGrid(
+                id="sensors-grid",
+                rowData=sensors_list,
+                columnDefs=[
+                    {
+                        "field": "select",
+                        "headerName": "",
+                        "checkboxSelection": True,
+                        "headerCheckboxSelection": True,
+                        "width": 50,
+                    },
+                    {"field": "id", "hide": True},
+                    {"field": "name", "sortable": True, "filter": True},
+                    {"field": "created_at", "sortable": True, "filter": True},
+                ],
+                defaultColDef={"resizable": True, "sortable": True, "filter": True},
+                dashGridOptions={
+                    "pagination": True,
+                    "paginationAutoPageSize": True,
+                    "rowSelection": "multiple",
+                    "deltaRowDataMode": True,
                 },
-                {"field": "id", "hide": True},
-                {"field": "name", "sortable": True, "filter": True},
-                {"field": "created_at", "sortable": True, "filter": True}
-            ],
-            defaultColDef={"resizable": True, "sortable": True, "filter": True},
-            dashGridOptions={"pagination": True,
-                "paginationAutoPageSize": True,
-                "rowSelection": "multiple",
-                "deltaRowDataMode": True
-            },
-            getRowId="params.data.id",
-            style={"height": 400}
-        ), 
-        dbc.Button("Delete Selected", id="delete-selected-sensor-btn", color="danger", className="mt-3"),
-        html.Div(id="sensor-update-status")
-    ])
+                getRowId="params.data.id",
+                style={"height": 400},
+            ),
+            dbc.Button(
+                "Delete Selected",
+                id="delete-selected-sensor-btn",
+                color="danger",
+                className="mt-3",
+            ),
+            html.Div(id="sensor-update-status"),
+        ]
+    )
+
 
 @callback(
-    [Output("sensor-name-input", "invalid"),
-     Output("sensor-submit-output", "children"),
-     Output("download-sensor", "data"),
-     Output("sensors-grid", "rowData"),
-     Output("sensor-update-status", "children")],
-    [Input("submit-sensor", "n_clicks"),
-     Input("delete-selected-sensor-btn", "n_clicks")],
-    [State("sensor-name-input", "value"),
-     State("sensors-grid", "selectedRows"),
-     State("sensors-grid", "rowData")],
-    prevent_initial_call=True
+    [
+        Output("sensor-name-input", "invalid"),
+        Output("sensor-submit-output", "children"),
+        Output("download-sensor", "data"),
+        Output("sensors-grid", "rowData"),
+        Output("sensor-update-status", "children"),
+    ],
+    [
+        Input("submit-sensor", "n_clicks"),
+        Input("delete-selected-sensor-btn", "n_clicks"),
+    ],
+    [
+        State("sensor-name-input", "value"),
+        State("sensors-grid", "selectedRows"),
+        State("sensors-grid", "rowData"),
+    ],
+    prevent_initial_call=True,
 )
-def manage_sensors(submit_clicks, delete_clicks, sensor_name, selected_rows, current_rows):
+def manage_sensors(
+    submit_clicks, delete_clicks, sensor_name, selected_rows, current_rows
+):
     ctx = dash.callback_context
 
     if not ctx.triggered:
         return False, dash.no_update, None, dash.no_update, dash.no_update
 
-    trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
     # Handle Sensor Creation
     if trigger_id == "submit-sensor":
         if not sensor_name:
-            return True, "Please enter a sensor name", None, dash.no_update, dash.no_update
-        if not sensor_name.replace('_', '').isalnum():
-            return True, "Invalid sensor name format", None, dash.no_update, dash.no_update
+            return (
+                True,
+                "Please enter a sensor name",
+                None,
+                dash.no_update,
+                dash.no_update,
+            )
+        if not sensor_name.replace("_", "").isalnum():
+            return (
+                True,
+                "Invalid sensor name format",
+                None,
+                dash.no_update,
+                dash.no_update,
+            )
 
         try:
             with current_app.app_context():
@@ -254,33 +475,63 @@ def manage_sensors(submit_clicks, delete_clicks, sensor_name, selected_rows, cur
 
                 # Get updated sensor list
                 sensors = Sensor.query.all()
-                sensors_list = [{"id": s.id, "name": s.name, "created_at": s.created_at.strftime("%Y-%m-%d %H:%M:%S")} for s in sensors]
+                sensors_list = [
+                    {
+                        "id": s.id,
+                        "name": s.name,
+                        "created_at": s.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                    for s in sensors
+                ]
 
             sensor_env = generate_env_file_for_sensors(sensor_name)
             dl_content = dict(
-                content=sensor_env,
-                filename=f"{sensor_name}.env",
-                type=".env"
+                content=sensor_env, filename=f"{sensor_name}.env", type=".env"
             )
-            return False, f"Sensor {sensor_name} created successfully", dl_content, sensors_list, dash.no_update
+            return (
+                False,
+                f"Sensor {sensor_name} created successfully",
+                dl_content,
+                sensors_list,
+                dash.no_update,
+            )
 
         except Exception as e:
-            return True, f"Error creating sensor: {str(e)}", None, dash.no_update, f"Error: {str(e)}"
+            return (
+                True,
+                f"Error creating sensor: {str(e)}",
+                None,
+                dash.no_update,
+                f"Error: {str(e)}",
+            )
 
     # Handle Sensor Deletion
     elif trigger_id == "delete-selected-sensor-btn" and selected_rows:
         try:
             with current_app.app_context():
                 for row in selected_rows:
-                    sensor_id = row['id']
+                    sensor_id = row["id"]
                     sensor = Sensor.query.get(sensor_id)
                     if sensor:
                         db.session.delete(sensor)
                 db.session.commit()
 
                 sensors = Sensor.query.all()
-                sensors_list = [{"id": s.id, "name": s.name, "created_at": s.created_at.strftime("%Y-%m-%d %H:%M:%S")} for s in sensors]
-            return False, dash.no_update, None, sensors_list, "Sensors deleted successfully"
+                sensors_list = [
+                    {
+                        "id": s.id,
+                        "name": s.name,
+                        "created_at": s.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                    for s in sensors
+                ]
+            return (
+                False,
+                dash.no_update,
+                None,
+                sensors_list,
+                "Sensors deleted successfully",
+            )
 
         except Exception as e:
             return False, dash.no_update, None, dash.no_update, f"Error: {str(e)}"
@@ -289,143 +540,8 @@ def manage_sensors(submit_clicks, delete_clicks, sensor_name, selected_rows, cur
     return False, dash.no_update, None, dash.no_update, dash.no_update
 
 
-# @callback(
-#     [Output("sensor-name-input", "invalid"),
-#      Output("sensor-submit-output", "children"),
-#      Output("download-sensor", "data"),
-#      Output("sensors-grid", "rowData")],
-#     Input("submit-sensor", "n_clicks"),
-#     State("sensor-name-input", "value"),
-#     prevent_initial_call=True
-# )
-# def submit_sensor(n_clicks, sensor_name):
-#     if not sensor_name:
-#         return True, "Please enter a sensor name", None, dash.no_update
-#     if not sensor_name.replace('_', '').isalnum():
-#         return True, "Invalid sensor name format", None, dash.no_update
-        
-#     try:
-#         with current_app.app_context():
-#             new_sensor = Sensor(name=sensor_name)
-#             db.session.add(new_sensor)
-#             db.session.commit()
-            
-#             # Get updated sensor list
-#             sensors = Sensor.query.all()
-#             sensors_list = [{"name": s.name, "created_at": s.created_at.strftime("%Y-%m-%d %H:%M:%S")} for s in sensors]
-            
-#         sensor_env = generate_env_file_for_sensors(sensor_name)
-#         dl_content = dict(
-#             content=sensor_env,
-#             filename=f"{sensor_name}.env",
-#             type=".env"
-#         )
-#         return False, f"Sensor {sensor_name} created successfully", dl_content, sensors_list
-#     except Exception as e:
-#         return True, f"Error creating sensor: {str(e)}", None, dash.no_update
 
-# @callback(
-#     [Output("users-grid", "rowData"),
-#      Output("user-update-status", "children")],
-#     [Input("delete-selected-btn", "n_clicks")],
-#     #State("users-grid", "selectedRows"),
-#     prevent_initial_call=True
-# )
-# def delete_selected_users(n_clicks):#, selected_rows):
-#     print("sss")
-#     return dash.no_update, dash.no_update
-#     if not selected_rows:
-#         return dash.no_update, dash.no_update
-    
-#     try:
-#         with current_app.app_context():
-#             for row in selected_rows:
-#                 user = User.query.filter_by(username=row['username']).first()
-#                 if user:
-#                     db.session.delete(user)
-#             db.session.commit()
-            
-#             users = User.query.all()
-#             users_list = [{"username": user.username, "role": user.role} for user in users]
-#             return users_list, html.Div("Users deleted successfully", style={"color": "green"})
-            
-#     except Exception as e:
-#         return dash.no_update, html.Div(f"Error deleting users: {str(e)}", style={"color": "red"})
-
-
-@callback(
-    [Output("users-grid", "rowData"),
-     Output("user-update-status", "children")],
-    [Input("delete-selected-btn", "n_clicks"),
-     Input("add-user-btn", "n_clicks"),
-     Input("users-grid", "cellValueChanged")],
-    [State("users-grid", "selectedRows"),
-     State("users-grid", "rowData")]
-)
-def manage_users(delete_clicks, n_clicks, cell_changed, selected_rows, current_rows):
-    print(selected_rows)
-    trigger = dash.callback_context.triggered_id
-    if not trigger:
-        return dash.no_update, dash.no_update
-    
-    # Handle delete
-    if trigger == "delete-selected-btn" and selected_rows:
-        try:
-            with current_app.app_context():
-                for row in selected_rows:
-                    user = User.query.filter_by(username=row['username']).first()
-                    if user:
-                        db.session.delete(user)
-                db.session.commit()
-                users = User.query.all()
-                users_list = [{"username": user.username, "role": user.role} for user in users]
-                return users_list, "Users deleted successfully"
-        except Exception as e:
-            return dash.no_update, f"Error: {str(e)}"
-        
-    print(trigger,cell_changed)
-    if trigger == "add-user-btn" and n_clicks:
-        current_rows.append({"username": "", "role": "user", "password": ""})
-        return current_rows, ""
-        
-    if trigger == "users-grid" and cell_changed:
-        try:
-            with current_app.app_context():
-                username = cell_changed[0]['data']['username']
-                role = cell_changed[0]['data']['role']
-                try:
-                    password = cell_changed[0]['data']['password']
-                except KeyError:
-                    password = None
-                # Change role
-                if cell_changed[0]['colId'] == "role":
-                    user = User.query.filter_by(username=username).first()
-                    if user:
-                        user.role = role
-                        db.session.commit()
-                        return dash.no_update, f"Updated role for {username} to {role}"
-                    print("role")
-                
-                # User creation
-                if not username or not password:
-                    return dash.no_update, "Username and password required"
-                
-                user = User(username=username, role=role)
-                user.set_password(password)
-                db.session.add(user)
-                db.session.commit()
-                
-                return dash.no_update, f"User {username} created successfully"
-            
-        except Exception as e:
-            return dash.no_update, f"Error: {str(e)}"
-    
-    return dash.no_update, dash.no_update
-
-@callback(
-    Output("admin-content", "children"),
-    Input("url", "search")
-)
+@callback(Output("admin-content", "children"), Input("url", "search"))
 def update_admin_content(search):
     if (search == "?section=users"):
         return user_management_content()
