@@ -35,10 +35,10 @@ CHANNEL_ID = int(getenv("DISCORD_CHANNEL_ID"))
 discord_client = DiscordClient(channel_id=CHANNEL_ID)
 NOTIFICATION_ACTIVE = getenv("NOTIFICATION_ACTIVE") == "1"
 last_notification = datetime.now() - timedelta(minutes=DISCORD_NOTIFICATION_DELAY)
-
+DEBUGGING = getenv("DEBUGGING") == "1"
 main_routes = Blueprint("main", __name__)
 
-
+print(f"DEBUG ist: {DEBUGGING}")
 @main_routes.route("/")
 @login_required
 def home():
@@ -138,32 +138,32 @@ def upload():
             proba = model.predict_proba(flow_data)
 
             # prepare the dict with the probabilities
-            # TODO add Debug Flag and only submit if Attack!
-            probabilities = {}
+            if prediction != ["BENIGN"] or proba.max() < 0.8 or DEBUGGING:
+                probabilities = {}
 
-            for i in range(len(proba[0])):
-                probabilities[model.classes_[i]] = proba[0][i]
+                for i in range(len(proba[0])):
+                    probabilities[model.classes_[i]] = proba[0][i]
 
-            # Prepare dict for upload
-            doc.update(
-                {
-                    "prediction": prediction.tolist()[0],
-                    "probabilities": probabilities,
-                    "attack_class": "not yet classified",
-                    "has_been_seen": False,  # TODO Is this redundant, if we have the attack_class field?
-                    "flow_data": request.json["flow_data"],
-                    "model_hash": mc.get_hash(),
-                }
-            )
+                # Prepare dict for upload
+                doc.update(
+                    {
+                        "prediction": prediction.tolist()[0],
+                        "probabilities": probabilities,
+                        "attack_class": "not yet classified",
+                        "has_been_seen": False,  # TODO Is this redundant, if we have the attack_class field?
+                        "flow_data": request.json["flow_data"],
+                        "model_hash": mc.get_hash(),
+                    }
+                )
 
-            timestamp = datetime.strptime(doc["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
-            doc["timestamp"] = timestamp.isoformat()
+                timestamp = datetime.strptime(doc["timestamp"], "%Y-%m-%d %H:%M:%S.%f")
+                doc["timestamp"] = timestamp.isoformat()
 
-            asyncio.run(cec.store_flow_data(data=doc))
+                asyncio.run(cec.store_flow_data(data=doc))
 
-            #  Discord notification to do
-            if NOTIFICATION_ACTIVE:
-                notify_users()
+                #  Discord notification to do
+                if NOTIFICATION_ACTIVE:
+                    notify_users()
         else:
             return jsonify({"error": "Malformed data"}), 400
 
