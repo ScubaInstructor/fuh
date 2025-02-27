@@ -39,13 +39,15 @@ Usage: tcpdump-sensor [-AbdDefhHIJKlLnNOpqStuUvxX#] [ -B size ] [ -c count ] [--
 * MacBookPro11,3
 * odroid H4 Ultra - N305
 
+### Abhängigkeit von libpcap
+tcpdump-sensor verwendet libpcap, eine systemunabhängige Schnittstelle für die Erfassung von Paketen auf Benutzerebene. Wenn Ihr Betriebssystem keine libpcap zur Verfügung stellt, oder wenn es eine libpcap zur Verfügung stellt, die die APIs von libpcap 1.0 oder höher nicht unterstützt, müssen Sie zuerst libpcap abrufen und bauen, bevor Sie tcpdump bauen.
 
-### Dependency on libpcap
-tcpdump-sensor uses libpcap, a system-independent interface for user-level packet capture. If your operating system does not provide libpcap, or if it provides a libpcap that does not support the APIs from libpcap 1.0 or later, you must first retrieve and build libpcap before building tcpdump.
+### Andere Abhängigkeiten
 
-### Other dependencies
+Übersetzt mit DeepL.com (kostenlose Version)
 * liblz4
 * librdkafka
+* openssl
 
 
 ### Build tcpdump-sensor
@@ -53,18 +55,18 @@ tcpdump-sensor uses libpcap, a system-independent interface for user-level packe
 Voraussetzungen:
  - libpcap (auf den meisten Linux-Distributionen und OSX bereits installiert)
  - openSSL
- - lz4
+ - liblz4
  - librdkafka
  - C99 compiler
  - cmake
 
 Nach dem clone/checkout bitte im nids-sensor Verzeichnis folgendes ausführen:
-´´´
+```console
 mkdir tcpdump-sensor-build
 cd tcpdump-sensor-build
 cmake ../tcpdump-sensor-build
 cmake --build .
-´´´
+```
 
 
 
