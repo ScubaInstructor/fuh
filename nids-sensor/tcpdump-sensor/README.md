@@ -98,7 +98,23 @@ dissect:
     attach_pcap_file: true
 ```
 
+Die Konfiguration teilt sich auf in 3 Sektionen:
+* kafka
+Hier werden die Parameter für die Kommunikation zum kafka endpoint festgelegt.
 
+** enable_capture_traffic_to_kafka: true
+Dieser Parameter legt fest ob die Pakete an kafka geschickt werden sollen. Hilfreich beim testen oder wenn noch kein kafka Server verfügbar ist.
+
+** packet-topic:
+Hier wird das topic an welches geschickt werden soll und der kafka Server auf dem dieses gehostet ist konfiguriert.
+
+* capture:
+Hier können Parameter bezüglich Paketaufzeichnung konfiguriert werden.
+** buffer_count
+  Grösse des ring buffers für die Paketaufzeichnung
+
+** dissect:
+Hie könnnen Anpassungen bezüglich der Paketanalyse gemacht werden. Die Pakete werden von pcap in JSON umgewandelt.
 
 
 # TCPDUMP 4.x.y by [The Tcpdump Group](https://www.tcpdump.org/)
