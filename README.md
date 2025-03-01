@@ -1,4 +1,6 @@
-# fuh 
+# Abschlussarbeit Fachpraktikum Softwareentwicklung mit
+Methoden der Künstlichen Intelligenz
+
 This is the Repository of Group 2 of the Fachpraktikum "Intelligente Anomalieerkennung in Datenströmen mittels KI" from the Fernuniversität in Hagen, Germany.
 
 We introduce an intrusion detection system around the improved-CIC-IDS-2017 Dataset from The Canadian Institue for Cybersecurity of the University New Brunswick and Lisa Liu/Gints Engelen. The IDS is divided in Server and sensor Components. The Server is build around an ElasticSearch backend and a dash frontend. The sensors can be placed onto machines to monitor for attacks on. 
