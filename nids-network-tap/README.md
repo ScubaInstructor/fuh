@@ -8,7 +8,7 @@ apk add lshw
 vi /etc/network/interfaces
 
 ```console
-# cat /etc/network/interfaces
+odroid-alpine:~$ vi /etc/network/interfaces
 auto lo
 iface lo inet loopback
 
@@ -18,20 +18,17 @@ iface eth0 inet dhcp
 auto eth1
 iface eth1 inet dhcp
 
-auto eth2
-iface eth2 inet dhcp
+auto bridge0
+iface bridge0 inet manual
+	bridge-ports eth2 eth3
+	up ip link set $IFACE up
+	down ip link set $IFACE down
 
-auto eth3
-iface eth2 inet dhcp
-
-auto eth4
-iface eth2 inet dhcp
-
-auto eth5
-iface eth2 inet dhcp
-
-auto eth6
-iface eth2 inet dhcp
+auto bridge1
+iface bridge1 inet manual
+	bridge-ports eth4 eth5
+	up ip link set $IFACE up
+	down ip link set $IFACE down
 ```
 
 Install libpcap
