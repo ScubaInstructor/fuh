@@ -1,5 +1,4 @@
-# Abschlussarbeit Fachpraktikum Softwareentwicklung mit
-Methoden der Künstlichen Intelligenz
+# Abschlussarbeit Fachpraktikum Softwareentwicklung mit Methoden der Künstlichen Intelligenz
 
 This is the Repository of Group 2 of the Fachpraktikum "Intelligente Anomalieerkennung in Datenströmen mittels KI" from the Fernuniversität in Hagen, Germany.
 
