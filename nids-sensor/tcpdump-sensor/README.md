@@ -68,6 +68,16 @@ cmake ../tcpdump-sensor-build
 cmake --build .
 ```
 
+Nach dem erfolgreichen build kann tcpdumpsensor wie folgt gestartet werden:
+```console
+./tcpdump-sensor -B 8192 -s 2048 --ids-packet-provider ../ids-provider/config.yml -i en3
+```
+-B 8192: libpcap ringuffer size
+-s 2048: capture length
+--ids-packet-provider: enable capturing to ids system with ../ids-provider/config.ymll
+-i en3: network interface 
+
+
 ### tcpdump-sensor config
 ```yaml
 kafka:
@@ -115,6 +125,14 @@ Hier können Parameter bezüglich Paketaufzeichnung konfiguriert werden.
 
 ** dissect:
 Hie könnnen Anpassungen bezüglich der Paketanalyse gemacht werden. Die Pakete werden von pcap in JSON umgewandelt.
+
+
+
+
+
+
+
+
 
 
 # TCPDUMP 4.x.y by [The Tcpdump Group](https://www.tcpdump.org/)
